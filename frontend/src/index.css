@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-navy font-sans text-white antialiased;
+  }
+  * {
+    @apply border-navy-border;
+  }
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-navy;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-navy-lighter rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-navy-border;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-navy-light rounded-xl border border-navy-border p-6 animate-fade-in;
+  }
+  .card-hover {
+    @apply card hover:border-gold/30 hover:shadow-lg hover:shadow-gold/5 transition-all duration-300;
+  }
+  .btn-primary {
+    @apply bg-gold hover:bg-gold-dark text-navy font-semibold px-5 py-2.5 rounded-lg
+           transition-all duration-200 flex items-center justify-center gap-2
+           shadow-lg shadow-gold/20 hover:shadow-gold/40
+           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-navy-lighter hover:bg-navy-border text-white font-medium px-5 py-2.5 rounded-lg
+           transition-all duration-200 flex items-center justify-center gap-2
+           border border-navy-border hover:border-slate-500
+           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-medium px-5 py-2.5 rounded-lg
+           transition-all duration-200 flex items-center justify-center gap-2
+           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply text-slate-400 hover:text-white hover:bg-navy-lighter px-3 py-2 rounded-lg
+           transition-all duration-200 flex items-center justify-center gap-2;
+  }
+  .input-field {
+    @apply bg-navy-lighter border border-navy-border rounded-lg px-4 py-2.5
+           text-white placeholder-slate-500
+           focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/50
+           transition-all duration-200 w-full;
+  }
+  .label {
+    @apply block text-sm font-medium text-slate-300 mb-1.5;
+  }
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg
+           text-slate-400 hover:text-white hover:bg-white/5
+           transition-all duration-200 text-sm font-medium;
+  }
+  .sidebar-link-active {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg
+           text-gold bg-gold/10 border-l-2 border-gold
+           text-sm font-medium;
+  }
+  .metric-card {
+    @apply card flex items-center gap-4 hover:border-gold/20 transition-all duration-300;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-success { @apply badge bg-emerald-500/20 text-emerald-400; }
+  .badge-danger { @apply badge bg-red-500/20 text-red-400; }
+  .badge-warning { @apply badge bg-amber-500/20 text-amber-400; }
+  .badge-info { @apply badge bg-blue-500/20 text-blue-400; }
+  .badge-purple { @apply badge bg-purple-500/20 text-purple-400; }
+  .badge-gray { @apply badge bg-slate-500/20 text-slate-400; }
+  .table-header {
+    @apply text-left text-xs font-semibold text-slate-400 uppercase tracking-wider px-4 py-3;
+  }
+  .table-cell {
+    @apply px-4 py-3 text-sm text-slate-300 border-t border-navy-border;
+  }
+}
+
+/* ─── MAK Document Print Styles ──────────────────────────── */
+.mak-document {
+  @apply bg-white text-black p-8;
+  font-family: 'Times New Roman', serif;
+  font-size: 12pt;
+  line-height: 1.6;
+}
+.mak-document h1 { @apply text-xl font-bold text-center mb-1; }
+.mak-document h2 { @apply text-base font-bold border-b-2 border-black pb-1 mb-3 mt-6 uppercase; }
+.mak-document h3 { @apply text-sm font-bold mt-4 mb-2; }
+.mak-document table { @apply w-full border-collapse text-sm; }
+.mak-document th { @apply border border-gray-400 bg-gray-100 px-2 py-1 text-left font-semibold; }
+.mak-document td { @apply border border-gray-400 px-2 py-1; }
+.mak-document .mak-header { @apply text-center border-b-2 border-black pb-4 mb-6; }
+.mak-document .mak-signature { @apply grid grid-cols-4 gap-8 mt-12 text-center text-sm; }
+.mak-document .mak-signature > div { @apply pt-16 border-t border-black mt-2; }
+
+@media print {
+  body { background: white !important; color: black !important; }
+  aside, header, nav, .no-print, .btn-primary, .btn-secondary, .btn-ghost { display: none !important; }
+  main { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+  .card { border: none !important; background: white !important; padding: 0 !important; box-shadow: none !important; }
+  .mak-document { padding: 20mm !important; }
+  @page { margin: 15mm; size: A4; }
+}

@@ -1,0 +1,163 @@
+version: '3.9'
+
+services:
+  # ============================================================
+  # PostgreSQL Database
+  # ============================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: bpr_bapera_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bpr_bapera
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-BprBapera@2024}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - bpr_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bpr_bapera"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================
+  # MinIO Object Storage
+  # ============================================================
+  minio:
+    image: minio/minio:latest
+    container_name: bpr_bapera_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-BprMinio@2024}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - bpr_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ============================================================
+  # Backend API (Node.js + Express)
+  # ============================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bpr_bapera_api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: bpr_bapera
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-BprBapera@2024}
+      JWT_SECRET: ${JWT_SECRET:-BprBaperaJwtSecret2024KeepThisSecure}
+      JWT_EXPIRES_IN: 8h
+      JWT_REFRESH_EXPIRES_IN: 7d
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-BprBapera32CharEncryptionKey2024}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-BprMinio@2024}
+      MINIO_BUCKET: bpr-bapera
+      MINIO_USE_SSL: false
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - bpr_network
+    volumes:
+      - ./backend/logs:/app/logs
+
+  # ============================================================
+  # Frontend (React + Vite, served via Nginx)
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+        VITE_APP_NAME: "BPR BAPERA - Analisa Kredit"
+    container_name: bpr_bapera_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - bpr_network
+
+  # ============================================================
+  # WhatsApp Gateway (Baileys)
+  # ============================================================
+  wa-gateway:
+    build:
+      context: ./wa-gateway
+      dockerfile: Dockerfile
+    container_name: bpr_bapera_wa
+    restart: unless-stopped
+    environment:
+      WA_PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - wa_auth_data:/app/auth_info
+    networks:
+      - bpr_network
+
+  # ============================================================
+  # Nginx Reverse Proxy
+  # ============================================================
+  nginx:
+    image: nginx:alpine
+    container_name: bpr_bapera_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - bpr_network
+
+# ============================================================
+# Networks
+# ============================================================
+networks:
+  bpr_network:
+    driver: bridge
+
+# ============================================================
+# Volumes
+# ============================================================
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+  wa_auth_data:
+    driver: local
