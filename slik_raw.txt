@@ -1,0 +1,655 @@
+Informasi ini bersifat RAHASIA dan hanya digunakan untuk kepentingan pemohon informasi.
+Akibat yang timbul dari penggunaan informasi ini bukan merupakan tanggung jawab Otoritas Jasa Keuangan.
+Sistem Layanan Informasi Keuangan
+Informasi Debitur
+RAHASIA
+18 Juni 2026 08:28:11
+569/IDEB/0103600827/2026
+Posisi Data Terakhir
+No. Identitas
+3325056606790001
+Tanggal Lahir 	17 Juni 2026
+Tanggal Permintaan
+Nama
+Nomor Laporan
+Jenis Kelamin
+Tempat Lahir	NPWP
+Informasi diberikan berdasarkan laporan yang dikirimkan oleh pelapor ke dalam Sistem Layanan Informasi
+Keuangan dengan 	kata kunci pencarian sebagai berikut:
+Kode Ref. Pengguna
+dina facum pratiwi
+Data Pokok Debitur
+Penyajian informasi debitur pada Sistem Layanan Informasi Keuangan dikelompokkan berdasarkan nomor identitas debitur. Pengguna informasi diharapkan
+dapat meneliti kembali kemungkinan adanya debitur berbeda yang dilaporkan menggunakan nomor identitas yang sama
+PASEKARAN 	PASEKARAN 	BATANG 	Kab. Batang 	51216 	Indonesia
+Wiraswasta 	NA 	Perdagangan Eceran Yang
+Utamanya Makanan, Minuman Atau
+Tembakau Di Toko
+Tanpa Gelar
+DINA FACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN / 	KUDUS /
+26 Juni 1979
+PT Bussan Auto Finance /
+12 November 2022
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+PASEKARAN 	PASEKARAN 	BATANG 	Kab. Gunung Kidul 	00000 	Indonesia
+Ibu Rumah Tangga 	NA 	Bukan Lapangan Usaha Lainnya 	Tanpa Gelar
+DINA FACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN / 	KUDUS /
+26 Juni 1979
+PT Bank Neo Commerce Tbk /
+11 Mei 2026
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+PASEKARAN RTRW 004001 PASEKARAN BATANG
+KABUPATEN BATANG JAWA TENGAH
+PASEKARAN 	BATANG 	Kab. Batang 	51216 	Indonesia
+Wiraswasta 	AGEN TELUR MB DIN 	Penyediaan Makanan dan Minuman
+Lainnya
+Lainnya
+DINA FACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN / 	KUDUS /
+26 Juni 1979
+PT Super Bank Indonesia /
+10 Februari 2025
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+PASEKARAN 	PASEKARAN 	BATANG 	Kab. Batang 	51216 	Indonesia
+Wiraswasta 	Dins sembako 	Bukan Lapangan Usaha Lainnya 	Tanpa Gelar
+DINA FACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN / 	KUDUS /
+26 Juni 1979
+PT Akulaku Finance Indonesia /
+12 Juni 2026
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+JAWA TENGAH KABUPATEN BATANG BATANG
+PASEKARAN
+PASEKARAN 	BATANG 	Kab. Batang 	51216 	Indonesia
+Buruh (Buruh Pabrik, Buruh Bangunan, Buruh
+Tani)
+Pt Dins Sembako 	Bukan Lapangan Usaha Lainnya 	S-1
+DINAFACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN /
+3325056606790001
+KUDUS /
+26 Juni 1979
+PT Bank Seabank Indonesia /
+10 Juni 2026
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+Nomor Laporan 	569/IDEB/0103600827/2026 	| Operat or 	Dian Wicaksana Adi 	| Tanggal Permint aan 	18 Juni 2026 08:28:11 	| Kode Ref. Pengguna 	dina facum pratiwi
+Posisi Dat a Terakhir 	Mei 2026 	| 	LJK 	600827 - 001 	| 	Perunt ukan 	01 	| 	Tanggal Dibent uk 	18 Juni 2026 08:28:11 	halaman 1 dari 10
+
+-- 1 of 10 --
+
+PASEKARAN RT 004 RW 001 	PASEKARAN 	BATANG 	Kab. Batang 	51216 	Indonesia
+Wiraswasta 	NA 	Aktivitas Rumah Tangga Sebagai
+Pemberi Kerja Dari Personil Domestik
+Tanpa Gelar
+DINA FACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN / 	KUDUS /
+26 Juni 1979
+PT Bussan Auto Finance (UUS) /
+11 Juni 2026
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+PASEKARAN 	Pasekaran 	Batang 	Kab. Batang 	51216 	Indonesia
+Wiraswasta 	PASEKARAN BATANG 	Bukan Lapangan Usaha Lainnya 	Tanpa Gelar
+DINA FACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN / 	KUDUS /
+26 Juni 1979
+PT Bank Jago Tbk d/h Bank Artos Indonesia
+/
+12 Januari 2026
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+DATA TIDAK TERSEDIA 	DATA TIDAK TERSEDIA 	DATA TIDAK TERSEDIA 	Kab. Batang 	51216 	Indonesia
+Wiraswasta 	NA 	Jasa Penunjang Pertanian dan Pasca
+Panen
+S-1
+DINA FACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN / 	KUDUS /
+26 Juni 1979
+PT Commerce Finance /
+09 Juni 2026
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+PASEKARAN 004/001 	PASEKARAN 	BATANG 	Kab. Kendal 	51216 	Indonesia
+Wiraswasta 	NA 	Rumah Tangga Untuk Keperluan
+Multiguna Lainnya
+Tanpa Gelar
+DINA FACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN /
+0000000000000000
+KUDUS /
+26 Juni 1979
+PT Bank Permata Tbk /
+10 Februari 2024
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+PASEKARAN 	PASEKARAN 	BATANG 	Kab. Batang 	51216 	Indonesia
+Lain-lain 	Pt Dins Sembako 	Bukan Lapangan Usaha Lainnya 	Tanpa Gelar
+DINA FACUM 	PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN /
+999999999999999
+KUDUS /
+26 Juni 1979
+PT Bank Negara Indonesia (Persero) Tbk /
+11 Juni 2026
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+PASEKARAN 	BATANG 	BATANG 	Kab. Batang 	51216 	Indonesia
+Wiraswasta 	Pasekaran batang 	Bukan Lapangan Usaha Lainnya 	Tanpa Gelar
+DINA FACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN / 	KUDUS /
+26 Juni 1979
+PT Atome Finance Indonesia /
+11 Juni 2025
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+PASEKARAN 004 001 	CEPOKOKUNING 	BATANG 	Kab. Batanghari 	51216 	Indonesia
+Wiraswasta 	PT DINS SEMBAKO 	Bukan Lapangan Usaha Lainnya 	S-1
+DINA FACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN / 	KUDUS /
+26 Juni 1979
+PT Bank DBS Indonesia /
+09 Juni 2026
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+Nomor Laporan 	569/IDEB/0103600827/2026 	| Operat or 	Dian Wicaksana Adi 	| Tanggal Permint aan 	18 Juni 2026 08:28:11 	| Kode Ref. Pengguna 	dina facum pratiwi
+Posisi Dat a Terakhir 	Mei 2026 	| 	LJK 	600827 - 001 	| 	Perunt ukan 	01 	| 	Tanggal Dibent uk 	18 Juni 2026 08:28:11 	halaman 2 dari 10
+
+-- 2 of 10 --
+
+PASEKARAN 	PASEKARAN 	BATANG 	Kab. Batang 	51216 	Indonesia
+Wiraswasta 	NA 	Jasa Penunjang Pertanian dan Pasca
+Panen
+S-1
+DINA FACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN / 	KUDUS /
+26 Juni 1979
+PT Lentera Dana Nusantara /
+09 Juni 2026
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+PASEKARAN 	BATANG 	PASEKARAN 	Kab. Batang 	51216 	Indonesia
+Wiraswasta 	NA 	Rumah Tangga Untuk Keperluan
+Multiguna Lainnya
+S-1
+DINA FACUM PRATIWI 	NIK /
+3325056606790001
+PEREMPUAN / 	KUDUS /
+26 Juni 1979
+PT Bank Oke Indonesia Tbk D/H PT Bank
+Dinar /
+10 Oktober 2025
+Pekerjaan 	Tempat Bekerja 	Bidang Usaha 	Status Gelar Debitur
+Alamat 	Kelurahan 	Kecamatan 	Kabupaten / Kota 	Kode Pos 	Negara
+Nama Sesuai Identitas 	Identitas 	Jenis Kelamin / NPWP 	Tempat / Tgl Lahir 	Pelapor / Tanggal Update
+Ringkasan Fasilitas
+Kualitas Terburuk
+/ Bulan Data
+Total
+(dalam IDR)
+2
+Fasilitas
+0
+Garansi Yang Diberikan
+(dalam IDR)
+Lembaga Pembiayaan
+Fasilitas Lain
+(dalam IDR)
+BPR / BPRS	Bank Umum 	3 	2	Jumlah Kreditur
+Irrevocable L/C
+(dalam IDR)
+Kredit/Pembiayaan
+(dalam IDR)
+Lainnya
+Plafon Efektif 	22.064.796,00 	0,00 	0,00 	0,00 	22.064.796,00 	1 / Januari 2026
+Baki Debet 	20.701.726,00 	0,00 	0,00 	0,00 	20.701.726,00
+Kredit/Pembiayaan
+Apr 25	Jun 24 	Mar 25	Jan 25 	Feb 25	Okt 24 	Mei 25	Nov 24
+Kualitas / Jumlah Hari
+Tunggakan
+No Rekening 	Kualitas 	1 - Lancar
+Sep 24	Jul 24 	Agt 24 	Des 24
+252090 - PT Bussan Auto Finance (UUS) 	Kantor Pusat (UUS) 	Rp 9.227.961,00 	11 Juni 2026
+Pelapor 	Cabang 	Baki Debet 	Tanggal Update
+Jun 25 	Jul 25 	Agt 25 	Sep 25 	Okt 25 	Nov 25 	Des 25
+1 	0
+Jan 26
+1
+Feb 26
+0
+Mar 26
+0	1
+Apr 26
+0	1
+Mei 26
+0	1
+Kredit Program Pemerintah 	Kredit yang bukan merupakan kredit/
+pembiayaan dalam rangka program
+pemerintah
+Cara Restrukturisasi
+Jenis Penggunaan 	Investasi 	Frekuensi Restrukturisasi 	0
+Jenis Kredit/Pembiayaan 	Lainnya (Dengan Perjanjian) 	Nilai Proyek 	Rp 10.432.453,00
+No Akad Awal 	877180005441 	Realisasi/Pencairan Bulan Berjalan 	Rp 0,00
+Suku Bunga/Imbalan 	41 % 	Jenis Suku Bunga/Imbalan 	Ujroh
+Sifat Kredit/Pembiayaan 	Lainnya 	Jumlah Hari Tunggakan 	0
+Kategori Debitur 	Debitur Usaha Mikro, Kecil, dan
+Menengah – Mikro
+Denda 	Rp 0,00
+No Akad Akhir 	877180005441 	Sebab Macet
+Tanggal Akad Awal 	10 Januari 2026 	Nilai dalam Mata Uang Asal
+Tanggal Akad Akhir 	10 Januari 2026 	Tanggal Macet
+Sektor Ekonomi 	Perdagangan Eceran Yang Utamanya
+Makanan, Minuman Atau Tembakau Di
+Toko
+Tanggal Restrukturisasi Akhir
+Kab/Kota Lokasi Proyek 	Kab. Batang 	Kondisi 	Fasilitas Aktif
+Keterangan
+Valuta 	IDR 	Tanggal Kondisi
+Akad Kredit/Pembiayaan 	Ijarah Muntahiya Bittamlik 	Plafon Awal 	Rp 10.432.453,00
+Frekuensi Perpanjangan Kredit/
+Pembiayaan
+0 	Plafon 	Rp 9.227.962,00
+Tanggal Awal Kredit 	10 Januari 2026 	Tunggakan Pokok 	Rp 0,00
+Tanggal Jatuh Tempo 	10 Januari 2028 	Frekuensi Tunggakan 	0
+Tanggal Mulai 	10 Januari 2026 	Tunggakan Bunga 	Rp 0,00
+Agunan
+Nomor Laporan 	569/IDEB/0103600827/2026 	| Operat or 	Dian Wicaksana Adi 	| Tanggal Permint aan 	18 Juni 2026 08:28:11 	| Kode Ref. Pengguna 	dina facum pratiwi
+Posisi Dat a Terakhir 	Mei 2026 	| 	LJK 	600827 - 001 	| 	Perunt ukan 	01 	| 	Tanggal Dibent uk 	18 Juni 2026 08:28:11 	halaman 3 dari 10
+
+-- 3 of 10 --
+
+Kab/Kota Lokasi Agunan 	Kab. Batang 	Nama Penilai Independen
+Keterangan 	Tgl Penilaian Penilai Independen
+Nomor Agunan 	877180005441 	Peringkat Agunan
+Nama Pemilik Agunan 	DINA FACUM PRATIWI 	Nilai Agunan (NJOP) / Nilai Wajar 	Rp 9.500.000,00
+Alamat Agunan 	PASEKARAN RT 004 RW 001 	Nilai Agunan Penilai Independen
+Jenis Pengikatan 	Belum Diikat atau Tidak Diikat 	Lembaga Pemeringkat
+Tanggal Penilaian Pelapor 	10 Januari 2026 	Asuransi 	Ya
+Tanggal Pengikatan 	Bukti Kepemilikan 	BPKB No. P-03102658
+Jenis Agunan 	Nilai Agunan 	Paripasu 	Tanggal Update
+Kendaraan 	Rp 9.500.000,00 	11 Juni 2026
+Penjamin
+Kredit/Pembiayaan
+Apr 25	Jun 24 	Mar 25	Jan 25 	Feb 25	Okt 24 	Mei 25	Nov 24
+Kualitas / Jumlah Hari
+Tunggakan
+No Rekening 	Kualitas 	1 - Lancar
+Sep 24	Jul 24 	Agt 24 	Des 24
+046 - PT Bank DBS Indonesia 	BANK DBS KPO 	Rp 90.852,00 	09 Juni 2026
+Pelapor 	Cabang 	Baki Debet 	Tanggal Update
+Jun 25 	Jul 25 	Agt 25 	Sep 25 	Okt 25 	Nov 25 	Des 25 	Jan 26 	Feb 26 	Mar 26
+0	1
+Apr 26
+0	1
+Mei 26
+0	1
+Kredit Program Pemerintah 	Kredit yang bukan merupakan kredit/
+pembiayaan dalam rangka program
+pemerintah
+Cara Restrukturisasi
+Jenis Penggunaan 	Konsumsi 	Frekuensi Restrukturisasi 	0
+Jenis Kredit/Pembiayaan 	Kredit/Pembiayaan Dalam Rangka
+Pembiayaan Bersama (Sindikasi)
+Nilai Proyek
+No Akad Awal 	00037000100064851842603P 	Realisasi/Pencairan Bulan Berjalan 	Rp 0,00
+Suku Bunga/Imbalan 	23.25 % 	Jenis Suku Bunga/Imbalan 	Suku Bunga Fixed
+Sifat Kredit/Pembiayaan 	Lainnya 	Jumlah Hari Tunggakan 	0
+Kategori Debitur 	Bukan Debitur Usaha Mikro, Kecil, dan
+Menengah
+Denda 	Rp 0,00
+No Akad Akhir 	00037000100064851842603P 	Sebab Macet
+Tanggal Akad Awal 	30 Maret 2026 	Nilai dalam Mata Uang Asal
+Tanggal Akad Akhir 	30 Maret 2026 	Tanggal Macet
+Sektor Ekonomi 	Rumah Tangga Untuk Keperluan
+Multiguna Lainnya
+Tanggal Restrukturisasi Akhir
+Kab/Kota Lokasi Proyek 	Kab. Batanghari 	Kondisi 	Fasilitas Aktif
+Keterangan 	MITRA PENYALUR=PT COMMERCE FINANCE, PAYLATER
+Valuta 	IDR 	Tanggal Kondisi
+Akad Kredit/Pembiayaan 	Konvensional 	Plafon Awal 	Rp 108.000,00
+Frekuensi Perpanjangan Kredit/
+Pembiayaan
+0 	Plafon 	Rp 90.852,00
+Tanggal Awal Kredit 	30 Maret 2026 	Tunggakan Pokok 	Rp 0,00
+Tanggal Jatuh Tempo 	02 Oktober 2026 	Frekuensi Tunggakan 	0
+Tanggal Mulai 	30 Maret 2026 	Tunggakan Bunga 	Rp 0,00
+Agunan
+Penjamin
+Nomor Laporan 	569/IDEB/0103600827/2026 	| Operat or 	Dian Wicaksana Adi 	| Tanggal Permint aan 	18 Juni 2026 08:28:11 	| Kode Ref. Pengguna 	dina facum pratiwi
+Posisi Dat a Terakhir 	Mei 2026 	| 	LJK 	600827 - 001 	| 	Perunt ukan 	01 	| 	Tanggal Dibent uk 	18 Juni 2026 08:28:11 	halaman 4 dari 10
+
+-- 4 of 10 --
+
+Kredit/Pembiayaan
+Apr 25	Jun 24 	Mar 25	Jan 25 	Feb 25	Okt 24 	Mei 25	Nov 24
+Kualitas / Jumlah Hari
+Tunggakan
+No Rekening 	Kualitas 	1 - Lancar
+Sep 24	Jul 24 	Agt 24 	Des 24
+252620 - PT Commerce Finance 	KC Surabaya 	Rp 10.366,00 	09 Juni 2026
+Pelapor 	Cabang 	Baki Debet 	Tanggal Update
+Jun 25 	Jul 25 	Agt 25 	Sep 25 	Okt 25 	Nov 25 	Des 25 	Jan 26 	Feb 26 	Mar 26
+0	1
+Apr 26
+0	1
+Mei 26
+0	1
+Kredit Program Pemerintah 	Kredit yang bukan merupakan kredit/
+pembiayaan dalam rangka program
+pemerintah
+Cara Restrukturisasi
+Jenis Penggunaan 	Konsumsi 	Frekuensi Restrukturisasi 	0
+Jenis Kredit/Pembiayaan 	Kredit/Pembiayaan Dalam Rangka
+Pembiayaan Bersama (Sindikasi)
+Nilai Proyek
+No Akad Awal 	2149763415849728019 	Realisasi/Pencairan Bulan Berjalan 	Rp 0,00
+Suku Bunga/Imbalan 	17.72 % 	Jenis Suku Bunga/Imbalan 	Suku Bunga Fixed
+Sifat Kredit/Pembiayaan 	Lainnya 	Jumlah Hari Tunggakan 	0
+Kategori Debitur 	Bukan Debitur Usaha Mikro, Kecil, dan
+Menengah
+Denda 	Rp 0,00
+No Akad Akhir 	2149763415849728019 	Sebab Macet
+Tanggal Akad Awal 	30 Maret 2026 	Nilai dalam Mata Uang Asal
+Tanggal Akad Akhir 	30 Maret 2026 	Tanggal Macet
+Sektor Ekonomi 	Perdagangan Eceran Melalui
+Pemesanan Pos Atau Internet
+Tanggal Restrukturisasi Akhir
+Kab/Kota Lokasi Proyek 	Kab. Batang 	Kondisi 	Fasilitas Aktif
+Keterangan 	Paylater
+Valuta 	IDR 	Tanggal Kondisi
+Akad Kredit/Pembiayaan 	Konvensional 	Plafon Awal 	Rp 12.000,00
+Frekuensi Perpanjangan Kredit/
+Pembiayaan
+0 	Plafon 	Rp 10.366,00
+Tanggal Awal Kredit 	30 Maret 2026 	Tunggakan Pokok 	Rp 0,00
+Tanggal Jatuh Tempo 	02 Oktober 2026 	Frekuensi Tunggakan 	0
+Tanggal Mulai 	30 Maret 2026 	Tunggakan Bunga 	Rp 0,00
+Agunan
+Penjamin
+Nomor Laporan 	569/IDEB/0103600827/2026 	| Operat or 	Dian Wicaksana Adi 	| Tanggal Permint aan 	18 Juni 2026 08:28:11 	| Kode Ref. Pengguna 	dina facum pratiwi
+Posisi Dat a Terakhir 	Mei 2026 	| 	LJK 	600827 - 001 	| 	Perunt ukan 	01 	| 	Tanggal Dibent uk 	18 Juni 2026 08:28:11 	halaman 5 dari 10
+
+-- 5 of 10 --
+
+Kredit/Pembiayaan
+Apr 25	Jun 24 	Mar 25	Jan 25 	Feb 25	Okt 24 	Mei 25	Nov 24
+Kualitas / Jumlah Hari
+Tunggakan
+No Rekening 	Kualitas 	1 - Lancar
+Sep 24	Jul 24 	Agt 24 	Des 24
+017977 - PT Lentera Dana Nusantara 	Kantor Pusat 	Rp 59.562,00 	09 Juni 2026
+Pelapor 	Cabang 	Baki Debet 	Tanggal Update
+Jun 25 	Jul 25 	Agt 25 	Sep 25 	Okt 25 	Nov 25 	Des 25 	Jan 26 	Feb 26 	Mar 26
+0	1
+Apr 26
+0	1
+Mei 26
+0	1
+Kredit Program Pemerintah 	Kredit yang bukan merupakan kredit/
+pembiayaan dalam rangka program
+pemerintah
+Cara Restrukturisasi
+Jenis Penggunaan 	Konsumsi 	Frekuensi Restrukturisasi 	0
+Jenis Kredit/Pembiayaan 	Lainnya (Dengan PK - LPBBTI) 	Nilai Proyek
+No Akad Awal 	2139226359617338417 	Realisasi/Pencairan Bulan Berjalan 	Rp 0,00
+Suku Bunga/Imbalan 	47.4 % 	Jenis Suku Bunga/Imbalan 	Suku Bunga Fixed
+Sifat Kredit/Pembiayaan 	Lainnya 	Jumlah Hari Tunggakan 	0
+Kategori Debitur 	Bukan Debitur Usaha Mikro, Kecil, dan
+Menengah
+Denda 	Rp 0,00
+No Akad Akhir 	2139226359617338417 	Sebab Macet
+Tanggal Akad Awal 	01 Maret 2026 	Nilai dalam Mata Uang Asal
+Tanggal Akad Akhir 	01 Maret 2026 	Tanggal Macet
+Sektor Ekonomi 	Bukan Lapangan Usaha Lainnya 	Tanggal Restrukturisasi Akhir
+Kab/Kota Lokasi Proyek 	Kab. Batang 	Kondisi 	Fasilitas Aktif
+Keterangan
+Valuta 	IDR 	Tanggal Kondisi
+Akad Kredit/Pembiayaan 	Konvensional 	Plafon Awal 	Rp 15.000,00
+Frekuensi Perpanjangan Kredit/
+Pembiayaan
+0 	Plafon 	Rp 59.562,00
+Tanggal Awal Kredit 	01 Maret 2026 	Tunggakan Pokok 	Rp 0,00
+Tanggal Jatuh Tempo 	26 Mei 2027 	Frekuensi Tunggakan 	0
+Tanggal Mulai 	01 Maret 2026 	Tunggakan Bunga 	Rp 0,00
+Agunan
+Penjamin
+Nomor Laporan 	569/IDEB/0103600827/2026 	| Operat or 	Dian Wicaksana Adi 	| Tanggal Permint aan 	18 Juni 2026 08:28:11 	| Kode Ref. Pengguna 	dina facum pratiwi
+Posisi Dat a Terakhir 	Mei 2026 	| 	LJK 	600827 - 001 	| 	Perunt ukan 	01 	| 	Tanggal Dibent uk 	18 Juni 2026 08:28:11 	halaman 6 dari 10
+
+-- 6 of 10 --
+
+Kredit/Pembiayaan
+Apr 25	Jun 24 	Mar 25	Jan 25 	Feb 25	Okt 24 	Mei 25	Nov 24
+Kualitas / Jumlah Hari
+Tunggakan
+No Rekening 	Kualitas 	1 - Lancar
+Sep 24	Jul 24 	Agt 24 	Des 24
+046 - PT Bank DBS Indonesia 	BANK DBS KPO 	Rp 5.050.688,00 	09 Juni 2026
+Pelapor 	Cabang 	Baki Debet 	Tanggal Update
+Jun 25 	Jul 25 	Agt 25 	Sep 25 	Okt 25 	Nov 25
+1 	0
+Des 25
+1 	0
+Jan 26
+1
+Feb 26
+0
+Mar 26
+0	1
+Apr 26
+0	1
+Mei 26
+0	1
+Kredit Program Pemerintah 	Kredit yang bukan merupakan kredit/
+pembiayaan dalam rangka program
+pemerintah
+Cara Restrukturisasi
+Jenis Penggunaan 	Konsumsi 	Frekuensi Restrukturisasi 	0
+Jenis Kredit/Pembiayaan 	Kredit/Pembiayaan Kepada Pihak
+Ketiga Melalui Lembaga Lain Secara
+Channeling
+Nilai Proyek
+No Akad Awal 	00037000100064851842512D 	Realisasi/Pencairan Bulan Berjalan 	Rp 0,00
+Suku Bunga/Imbalan 	40.75 % 	Jenis Suku Bunga/Imbalan 	Suku Bunga Fixed
+Sifat Kredit/Pembiayaan 	Lainnya 	Jumlah Hari Tunggakan 	0
+Kategori Debitur 	Bukan Debitur Usaha Mikro, Kecil, dan
+Menengah
+Denda 	Rp 0,00
+No Akad Akhir 	00037000100064851842512D 	Sebab Macet
+Tanggal Akad Awal 	27 Desember 2025 	Nilai dalam Mata Uang Asal
+Tanggal Akad Akhir 	27 Desember 2025 	Tanggal Macet
+Sektor Ekonomi 	Rumah Tangga Untuk Keperluan
+Multiguna Lainnya
+Tanggal Restrukturisasi Akhir
+Kab/Kota Lokasi Proyek 	Kab. Batanghari 	Kondisi 	Fasilitas Aktif
+Keterangan 	MITRA PENYALUR=PT LENTERA DANA NUSANTARA, DANA TUNAI
+Valuta 	IDR 	Tanggal Kondisi
+Akad Kredit/Pembiayaan 	Konvensional 	Plafon Awal 	Rp 8.000.000,00
+Frekuensi Perpanjangan Kredit/
+Pembiayaan
+0 	Plafon 	Rp 5.050.688,00
+Tanggal Awal Kredit 	27 Desember 2025 	Tunggakan Pokok 	Rp 0,00
+Tanggal Jatuh Tempo 	27 Desember 2026 	Frekuensi Tunggakan 	0
+Tanggal Mulai 	27 Desember 2025 	Tunggakan Bunga 	Rp 0,00
+Agunan
+Penjamin
+Nomor Laporan 	569/IDEB/0103600827/2026 	| Operat or 	Dian Wicaksana Adi 	| Tanggal Permint aan 	18 Juni 2026 08:28:11 	| Kode Ref. Pengguna 	dina facum pratiwi
+Posisi Dat a Terakhir 	Mei 2026 	| 	LJK 	600827 - 001 	| 	Perunt ukan 	01 	| 	Tanggal Dibent uk 	18 Juni 2026 08:28:11 	halaman 7 dari 10
+
+-- 7 of 10 --
+
+Kredit/Pembiayaan
+Apr 25	Jun 24 	Mar 25	Jan 25 	Feb 25	Okt 24 	Mei 25	Nov 24
+Kualitas / Jumlah Hari
+Tunggakan
+No Rekening 	Kualitas 	1 - Lancar
+Sep 24	Jul 24 	Agt 24 	Des 24
+251670 - PT Akulaku Finance Indonesia 	Kantor Pusat 	Rp 67.580,00 	12 Juni 2026
+Pelapor 	Cabang 	Baki Debet 	Tanggal Update
+Jun 25 	Jul 25 	Agt 25 	Sep 25 	Okt 25 	Nov 25 	Des 25 	Jan 26 	Feb 26 	Mar 26 	Apr 26
+0	1
+Mei 26
+0	1
+Kredit Program Pemerintah 	Kredit yang bukan merupakan kredit/
+pembiayaan dalam rangka program
+pemerintah
+Cara Restrukturisasi
+Jenis Penggunaan 	Konsumsi 	Frekuensi Restrukturisasi 	0
+Jenis Kredit/Pembiayaan 	Buy Now Pay Later (BNPL) 	Nilai Proyek
+No Akad Awal 	052026-AFI-899125869042045442 	Realisasi/Pencairan Bulan Berjalan 	Rp 0,00
+Suku Bunga/Imbalan 	36 % 	Jenis Suku Bunga/Imbalan 	Suku Bunga Fixed
+Sifat Kredit/Pembiayaan 	Lainnya 	Jumlah Hari Tunggakan 	0
+Kategori Debitur 	Bukan Debitur Usaha Mikro, Kecil, dan
+Menengah
+Denda 	Rp 0,00
+No Akad Akhir 	052026-AFI-899125869042045442 	Sebab Macet
+Tanggal Akad Awal 	17 Mei 2026 	Nilai dalam Mata Uang Asal
+Tanggal Akad Akhir 	17 Mei 2026 	Tanggal Macet
+Sektor Ekonomi 	Bukan Lapangan Usaha Lainnya 	Tanggal Restrukturisasi Akhir
+Kab/Kota Lokasi Proyek 	Kab. Batang 	Kondisi 	Fasilitas Aktif
+Keterangan
+Valuta 	IDR 	Tanggal Kondisi
+Akad Kredit/Pembiayaan 	Konvensional 	Plafon Awal 	Rp 1.500.000,00
+Frekuensi Perpanjangan Kredit/
+Pembiayaan
+0 	Plafon 	Rp 1.430.649,00
+Tanggal Awal Kredit 	17 Mei 2026 	Tunggakan Pokok 	Rp 0,00
+Tanggal Jatuh Tempo 	25 Juni 2026 	Frekuensi Tunggakan 	0
+Tanggal Mulai 	17 Mei 2026 	Tunggakan Bunga 	Rp 0,00
+Agunan
+Penjamin
+Nomor Laporan 	569/IDEB/0103600827/2026 	| Operat or 	Dian Wicaksana Adi 	| Tanggal Permint aan 	18 Juni 2026 08:28:11 	| Kode Ref. Pengguna 	dina facum pratiwi
+Posisi Dat a Terakhir 	Mei 2026 	| 	LJK 	600827 - 001 	| 	Perunt ukan 	01 	| 	Tanggal Dibent uk 	18 Juni 2026 08:28:11 	halaman 8 dari 10
+
+-- 8 of 10 --
+
+Kredit/Pembiayaan
+Apr 25	Jun 24 	Mar 25	Jan 25 	Feb 25	Okt 24 	Mei 25	Nov 24
+Kualitas / Jumlah Hari
+Tunggakan
+No Rekening 	Kualitas 	1 - Lancar
+Sep 24	Jul 24 	Agt 24 	Des 24
+535 - PT Bank Seabank Indonesia 	KPO 	Rp 3.664.717,00 	10 Juni 2026
+Pelapor 	Cabang 	Baki Debet 	Tanggal Update
+Jun 25 	Jul 25 	Agt 25 	Sep 25 	Okt 25 	Nov 25 	Des 25 	Jan 26 	Feb 26 	Mar 26
+0	1
+Apr 26
+0	1
+Mei 26
+Kredit Program Pemerintah 	Kredit yang bukan merupakan kredit/
+pembiayaan dalam rangka program
+pemerintah
+Cara Restrukturisasi
+Jenis Penggunaan 	Konsumsi 	Frekuensi Restrukturisasi 	0
+Jenis Kredit/Pembiayaan 	Dana Tunai 	Nilai Proyek
+No Akad Awal 	2139226359617338417 	Realisasi/Pencairan Bulan Berjalan 	Rp 2.500.000,00
+Suku Bunga/Imbalan 	38.49 % 	Jenis Suku Bunga/Imbalan 	Suku Bunga Fixed
+Sifat Kredit/Pembiayaan 	Lainnya 	Jumlah Hari Tunggakan 	0
+Kategori Debitur 	Bukan Debitur Usaha Mikro, Kecil, dan
+Menengah
+Denda 	Rp 0,00
+No Akad Akhir 	2170049048238367754 	Sebab Macet
+Tanggal Akad Awal 	01 Maret 2026 	Nilai dalam Mata Uang Asal
+Tanggal Akad Akhir 	25 Mei 2026 	Tanggal Macet
+Sektor Ekonomi 	Bukan Lapangan Usaha Lainnya 	Tanggal Restrukturisasi Akhir
+Kab/Kota Lokasi Proyek 	Kab. Batang 	Kondisi 	Fasilitas Aktif
+Keterangan 	Dana Tunai
+Valuta 	IDR 	Tanggal Kondisi
+Akad Kredit/Pembiayaan 	Konvensional 	Plafon Awal 	Rp 3.985.000,00
+Frekuensi Perpanjangan Kredit/
+Pembiayaan
+0 	Plafon 	Rp 3.664.717,00
+Tanggal Awal Kredit 	01 Maret 2026 	Tunggakan Pokok 	Rp 0,00
+Tanggal Jatuh Tempo 	25 Mei 2027 	Frekuensi Tunggakan 	0
+Tanggal Mulai 	01 Maret 2026 	Tunggakan Bunga 	Rp 0,00
+Agunan
+Penjamin
+Nomor Laporan 	569/IDEB/0103600827/2026 	| Operat or 	Dian Wicaksana Adi 	| Tanggal Permint aan 	18 Juni 2026 08:28:11 	| Kode Ref. Pengguna 	dina facum pratiwi
+Posisi Dat a Terakhir 	Mei 2026 	| 	LJK 	600827 - 001 	| 	Perunt ukan 	01 	| 	Tanggal Dibent uk 	18 Juni 2026 08:28:11 	halaman 9 dari 10
+
+-- 9 of 10 --
+
+Kredit/Pembiayaan
+Apr 25	Jun 24 	Mar 25	Jan 25 	Feb 25	Okt 24 	Mei 25	Nov 24
+Kualitas / Jumlah Hari
+Tunggakan
+No Rekening 	Kualitas 	1 - Lancar
+Sep 24	Jul 24 	Agt 24 	Des 24
+009 - PT Bank Negara Indonesia (Persero)
+Tbk
+BNI KC JKT-SENAYAN 	Rp 2.530.000,00 	11 Juni 2026
+Pelapor 	Cabang 	Baki Debet 	Tanggal Update
+Jun 25 	Jul 25 	Agt 25 	Sep 25 	Okt 25 	Nov 25 	Des 25 	Jan 26 	Feb 26 	Mar 26
+0	1
+Apr 26
+0	1
+Mei 26
+0	1
+Kredit Program Pemerintah 	Kredit yang bukan merupakan kredit/
+pembiayaan dalam rangka program
+pemerintah
+Cara Restrukturisasi
+Jenis Penggunaan 	Konsumsi 	Frekuensi Restrukturisasi 	0
+Jenis Kredit/Pembiayaan 	Buy Now Pay Later (BNPL) 	Nilai Proyek
+No Akad Awal 	SPL2141117748124822559 	Realisasi/Pencairan Bulan Berjalan 	Rp 0,00
+Suku Bunga/Imbalan 	25 % 	Jenis Suku Bunga/Imbalan 	Suku Bunga Fixed
+Sifat Kredit/Pembiayaan 	Lainnya 	Jumlah Hari Tunggakan 	0
+Kategori Debitur 	Bukan Debitur Usaha Mikro, Kecil, dan
+Menengah
+Denda 	Rp 0,00
+No Akad Akhir 	SPL2141517967110941746 	Sebab Macet
+Tanggal Akad Awal 	07 Maret 2026 	Nilai dalam Mata Uang Asal
+Tanggal Akad Akhir 	08 Maret 2026 	Tanggal Macet
+Sektor Ekonomi 	Bukan Lapangan Usaha Lainnya 	Tanggal Restrukturisasi Akhir
+Kab/Kota Lokasi Proyek 	Wil. Kota Jakarta Pusat 	Kondisi 	Fasilitas Aktif
+Keterangan
+Valuta 	IDR 	Tanggal Kondisi
+Akad Kredit/Pembiayaan 	Konvensional 	Plafon Awal 	Rp 3.261.227,00
+Frekuensi Perpanjangan Kredit/
+Pembiayaan
+1 	Plafon 	Rp 2.530.000,00
+Tanggal Awal Kredit 	07 Maret 2026 	Tunggakan Pokok 	Rp 0,00
+Tanggal Jatuh Tempo 	02 Maret 2027 	Frekuensi Tunggakan 	0
+Tanggal Mulai 	08 Maret 2026 	Tunggakan Bunga 	Rp 0,00
+Agunan
+Penjamin
+Irrevocable L/C
+Garansi Yang Diberikan
+Fasilitas Lain
+Nomor Laporan 	569/IDEB/0103600827/2026 	| Operat or 	Dian Wicaksana Adi 	| Tanggal Permint aan 	18 Juni 2026 08:28:11 	| Kode Ref. Pengguna 	dina facum pratiwi
+Posisi Dat a Terakhir 	Mei 2026 	| 	LJK 	600827 - 001 	| 	Perunt ukan 	01 	| 	Tanggal Dibent uk 	18 Juni 2026 08:28:11 	halaman 10 dari 10
+
+-- 10 of 10 --
+

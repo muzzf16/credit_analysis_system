@@ -97,3 +97,7 @@ export const auditService = {
   getAll: (params) => api.get('/audit', { params }),
   getSummary: () => api.get('/audit/summary'),
 };
+
+export const ocrService = {
+  process: (formData) => api.post('/ocr', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+};

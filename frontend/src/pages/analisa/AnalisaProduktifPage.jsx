@@ -67,6 +67,13 @@ export default function AnalisaProduktifPage() {
         </div>
       </div>
 
+      {!pengajuanId && (
+        <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-lg flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+          <p className="text-sm text-red-400 font-medium">Pengajuan ID tidak ditemukan! Silakan buka menu <strong>Pengajuan Kredit</strong> terlebih dahulu, lalu klik tombol <strong>Analisa</strong> pada pengajuan yang diinginkan agar data dapat tersimpan.</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Input 3 Bulan */}

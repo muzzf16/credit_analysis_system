@@ -1,16 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, Shield } from 'lucide-react';
-import { slikService } from '../../services';
+import { ArrowLeft, Save, Loader2, Shield, Search } from 'lucide-react';
+import { slikService, ocrService, pengajuanService } from '../../services';
 import { formatRupiah } from '../../utils/formatters';
 
 export default function SlikFormPage() {
   const [params] = useSearchParams();
-  const pengajuanId = params.get('pengajuanId') || '';
-  const debiturId = params.get('debiturId') || '';
+  const initialPengajuanId = params.get('pengajuanId') || '';
+  const initialDebiturId = params.get('debiturId') || '';
+  
+  const [pengajuanId, setPengajuanId] = useState(initialPengajuanId);
+  const [debiturId, setDebiturId] = useState(initialDebiturId);
+  
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Search parameters for fallback selection when accessed from Sidebar directly
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activePengajuans, setActivePengajuans] = useState([]);
+  const [selectedPengajuan, setSelectedPengajuan] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  useEffect(() => {
+    if (initialPengajuanId) {
+      pengajuanService.getById(initialPengajuanId)
+        .then(res => {
+          setSelectedPengajuan(res.data.data);
+          setDebiturId(res.data.data.debitur_id);
+        })
+        .catch(() => {});
+    }
+  }, [initialPengajuanId]);
+
+  useEffect(() => {
+    if (searchQuery.length >= 2) {
+      pengajuanService.getAll({ search: searchQuery, limit: 5 })
+        .then(res => {
+          setActivePengajuans(res.data.data);
+          setShowDropdown(true);
+        })
+        .catch(() => {});
+    } else {
+      setActivePengajuans([]);
+      setShowDropdown(false);
+    }
+  }, [searchQuery]);
+
+  const selectPengajuan = (p) => {
+    setSelectedPengajuan(p);
+    setPengajuanId(p.id);
+    setDebiturId(p.debitur_id);
+    setShowDropdown(false);
+    setSearchQuery('');
+  };
 
   const [form, setForm] = useState({
     tanggalSlik: new Date().toISOString().split('T')[0],
@@ -22,6 +66,44 @@ export default function SlikFormPage() {
   });
 
   const [detailSlik, setDetailSlik] = useState([]);
+
+  const handleOcrUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setOcrLoading(true);
+    setError('');
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', 'slik');
+
+    try {
+      const res = await ocrService.process(formData);
+      const parsed = res.data.data?.data || {};
+      
+      if (parsed.detailSlik && parsed.detailSlik.length > 0) {
+        setDetailSlik(parsed.detailSlik);
+        setForm(prev => ({
+          ...prev,
+          tanggalSlik: parsed.tanggalSlik || prev.tanggalSlik,
+          totalFasilitas: parsed.totalFasilitas || 0,
+          totalPlafon: parsed.totalPlafon || 0,
+          totalBakiDebet: parsed.totalBakiDebet || 0,
+          kolektibilitasTertinggi: parsed.kolektibilitasTertinggi || 1,
+        }));
+        alert(`Berhasil mendeteksi ${parsed.detailSlik.length} fasilitas kredit dari dokumen SLIK.`);
+      } else {
+        alert('OCR berhasil diproses, namun tidak menemukan fasilitas kredit aktif.');
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Gagal memproses OCR SLIK. Pastikan format file sesuai.');
+    } finally {
+      setOcrLoading(false);
+      e.target.value = '';
+    }
+  };
 
   const addDetail = () => {
     setDetailSlik([...detailSlik, { bank: '', jenisFasilitas: '', plafon: 0, bakiDebet: 0, kolektibilitas: 1, jatuhTempo: '' }]);
@@ -46,6 +128,10 @@ export default function SlikFormPage() {
   };
 
   const handleSubmit = async () => {
+    if (!pengajuanId || !debiturId) {
+      setError('Pilih pengajuan kredit terlebih dahulu sebelum menyimpan data SLIK.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -71,6 +157,82 @@ export default function SlikFormPage() {
       </div>
 
       {error && <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400">{error}</div>}
+
+      {/* Pengajuan Selector */}
+      <div className="card">
+        <h3 className="text-sm font-semibold text-gold mb-4">Pilih Pengajuan Kredit</h3>
+        {selectedPengajuan ? (
+          <div className="bg-navy-lighter/50 rounded-lg p-4 border border-gold/30 flex items-center justify-between">
+            <div>
+              <p className="font-medium text-white">{selectedPengajuan.nomor_pengajuan}</p>
+              <p className="text-xs text-slate-400">
+                Debitur: {selectedPengajuan.debitur_nama} • Plafon: {formatRupiah(selectedPengajuan.plafon_diajukan)} • {selectedPengajuan.jenis_kredit}
+              </p>
+            </div>
+            {!initialPengajuanId && (
+              <button onClick={() => { setSelectedPengajuan(null); setPengajuanId(''); setDebiturId(''); }} className="btn-ghost text-xs text-red-400">Ganti</button>
+            )}
+          </div>
+        ) : (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Cari no. pengajuan atau nama debitur..."
+              className="input-field pl-10"
+            />
+            {showDropdown && activePengajuans.length > 0 && (
+              <div className="absolute z-20 w-full mt-1 bg-navy-light border border-navy-border rounded-xl shadow-xl max-h-60 overflow-auto">
+                {activePengajuans.map(p => (
+                  <button key={p.id} onClick={() => selectPengajuan(p)}
+                    className="w-full text-left px-4 py-3 hover:bg-navy-lighter transition-colors border-b border-navy-border last:border-0">
+                    <p className="text-sm font-medium text-white">{p.nomor_pengajuan}</p>
+                    <p className="text-xs text-slate-500">Debitur: {p.debitur_nama} • Plafon: {formatRupiah(p.plafon_diajukan)}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+            {showDropdown && activePengajuans.length === 0 && searchQuery.length >= 2 && (
+              <div className="absolute z-20 w-full mt-1 bg-navy-light border border-navy-border rounded-xl p-4 text-center text-sm text-slate-500">
+                Pengajuan tidak ditemukan
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* OCR File Upload */}
+      <div className="card border-dashed border-2 border-gold/40 hover:border-gold/85 transition-all bg-navy-light/20">
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+          <Shield className="w-10 h-10 text-gold mb-3 animate-pulse" />
+          <h3 className="text-base font-semibold text-white">Unggah Dokumen SLIK (iDeb OJK)</h3>
+          <p className="text-xs text-slate-400 mt-1 max-w-lg">
+            Unggah file PDF hasil download iDeb OJK atau scan foto dokumen SLIK untuk membaca data secara otomatis.
+          </p>
+          <input
+            type="file"
+            accept=".pdf,image/*"
+            id="slik-file-upload"
+            className="hidden"
+            onChange={handleOcrUpload}
+          />
+          <button
+            onClick={() => document.getElementById('slik-file-upload').click()}
+            disabled={ocrLoading}
+            className="btn-primary text-xs mt-5 px-6"
+          >
+            {ocrLoading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-navy" /> Memproses Dokumen SLIK...
+              </span>
+            ) : (
+              'Unggah & Parse Dokumen SLIK'
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

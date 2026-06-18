@@ -91,14 +91,27 @@ export default function PengajuanDetailPage() {
 
         {/* Action Buttons */}
         <div className="flex gap-2 flex-wrap">
-          {data.status === 'DIAJUKAN' && user?.role === 'AO' && (
+          {(!data.slik || data.status === 'DIAJUKAN') && (
+            <button onClick={() => navigate(`/slik?pengajuanId=${id}&debiturId=${data.debitur_id}`)} className="btn-secondary text-sm">
+              <Shield className="w-4 h-4 text-gold" /> Input SLIK
+            </button>
+          )}
+          {['DIAJUKAN', 'SURVEY'].includes(data.status) && ['AO', 'ADMIN'].includes(user?.role) && (
             <button onClick={() => navigate(`/survey/tambah?pengajuanId=${id}`)} className="btn-primary text-sm"><MapPin className="w-4 h-4" /> Input Survey</button>
           )}
-          {data.status === 'SURVEY' && ['ANALIS','ADMIN'].includes(user?.role) && (
+          {['DIAJUKAN', 'SURVEY'].includes(data.status) && ['AO','ADMIN'].includes(user?.role) && (
+            <button onClick={() => navigate(`/agunan?pengajuanId=${id}`)} className="btn-primary text-sm"><Building2 className="w-4 h-4" /> Input Agunan</button>
+          )}
+          {['DIAJUKAN', 'SURVEY', 'ANALISA'].includes(data.status) && ['ANALIS','ADMIN'].includes(user?.role) && (
             <button onClick={() => navigate(`/analisa/${data.jenis_kredit === 'KONSUMTIF' ? 'konsumtif' : 'produktif'}?pengajuanId=${id}`)} className="btn-primary text-sm"><Calculator className="w-4 h-4" /> Analisa</button>
           )}
           {data.status === 'ANALISA' && ['ANALIS','ADMIN'].includes(user?.role) && (
             <button onClick={() => navigate(`/scoring?pengajuanId=${id}`)} className="btn-primary text-sm"><BarChart3 className="w-4 h-4" /> Scoring</button>
+          )}
+          {data.status !== 'DRAFT' && (
+            <button onClick={() => navigate(`/mak/${id}`)} className="btn-secondary text-sm">
+              <FileText className="w-4 h-4 text-gold" /> Cetak / Preview MAK
+            </button>
           )}
         </div>
       </div>
@@ -226,7 +239,7 @@ export default function PengajuanDetailPage() {
                   <InfoRow label="Nilai Pasar" value={formatRupiah(a.nilai_pasar)} />
                   <InfoRow label="Nilai Taksasi" value={formatRupiah(a.nilai_taksasi)} highlight />
                   <InfoRow label="LTV" value={formatPercent(a.ltv)} />
-                  <InfoRow label="Coverage Ratio" value={a.coverage_ratio?.toFixed(2) + 'x'} />
+                  <InfoRow label="Coverage Ratio" value={Number(a.coverage_ratio || 0).toFixed(2) + 'x'} />
                 </div>
               </div>
             ))}
@@ -268,7 +281,7 @@ export default function PengajuanDetailPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <MetricBox label="Rata-rata Omset" value={formatRupiah(data.analisaProduktif.rata_omset)} />
                   <MetricBox label="Laba Bersih" value={formatRupiah(data.analisaProduktif.laba_bersih)} />
-                  <MetricBox label="DSCR" value={data.analisaProduktif.dscr?.toFixed(2)} color={data.analisaProduktif.dscr >= 1.2 ? 'emerald' : 'red'} />
+                  <MetricBox label="DSCR" value={Number(data.analisaProduktif.dscr || 0).toFixed(2)} color={Number(data.analisaProduktif.dscr || 0) >= 1.2 ? 'emerald' : 'red'} />
                   <MetricBox label="NPM" value={formatPercent(data.analisaProduktif.net_profit_margin)} />
                 </div>
                 <div className={`mt-4 text-center py-2 rounded-lg font-semibold text-sm ${data.analisaProduktif.status_kelayakan === 'LAYAK' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
@@ -390,7 +403,7 @@ function ScoreBar({ label, score, bobot }) {
           percentage >= 80 ? 'bg-emerald-500' : percentage >= 60 ? 'bg-gold' : 'bg-red-500'
         }`} style={{ width: `${percentage}%` }} />
       </div>
-      <span className="text-sm font-bold w-10 text-right">{percentage?.toFixed(0)}</span>
+      <span className="text-sm font-bold w-10 text-right">{Number(percentage || 0).toFixed(0)}</span>
     </div>
   );
 }

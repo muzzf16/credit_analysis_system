@@ -36,6 +36,7 @@ app.use('/mak', require('./modules/mak/mak.routes'));
 app.use('/notifikasi', require('./modules/notifikasi/notifikasi.routes'));
 app.use('/monitoring', require('./modules/monitoring/monitoring.routes'));
 app.use('/audit', require('./modules/audit/audit.routes'));
+app.use('/ocr', require('./modules/ocr/ocr.routes'));
 
 // ─── 404 HANDLER ──────────────────────────────────────────────────────────
 app.use((req, res) => {

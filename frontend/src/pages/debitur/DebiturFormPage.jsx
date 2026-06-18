@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Save, Loader2, ArrowLeft } from 'lucide-react';
-import { debiturService } from '../../services';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Save, Loader2, ArrowLeft, Camera } from 'lucide-react';
+import { debiturService, ocrService } from '../../services';
 import { GENDER, STATUS_NIKAH, PENDIDIKAN, JENIS_PEKERJAAN } from '../../utils/constants';
 
 const TABS = ['Data Pribadi', 'Pasangan', 'Pekerjaan', 'Usaha'];
 
 export default function DebiturFormPage() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   const [pribadi, setPribadi] = useState({ nik: '', nama: '', tempatLahir: '', tanggalLahir: '', gender: 'L', statusNikah: 'BELUM_KAWIN', pendidikan: 'SMA', agama: 'Islam', alamat: '', kelurahan: '', kecamatan: '', kabupaten: 'Batang', kodePos: '', noHp: '', email: '' });
   const [pasangan, setPasangan] = useState({ nama: '', nik: '', tempatLahir: '', tanggalLahir: '', pendidikan: 'SMA', pekerjaan: '', noHp: '' });
@@ -18,6 +21,103 @@ export default function DebiturFormPage() {
   const [usaha, setUsaha] = useState({ namaUsaha: '', jenisUsaha: '', lamaUsahaTahun: 0, alamatUsaha: '', omsetBulanan: 0, jumlahKaryawan: 0, statusTempatUsaha: 'MILIK' });
 
   const updateField = (setter) => (field, value) => setter(prev => ({ ...prev, [field]: value }));
+  const [ocrLoading, setOcrLoading] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      setIsEditing(true);
+      setLoading(true);
+      debiturService.getById(id).then(res => {
+        const d = res.data.data;
+        setPribadi({
+          nik: d.nik || '', nama: d.nama || '', tempatLahir: d.tempat_lahir || '',
+          tanggalLahir: d.tanggal_lahir ? d.tanggal_lahir.split('T')[0] : '',
+          gender: d.gender || 'L', statusNikah: d.status_nikah || 'BELUM_KAWIN',
+          pendidikan: d.pendidikan || 'SMA', agama: d.agama || 'Islam',
+          alamat: d.alamat || '', kelurahan: d.kelurahan || '', kecamatan: d.kecamatan || '',
+          kabupaten: d.kabupaten || 'Batang', kodePos: d.kode_pos || '', noHp: d.no_hp || '', email: d.email || ''
+        });
+        if (d.pasangan) {
+          setPasangan({
+            nama: d.pasangan.nama || '', nik: d.pasangan.nik || '', tempatLahir: d.pasangan.tempat_lahir || '',
+            tanggalLahir: d.pasangan.tanggal_lahir ? d.pasangan.tanggal_lahir.split('T')[0] : '',
+            pendidikan: d.pasangan.pendidikan || 'SMA', pekerjaan: d.pasangan.pekerjaan || '', noHp: d.pasangan.no_hp || ''
+          });
+        }
+        if (d.pekerjaan) {
+          setPekerjaan({
+            jenisPekerjaan: d.pekerjaan.jenis_pekerjaan || 'SWASTA', namaInstansi: d.pekerjaan.nama_instansi || '',
+            jabatan: d.pekerjaan.jabatan || '', masaKerjaTahun: d.pekerjaan.masa_kerja_tahun || 0,
+            alamatKantor: d.pekerjaan.alamat_kantor || '', noTelpKantor: d.pekerjaan.no_telp_kantor || '',
+            gajiPokok: d.pekerjaan.gaji_pokok || 0, tunjangan: d.pekerjaan.tunjangan || 0, penghasilanLain: d.pekerjaan.penghasilan_lain || 0
+          });
+        }
+        if (d.usaha) {
+          setUsaha({
+            namaUsaha: d.usaha.nama_usaha || '', jenisUsaha: d.usaha.jenis_usaha || '',
+            lamaUsahaTahun: d.usaha.lama_usaha_tahun || 0, alamatUsaha: d.usaha.alamat_usaha || '',
+            omsetBulanan: d.usaha.omset_bulanan || 0, jumlahKaryawan: d.usaha.jumlah_karyawan || 0, statusTempatUsaha: d.usaha.status_tempat_usaha || 'MILIK'
+          });
+        }
+      }).catch(err => setError('Gagal memuat data debitur.'))
+        .finally(() => setLoading(false));
+    }
+  }, [id]);
+
+  const handleOcrScan = async (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setOcrLoading(true);
+    setError('');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+
+    try {
+      const res = await ocrService.process(formData);
+      const extracted = res.data.data.data;
+      
+      if (type === 'ktp') {
+        setPribadi(prev => ({
+          ...prev,
+          nik: extracted.nik || prev.nik,
+          nama: extracted.nama || prev.nama,
+          tempatLahir: extracted.tempatLahir || prev.tempatLahir,
+          tanggalLahir: extracted.tanggalLahir || prev.tanggalLahir,
+          gender: extracted.gender || prev.gender,
+          statusNikah: extracted.statusNikah || prev.statusNikah,
+          alamat: extracted.alamat || prev.alamat,
+          kelurahan: extracted.kelurahan || prev.kelurahan,
+          kecamatan: extracted.kecamatan || prev.kecamatan,
+          kabupaten: extracted.kabupaten || prev.kabupaten,
+        }));
+      } else if (type === 'surat_nikah') {
+        const suamiMatches = extracted.suamiNama && pribadi.nama && 
+          (extracted.suamiNama.includes(pribadi.nama) || pribadi.nama.includes(extracted.suamiNama));
+        
+        if (suamiMatches) {
+          setPasangan(prev => ({
+            ...prev,
+            nama: extracted.istriNama || prev.nama,
+            nik: extracted.istriNik || prev.nik,
+            tanggalLahir: extracted.tanggalNikah || prev.tanggalLahir,
+          }));
+        } else {
+          setPasangan(prev => ({
+            ...prev,
+            nama: extracted.suamiNama || prev.nama,
+            nik: extracted.suamiNik || prev.nik,
+            tanggalLahir: extracted.tanggalNikah || prev.tanggalLahir,
+          }));
+        }
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Gagal memproses OCR dokumen.');
+    } finally {
+      setOcrLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -26,7 +126,12 @@ export default function DebiturFormPage() {
       const body = { pribadi, pekerjaan };
       if (pribadi.statusNikah === 'KAWIN') body.pasangan = pasangan;
       if (usaha.namaUsaha) body.usaha = usaha;
-      await debiturService.create(body);
+      
+      if (isEditing) {
+        await debiturService.update(id, body);
+      } else {
+        await debiturService.create(body);
+      }
       navigate('/debitur');
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal menyimpan data debitur.');
@@ -52,8 +157,8 @@ export default function DebiturFormPage() {
       <div className="flex items-center gap-3">
         <button onClick={() => navigate('/debitur')} className="btn-ghost p-2"><ArrowLeft className="w-5 h-5" /></button>
         <div>
-          <h1 className="text-2xl font-bold">Tambah Debitur</h1>
-          <p className="text-sm text-slate-400">Lengkapi data debitur baru</p>
+          <h1 className="text-2xl font-bold">{isEditing ? 'Edit Debitur' : 'Tambah Debitur'}</h1>
+          <p className="text-sm text-slate-400">{isEditing ? 'Perbarui data debitur' : 'Lengkapi data debitur baru'}</p>
         </div>
       </div>
 
@@ -73,6 +178,18 @@ export default function DebiturFormPage() {
       <div className="card animate-fade-in">
         {activeTab === 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2 flex items-center justify-between bg-navy-light/30 border border-navy-border p-4 rounded-xl">
+              <div>
+                <h3 className="text-sm font-semibold text-gold">Scan KTP Otomatis (OCR)</h3>
+                <p className="text-xs text-slate-400">Unggah foto KTP debitur untuk mengisi formulir secara otomatis</p>
+              </div>
+              <label className="btn-primary flex items-center gap-2 cursor-pointer">
+                {ocrLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                {ocrLoading ? 'Memproses OCR...' : 'Unggah KTP'}
+                <input type="file" accept="image/*,application/pdf" onChange={(e) => handleOcrScan(e, 'ktp')} className="hidden" disabled={ocrLoading} />
+              </label>
+            </div>
+
             {renderInput('NIK *', pribadi.nik, v => updateField(setPribadi)('nik', v))}
             {renderInput('Nama Lengkap *', pribadi.nama, v => updateField(setPribadi)('nama', v))}
             {renderInput('Tempat Lahir', pribadi.tempatLahir, v => updateField(setPribadi)('tempatLahir', v))}
@@ -91,6 +208,18 @@ export default function DebiturFormPage() {
 
         {activeTab === 1 && pribadi.statusNikah === 'KAWIN' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2 flex items-center justify-between bg-navy-light/30 border border-navy-border p-4 rounded-xl mb-2">
+              <div>
+                <h3 className="text-sm font-semibold text-gold">Scan Buku/Surat Nikah (OCR)</h3>
+                <p className="text-xs text-slate-400">Unggah foto Surat Nikah untuk mengisi data pasangan otomatis</p>
+              </div>
+              <label className="btn-primary flex items-center gap-2 cursor-pointer">
+                {ocrLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                {ocrLoading ? 'Memproses OCR...' : 'Unggah Surat Nikah'}
+                <input type="file" accept="image/*,application/pdf" onChange={(e) => handleOcrScan(e, 'surat_nikah')} className="hidden" disabled={ocrLoading} />
+              </label>
+            </div>
+
             {renderInput('Nama Pasangan', pasangan.nama, v => updateField(setPasangan)('nama', v))}
             {renderInput('NIK Pasangan', pasangan.nik, v => updateField(setPasangan)('nik', v))}
             {renderInput('Tempat Lahir', pasangan.tempatLahir, v => updateField(setPasangan)('tempatLahir', v))}

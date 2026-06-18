@@ -7,9 +7,9 @@ async function getMakData(pengajuanId) {
   // 1. Pengajuan + Debitur + AO
   const pengajuanRes = await db.query(
     `SELECT p.*, d.nama as debitur_nama, d.nik, d.tempat_lahir, d.tanggal_lahir,
-            d.jenis_kelamin, d.alamat, d.kelurahan, d.kecamatan, d.kabupaten, d.provinsi,
-            d.kode_pos, d.no_hp, d.email, d.status_pernikahan, d.jumlah_tanggungan,
-            u.full_name as ao_nama, u.nip as ao_nip
+            d.gender as jenis_kelamin, d.alamat, d.kelurahan, d.kecamatan, d.kabupaten,
+            d.kode_pos, d.no_hp, d.email, d.status_nikah as status_pernikahan,
+            u.full_name as ao_nama, NULL as ao_nip
      FROM pengajuan p
      LEFT JOIN debitur d ON p.debitur_id = d.id
      LEFT JOIN users u ON p.ao_id = u.id

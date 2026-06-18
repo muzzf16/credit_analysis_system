@@ -1,4 +1,5 @@
 const db = require('../../config/database');
+const { toNum, toInt, toStr } = require('../../utils/db-helpers');
 
 async function generateNomor() {
   const year = new Date().getFullYear();
@@ -79,7 +80,7 @@ async function create(data, userId) {
   const result = await db.query(
     `INSERT INTO pengajuan (nomor_pengajuan, debitur_id, jenis_kredit, tujuan_kredit, plafon_diajukan, jangka_waktu_bulan, suku_bunga, angsuran_perbulan, status, ao_id, created_by)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'DIAJUKAN',$9,$9) RETURNING *`,
-    [nomorPengajuan, debiturId, jenisKredit, tujuanKredit, plafonDiajukan, jangkaWaktuBulan, sukuBunga, angsuranPerbulan, userId]
+    [nomorPengajuan, debiturId, toStr(jenisKredit), toStr(tujuanKredit), toNum(plafonDiajukan), toInt(jangkaWaktuBulan), toNum(sukuBunga), toNum(angsuranPerbulan), userId]
   );
   return result.rows[0];
 }

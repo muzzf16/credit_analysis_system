@@ -1,6 +1,11 @@
 const db = require('../../config/database');
 const { encrypt, decrypt, maskNik } = require('../../utils/encryption');
 
+// Helpers to safely convert empty strings to null for typed DB columns
+const toDate = (v) => (v && String(v).trim() !== '' ? v : null);
+const toNum = (v) => (v !== null && v !== undefined && String(v).trim() !== '' ? parseFloat(v) : null);
+const toInt = (v) => (v !== null && v !== undefined && String(v).trim() !== '' ? parseInt(v, 10) : null);
+
 async function getAll(page = 1, limit = 10, search = '', aoId = null) {
   const offset = (page - 1) * limit;
   const params = [];
@@ -44,7 +49,7 @@ async function getById(id) {
 }
 
 async function create(data, userId) {
-  const client = await db.connect();
+  const client = await db.getClient();
   try {
     await client.query('BEGIN');
     const { pribadi, pasangan, pekerjaan, usaha } = data;
@@ -53,8 +58,9 @@ async function create(data, userId) {
     const dResult = await client.query(
       `INSERT INTO debitur (nik, nama, tempat_lahir, tanggal_lahir, gender, status_nikah, pendidikan, agama, alamat, kelurahan, kecamatan, kabupaten, kode_pos, no_hp, no_telp, email, ao_id, created_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
-      [encrypt(pribadi.nik), pribadi.nama, pribadi.tempatLahir, pribadi.tanggalLahir, pribadi.gender, pribadi.statusNikah, pribadi.pendidikan, pribadi.agama,
-       pribadi.alamat, pribadi.kelurahan, pribadi.kecamatan, pribadi.kabupaten, pribadi.kodePos, pribadi.noHp, pribadi.noTelp, pribadi.email, pribadi.aoId || userId, userId]
+      [encrypt(pribadi.nik), pribadi.nama, pribadi.tempatLahir || null, toDate(pribadi.tanggalLahir), pribadi.gender || null, pribadi.statusNikah || null,
+       pribadi.pendidikan || null, pribadi.agama || null, pribadi.alamat || null, pribadi.kelurahan || null, pribadi.kecamatan || null, pribadi.kabupaten || null,
+       pribadi.kodePos || null, pribadi.noHp || null, pribadi.noTelp || null, pribadi.email || null, pribadi.aoId || userId, userId]
     );
     const debiturId = dResult.rows[0].id;
 
@@ -63,7 +69,8 @@ async function create(data, userId) {
       await client.query(
         `INSERT INTO pasangan (debitur_id, nik, nama, tempat_lahir, tanggal_lahir, pendidikan, pekerjaan, no_hp)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-        [debiturId, pasangan.nik ? encrypt(pasangan.nik) : null, pasangan.nama, pasangan.tempatLahir, pasangan.tanggalLahir, pasangan.pendidikan, pasangan.pekerjaan, pasangan.noHp]
+        [debiturId, pasangan.nik ? encrypt(pasangan.nik) : null, pasangan.nama || null, pasangan.tempatLahir || null,
+         toDate(pasangan.tanggalLahir), pasangan.pendidikan || null, pasangan.pekerjaan || null, pasangan.noHp || null]
       );
     }
 
@@ -72,7 +79,9 @@ async function create(data, userId) {
       await client.query(
         `INSERT INTO pekerjaan (debitur_id, jenis_pekerjaan, nama_instansi, jabatan, masa_kerja_tahun, alamat_kantor, no_telp_kantor, gaji_pokok, tunjangan, penghasilan_lain)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-        [debiturId, pekerjaan.jenisPekerjaan, pekerjaan.namaInstansi, pekerjaan.jabatan, pekerjaan.masaKerjaTahun, pekerjaan.alamatKantor, pekerjaan.noTelpKantor, pekerjaan.gajiPokok, pekerjaan.tunjangan, pekerjaan.penghasilanLain]
+        [debiturId, pekerjaan.jenisPekerjaan || null, pekerjaan.namaInstansi || null, pekerjaan.jabatan || null,
+         toInt(pekerjaan.masaKerjaTahun), pekerjaan.alamatKantor || null, pekerjaan.noTelpKantor || null,
+         toNum(pekerjaan.gajiPokok), toNum(pekerjaan.tunjangan), toNum(pekerjaan.penghasilanLain)]
       );
     }
 
@@ -81,7 +90,9 @@ async function create(data, userId) {
       await client.query(
         `INSERT INTO usaha (debitur_id, nama_usaha, jenis_usaha, lama_usaha_tahun, alamat_usaha, kelurahan_usaha, kecamatan_usaha, omset_bulanan, omset_tahunan, jumlah_karyawan, status_tempat_usaha)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-        [debiturId, usaha.namaUsaha, usaha.jenisUsaha, usaha.lamaUsahaTahun, usaha.alamatUsaha, usaha.kelurahanUsaha, usaha.kecamatanUsaha, usaha.omsetBulanan, usaha.omsetTahunan, usaha.jumlahKaryawan, usaha.statusTempatUsaha]
+        [debiturId, usaha.namaUsaha || null, usaha.jenisUsaha || null, toInt(usaha.lamaUsahaTahun),
+         usaha.alamatUsaha || null, usaha.kelurahanUsaha || null, usaha.kecamatanUsaha || null,
+         toNum(usaha.omsetBulanan), toNum(usaha.omsetTahunan), toInt(usaha.jumlahKaryawan), usaha.statusTempatUsaha || null]
       );
     }
 
@@ -96,7 +107,7 @@ async function create(data, userId) {
 }
 
 async function update(id, data, userId) {
-  const client = await db.connect();
+  const client = await db.getClient();
   try {
     await client.query('BEGIN');
     const { pribadi, pasangan, pekerjaan, usaha } = data;
@@ -107,8 +118,10 @@ async function update(id, data, userId) {
          gender=COALESCE($5,gender), status_nikah=COALESCE($6,status_nikah), pendidikan=COALESCE($7,pendidikan), agama=COALESCE($8,agama),
          alamat=COALESCE($9,alamat), kelurahan=COALESCE($10,kelurahan), kecamatan=COALESCE($11,kecamatan), kabupaten=COALESCE($12,kabupaten),
          kode_pos=COALESCE($13,kode_pos), no_hp=COALESCE($14,no_hp), email=COALESCE($15,email), updated_at=NOW() WHERE id=$16`,
-        [pribadi.nik ? encrypt(pribadi.nik) : null, pribadi.nama, pribadi.tempatLahir, pribadi.tanggalLahir, pribadi.gender, pribadi.statusNikah,
-         pribadi.pendidikan, pribadi.agama, pribadi.alamat, pribadi.kelurahan, pribadi.kecamatan, pribadi.kabupaten, pribadi.kodePos, pribadi.noHp, pribadi.email, id]
+        [pribadi.nik ? encrypt(pribadi.nik) : null, pribadi.nama || null, pribadi.tempatLahir || null,
+         toDate(pribadi.tanggalLahir), pribadi.gender || null, pribadi.statusNikah || null,
+         pribadi.pendidikan || null, pribadi.agama || null, pribadi.alamat || null, pribadi.kelurahan || null,
+         pribadi.kecamatan || null, pribadi.kabupaten || null, pribadi.kodePos || null, pribadi.noHp || null, pribadi.email || null, id]
       );
     }
 
@@ -116,7 +129,8 @@ async function update(id, data, userId) {
       await client.query('DELETE FROM pasangan WHERE debitur_id = $1', [id]);
       await client.query(
         `INSERT INTO pasangan (debitur_id, nik, nama, tempat_lahir, tanggal_lahir, pendidikan, pekerjaan, no_hp) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-        [id, pasangan.nik ? encrypt(pasangan.nik) : null, pasangan.nama, pasangan.tempatLahir, pasangan.tanggalLahir, pasangan.pendidikan, pasangan.pekerjaan, pasangan.noHp]
+        [id, pasangan.nik ? encrypt(pasangan.nik) : null, pasangan.nama || null, pasangan.tempatLahir || null,
+         toDate(pasangan.tanggalLahir), pasangan.pendidikan || null, pasangan.pekerjaan || null, pasangan.noHp || null]
       );
     }
 
@@ -124,7 +138,9 @@ async function update(id, data, userId) {
       await client.query('DELETE FROM pekerjaan WHERE debitur_id = $1', [id]);
       await client.query(
         `INSERT INTO pekerjaan (debitur_id, jenis_pekerjaan, nama_instansi, jabatan, masa_kerja_tahun, alamat_kantor, no_telp_kantor, gaji_pokok, tunjangan, penghasilan_lain) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-        [id, pekerjaan.jenisPekerjaan, pekerjaan.namaInstansi, pekerjaan.jabatan, pekerjaan.masaKerjaTahun, pekerjaan.alamatKantor, pekerjaan.noTelpKantor, pekerjaan.gajiPokok, pekerjaan.tunjangan, pekerjaan.penghasilanLain]
+        [id, pekerjaan.jenisPekerjaan || null, pekerjaan.namaInstansi || null, pekerjaan.jabatan || null,
+         toInt(pekerjaan.masaKerjaTahun), pekerjaan.alamatKantor || null, pekerjaan.noTelpKantor || null,
+         toNum(pekerjaan.gajiPokok), toNum(pekerjaan.tunjangan), toNum(pekerjaan.penghasilanLain)]
       );
     }
 
@@ -132,7 +148,9 @@ async function update(id, data, userId) {
       await client.query('DELETE FROM usaha WHERE debitur_id = $1', [id]);
       await client.query(
         `INSERT INTO usaha (debitur_id, nama_usaha, jenis_usaha, lama_usaha_tahun, alamat_usaha, kelurahan_usaha, kecamatan_usaha, omset_bulanan, omset_tahunan, jumlah_karyawan, status_tempat_usaha) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-        [id, usaha.namaUsaha, usaha.jenisUsaha, usaha.lamaUsahaTahun, usaha.alamatUsaha, usaha.kelurahanUsaha, usaha.kecamatanUsaha, usaha.omsetBulanan, usaha.omsetTahunan, usaha.jumlahKaryawan, usaha.statusTempatUsaha]
+        [id, usaha.namaUsaha || null, usaha.jenisUsaha || null, toInt(usaha.lamaUsahaTahun),
+         usaha.alamatUsaha || null, usaha.kelurahanUsaha || null, usaha.kecamatanUsaha || null,
+         toNum(usaha.omsetBulanan), toNum(usaha.omsetTahunan), toInt(usaha.jumlahKaryawan), usaha.statusTempatUsaha || null]
       );
     }
 
