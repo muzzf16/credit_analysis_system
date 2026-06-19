@@ -25,6 +25,7 @@ import SlikFormPage from './pages/slik/SlikFormPage';
 
 // Agunan
 import AgunanFormPage from './pages/agunan/AgunanFormPage';
+import AgunanEditPage from './pages/agunan/AgunanEditPage';
 
 // Analisa
 import AnalisaKonsumtifPage from './pages/analisa/AnalisaKonsumtifPage';
@@ -74,6 +75,7 @@ export default function App() {
 
           {/* Agunan */}
           <Route path="/agunan" element={<AgunanFormPage />} />
+          <Route path="/agunan/:id/edit" element={<AgunanEditPage />} />
 
           {/* Analisa */}
           <Route path="/analisa/konsumtif" element={<AnalisaKonsumtifPage />} />

@@ -53,4 +53,54 @@ async function addFoto(agunanId, data) {
   return result.rows[0];
 }
 
-module.exports = { create, getByPengajuanId, addFoto };
+async function getById(id) {
+  const result = await db.query(
+    `SELECT a.*, (SELECT json_agg(f.*) FROM agunan_foto f WHERE f.agunan_id = a.id) as foto
+     FROM agunan a WHERE a.id = $1`, [id]);
+  if (result.rows.length === 0) { const e = new Error('Agunan tidak ditemukan'); e.status = 404; throw e; }
+  return result.rows[0];
+}
+
+async function update(id, data, userId) {
+  const { jenisAgunan, deskripsi, nomorSertifikat, atasNama,
+    luasTanah, luasBangunan, nilaiPasar, nilaiNjop, nilaiTaksasi, nilaiLikuidasi,
+    alamatAgunan, kecamatan, latitude, longitude,
+    rtRw, kelurahan, kabupaten,
+    batasUtara, batasSelatan, batasTimur, batasBarat,
+    bentukTanah, permukaanTanah, aksesJalan, jenisJalan,
+    lantaiBangunan, rangkaAtap, penutupAtap, dinding, fasilitasListrik, fasilitasAir } = data;
+
+  // Recalculate LTV and coverage ratio from plafon
+  const agunanRow = await db.query('SELECT pengajuan_id FROM agunan WHERE id = $1', [id]);
+  if (agunanRow.rows.length === 0) { const e = new Error('Agunan tidak ditemukan'); e.status = 404; throw e; }
+  const pengajuan = await db.query('SELECT plafon_diajukan FROM pengajuan WHERE id = $1', [agunanRow.rows[0].pengajuan_id]);
+  const plafon = pengajuan.rows.length > 0 ? parseFloat(pengajuan.rows[0].plafon_diajukan) : 0;
+  const ltv = hitungLTV(toNum(nilaiTaksasi), plafon);
+  const coverageRatio = hitungCoverageRatio(toNum(nilaiLikuidasi), plafon);
+
+  const result = await db.query(
+    `UPDATE agunan SET
+      jenis_agunan=$1, deskripsi=$2, nomor_sertifikat=$3, atas_nama=$4,
+      luas_tanah=$5, luas_bangunan=$6, nilai_pasar=$7, nilai_njop=$8,
+      nilai_taksasi=$9, nilai_likuidasi=$10, ltv=$11, coverage_ratio=$12,
+      alamat_agunan=$13, kecamatan=$14, latitude=$15, longitude=$16,
+      rt_rw=$17, kelurahan=$18, kabupaten=$19,
+      batas_utara=$20, batas_selatan=$21, batas_timur=$22, batas_barat=$23,
+      bentuk_tanah=$24, permukaan_tanah=$25, akses_jalan=$26, jenis_jalan=$27,
+      lantai_bangunan=$28, rangka_atap=$29, penutup_atap=$30, dinding=$31,
+      fasilitas_listrik=$32, fasilitas_air=$33, updated_at=NOW()
+    WHERE id=$34 RETURNING *`,
+    [toStr(jenisAgunan), toStr(deskripsi), toStr(nomorSertifikat), toStr(atasNama),
+     toNum(luasTanah), toNum(luasBangunan), toNum(nilaiPasar), toNum(nilaiNjop),
+     toNum(nilaiTaksasi), toNum(nilaiLikuidasi), ltv, coverageRatio,
+     toStr(alamatAgunan), toStr(kecamatan), toNum(latitude), toNum(longitude),
+     toStr(rtRw), toStr(kelurahan), toStr(kabupaten),
+     toStr(batasUtara), toStr(batasSelatan), toStr(batasTimur), toStr(batasBarat),
+     toStr(bentukTanah), toStr(permukaanTanah), toStr(aksesJalan), toStr(jenisJalan),
+     toStr(lantaiBangunan), toStr(rangkaAtap), toStr(penutupAtap), toStr(dinding),
+     toStr(fasilitasListrik), toStr(fasilitasAir), id]
+  );
+  return result.rows[0];
+}
+
+module.exports = { create, getById, update, getByPengajuanId, addFoto };

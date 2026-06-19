@@ -50,8 +50,44 @@ export default function PengajuanListPage() {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="card p-0 overflow-hidden">
+      {/* Mobile Card List (sm and below) */}
+      <div className="sm:hidden card p-0 overflow-hidden">
+        {loading ? (
+          <div className="py-12 text-center"><div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" /></div>
+        ) : data.length === 0 ? (
+          <div className="py-12 text-center text-slate-500 text-sm">Belum ada pengajuan</div>
+        ) : data.map((p) => {
+          const st = STATUS_PENGAJUAN[p.status] || { label: p.status, color: 'badge-gray' };
+          return (
+            <div key={p.id} onClick={() => navigate(`/pengajuan/${p.id}`)}
+              className="flex items-start justify-between gap-3 px-4 py-4 border-b border-navy-border active:bg-white/5 cursor-pointer">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-mono text-gold">{p.nomor_pengajuan}</p>
+                <p className="font-semibold text-white mt-0.5 truncate">{p.debitur_nama}</p>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <span className={`${p.jenis_kredit === 'KONSUMTIF' ? 'badge-info' : 'badge-purple'} text-[10px]`}>{p.jenis_kredit}</span>
+                  <span className={`${st.color} text-[10px]`}>{st.label}</span>
+                </div>
+                <p className="text-sm font-semibold text-gold mt-1">{formatRupiah(p.plafon_diajukan)}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{p.jangka_waktu_bulan} bln · {formatDate(p.created_at)}</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-600 shrink-0 mt-1" />
+            </div>
+          );
+        })}
+        {total > 10 && (
+          <div className="flex items-center justify-between px-4 py-3">
+            <p className="text-xs text-slate-500">{(page-1)*10+1}-{Math.min(page*10, total)} dari {total}</p>
+            <div className="flex gap-1">
+              <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page === 1} className="btn-ghost px-3 py-1 text-xs disabled:opacity-30">Prev</button>
+              <button onClick={() => setPage(p => p+1)} disabled={page*10 >= total} className="btn-ghost px-3 py-1 text-xs disabled:opacity-30">Next</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table (sm and above) */}
+      <div className="hidden sm:block card p-0 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-navy-lighter/50">

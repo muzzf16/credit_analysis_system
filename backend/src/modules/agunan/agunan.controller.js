@@ -15,6 +15,20 @@ async function getByPengajuanId(req, res) {
   } catch (err) { return error(res, err.message, err.status || 500); }
 }
 
+async function getById(req, res) {
+  try {
+    const data = await svc.getById(req.params.id);
+    return success(res, data);
+  } catch (err) { return error(res, err.message, err.status || 500); }
+}
+
+async function update(req, res) {
+  try {
+    const data = await svc.update(req.params.id, req.body, req.user.id);
+    return success(res, data, 'Agunan berhasil diperbarui.');
+  } catch (err) { return error(res, err.message, err.status || 500); }
+}
+
 async function addFoto(req, res) {
   try {
     const data = await svc.addFoto(req.params.agunanId, req.body);
@@ -22,4 +36,4 @@ async function addFoto(req, res) {
   } catch (err) { return error(res, err.message, err.status || 500); }
 }
 
-module.exports = { create, getByPengajuanId, addFoto };
+module.exports = { create, getById, update, getByPengajuanId, addFoto };

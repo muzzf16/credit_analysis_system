@@ -89,7 +89,31 @@
   .table-cell {
     @apply px-4 py-3 text-sm text-slate-300 border-t border-navy-border;
   }
-}
+
+  /* ─── Mobile-friendly utilities ─────────────────────────── */
+  /* Touch-friendly minimum tap size */
+  .btn-primary, .btn-secondary, .btn-danger, .btn-ghost {
+    @apply min-h-[44px];
+  }
+  /* Mobile card row — replaces table rows on small screens */
+  .mobile-card-row {
+    @apply flex flex-col gap-1 px-4 py-3 border-t border-navy-border;
+  }
+  .mobile-card-label {
+    @apply text-[10px] font-semibold text-slate-500 uppercase tracking-wider;
+  }
+  /* Input with proper mobile font size to prevent zoom on iOS */
+  .input-field {
+    font-size: 16px !important;
+  }
+  @media (min-width: 640px) {
+    .input-field {
+      font-size: 0.875rem !important;
+    }
+  }
+
+
+} /* end @layer components */
 
 /* ─── MAK Document Print Styles ──────────────────────────── */
 .mak-document {

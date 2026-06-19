@@ -106,7 +106,7 @@ export default function SlikFormPage() {
   };
 
   const addDetail = () => {
-    setDetailSlik([...detailSlik, { bank: '', jenisFasilitas: '', plafon: 0, bakiDebet: 0, kolektibilitas: 1, jatuhTempo: '' }]);
+    setDetailSlik([...detailSlik, { bank: '', jenisFasilitas: '', plafon: 0, bakiDebet: 0, kolektibilitas: 1, jatuhTempo: '', tanggalMulai: '', sukuBunga: 0 }]);
   };
 
   const updateDetail = (index, field, value) => {
@@ -272,7 +272,7 @@ export default function SlikFormPage() {
                   <span className="text-sm font-medium">Fasilitas #{i + 1}</span>
                   <button onClick={() => removeDetail(i)} className="text-xs text-red-400 hover:text-red-300">Hapus</button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div><label className="label text-xs">Nama Bank</label><input type="text" value={d.bank} onChange={e => updateDetail(i, 'bank', e.target.value)} className="input-field text-sm" placeholder="BRI, BCA, dll" /></div>
                   <div><label className="label text-xs">Jenis Fasilitas</label><input type="text" value={d.jenisFasilitas} onChange={e => updateDetail(i, 'jenisFasilitas', e.target.value)} className="input-field text-sm" placeholder="KPR, KMK, dll" /></div>
                   <div><label className="label text-xs">Kolektibilitas</label>
@@ -280,8 +280,10 @@ export default function SlikFormPage() {
                       {[1,2,3,4,5].map(k => <option key={k} value={k}>{kolLabels[k]}</option>)}
                     </select>
                   </div>
+                  <div><label className="label text-xs">Suku Bunga (%)</label><input type="number" step="0.01" value={d.sukuBunga || 0} onChange={e => updateDetail(i, 'sukuBunga', parseFloat(e.target.value)||0)} className="input-field text-sm text-right" /></div>
                   <div><label className="label text-xs">Plafon</label><input type="number" value={d.plafon} onChange={e => updateDetail(i, 'plafon', parseFloat(e.target.value)||0)} className="input-field text-sm text-right" /></div>
                   <div><label className="label text-xs">Baki Debet</label><input type="number" value={d.bakiDebet} onChange={e => updateDetail(i, 'bakiDebet', parseFloat(e.target.value)||0)} className="input-field text-sm text-right" /></div>
+                  <div><label className="label text-xs">Tanggal Mulai</label><input type="date" value={d.tanggalMulai || ''} onChange={e => updateDetail(i, 'tanggalMulai', e.target.value)} className="input-field text-sm" /></div>
                   <div><label className="label text-xs">Jatuh Tempo</label><input type="date" value={d.jatuhTempo} onChange={e => updateDetail(i, 'jatuhTempo', e.target.value)} className="input-field text-sm" /></div>
                 </div>
               </div>

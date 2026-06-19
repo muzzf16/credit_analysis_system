@@ -37,7 +37,9 @@ export const surveyService = {
 
 export const agunanService = {
   getByPengajuanId: (id) => api.get(`/agunan/pengajuan/${id}`),
+  getById: (id) => api.get(`/agunan/${id}`),
   create: (data) => api.post('/agunan', data),
+  update: (id, data) => api.put(`/agunan/${id}`, data),
   addFoto: (agunanId, data) => api.post(`/agunan/${agunanId}/foto`, data),
 };
 

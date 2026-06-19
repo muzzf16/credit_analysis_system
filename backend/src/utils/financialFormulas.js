@@ -34,8 +34,8 @@ function hitungKonsumtif(data) {
   // RPC = Disposable Income / Angsuran Diajukan * 100 — min 110%
   const rpc = angsuranDiajukan > 0 ? (disposableIncome / angsuranDiajukan) * 100 : 0;
 
-  // Maximum kredit berdasarkan disposable income (DSR max 40%)
-  const maxAngsuran = totalPenghasilan * 0.4 - cicilanExisting;
+  // Maximum kredit berdasarkan disposable income (95% of disposable income)
+  const maxAngsuran = disposableIncome * 0.95;
   const angsuranEfektif = plafon > 0 ? hitungAngsuran(plafon, bungaPerTahun, jangkaWaktuBulan) : angsuranDiajukan;
   const maxKredit = bungaPerTahun > 0 && jangkaWaktuBulan > 0
     ? Math.max(0, Math.floor((maxAngsuran / hitungAngsuran(1000000, bungaPerTahun, jangkaWaktuBulan)) * 1000000))

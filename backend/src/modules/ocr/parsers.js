@@ -571,13 +571,6 @@ function parseSLIK(text) {
         break;
       }
     }
-    const bl = block.toLowerCase();
-    if (kolVal === 1) {
-      if (bl.includes('macet')) kolVal = 5;
-      else if (bl.includes('diragukan') || bl.includes('ragu-ragu')) kolVal = 4;
-      else if (bl.match(/kurang\s+lancar/)) kolVal = 3;
-      else if (bl.match(/dalam\s+perhatian|perhatian\s+khusus/)) kolVal = 2;
-    }
     facility.kolektibilitas = kolVal;
 
     // ── 6. Jatuh Tempo ────────────────────────────────────────────────────
@@ -604,6 +597,41 @@ function parseSLIK(text) {
       if (allDates.length > 0) {
         const last = allDates[allDates.length - 1];
         facility.jatuhTempo = `${last[3]}-${last[2].padStart(2,'0')}-${last[1].padStart(2,'0')}`;
+      }
+    }
+
+    // ── 7. Tanggal Mulai ──────────────────────────────────────────────────
+    facility.tanggalMulai = '';
+    const mulaiPatterns = [
+      /(?:Tanggal\s+)?Mulai\s*[:;=]?\s*(\d{1,2}[-/]\d{1,2}[-/]\d{4})/i,
+      /(?:Tanggal\s+)?Mulai\s*[:;=]?\s*(\d{1,2}\s+\w+\s+\d{4})/i,
+      /(?:Tanggal\s+)?Mulai\s*[:;=]?\s*(\d{2}[-/]\d{4})/i,
+      /Mulai\s*[:;=]?\s*([^\n\r]{4,20})/i,
+    ];
+    for (const pat of mulaiPatterns) {
+      const m = block.match(pat);
+      if (m) {
+        const raw = m[1].trim();
+        let parsed = parseDateDMY(raw) || parseIndonesianDate(raw);
+        if (!parsed) {
+          const myMatch = raw.match(/^(\d{2})[-/](\d{4})$/);
+          if (myMatch) parsed = `${myMatch[2]}-${myMatch[1]}-01`;
+        }
+        if (parsed) { facility.tanggalMulai = parsed; break; }
+      }
+    }
+
+    // ── 8. Suku Bunga ─────────────────────────────────────────────────────
+    facility.sukuBunga = 0;
+    const bungaPatterns = [
+      /Suku\s+Bunga\s*(?:\/\s*Imbalan)?\s*[:;=]?\s*([\d.,]+)\s*%/i,
+      /Bunga\s*[:;=]?\s*([\d.,]+)\s*%/i,
+    ];
+    for (const pat of bungaPatterns) {
+      const m = block.match(pat);
+      if (m) {
+        const val = parseFloat(m[1].replace(',', '.')) || 0;
+        if (val > 0) { facility.sukuBunga = val; break; }
       }
     }
 

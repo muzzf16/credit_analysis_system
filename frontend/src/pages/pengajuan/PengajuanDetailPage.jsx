@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, User, FileText, MapPin, Shield, Calculator, BarChart3,
   CheckCircle, XCircle, Clock, ChevronRight, Building2, CreditCard,
-  AlertTriangle, ThumbsUp, ThumbsDown
+  AlertTriangle, ThumbsUp, ThumbsDown, Pencil
 } from 'lucide-react';
 import { pengajuanService, approvalService } from '../../services';
 import { formatRupiah, formatDate, formatPercent } from '../../utils/formatters';
@@ -75,42 +75,42 @@ export default function PengajuanDetailPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/pengajuan')} className="btn-ghost p-2"><ArrowLeft className="w-5 h-5" /></button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold font-mono text-gold">{data.nomor_pengajuan}</h1>
+          <button onClick={() => navigate('/pengajuan')} className="btn-ghost p-2 shrink-0"><ArrowLeft className="w-5 h-5" /></button>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-base sm:text-xl font-bold font-mono text-gold">{data.nomor_pengajuan}</h1>
               <span className={statusInfo.color}>{statusInfo.label}</span>
             </div>
-            <p className="text-sm text-slate-400">{data.debitur_nama} • {data.jenis_kredit} • {formatRupiah(data.plafon_diajukan)}</p>
+            <p className="text-xs sm:text-sm text-slate-400 truncate">{data.debitur_nama} • {data.jenis_kredit} • {formatRupiah(data.plafon_diajukan)}</p>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-2 flex-wrap">
           {(!data.slik || data.status === 'DIAJUKAN') && (
-            <button onClick={() => navigate(`/slik?pengajuanId=${id}&debiturId=${data.debitur_id}`)} className="btn-secondary text-sm">
-              <Shield className="w-4 h-4 text-gold" /> Input SLIK
+            <button onClick={() => navigate(`/slik?pengajuanId=${id}&debiturId=${data.debitur_id}`)} className="btn-secondary text-xs sm:text-sm px-3">
+              <Shield className="w-4 h-4 text-gold" /> <span className="hidden xs:inline">Input </span>SLIK
             </button>
           )}
           {['DIAJUKAN', 'SURVEY'].includes(data.status) && ['AO', 'ADMIN'].includes(user?.role) && (
-            <button onClick={() => navigate(`/survey/tambah?pengajuanId=${id}`)} className="btn-primary text-sm"><MapPin className="w-4 h-4" /> Input Survey</button>
+            <button onClick={() => navigate(`/survey/tambah?pengajuanId=${id}`)} className="btn-primary text-xs sm:text-sm px-3"><MapPin className="w-4 h-4" /> Survey</button>
           )}
           {['DIAJUKAN', 'SURVEY'].includes(data.status) && ['AO','ADMIN'].includes(user?.role) && (
-            <button onClick={() => navigate(`/agunan?pengajuanId=${id}`)} className="btn-primary text-sm"><Building2 className="w-4 h-4" /> Input Agunan</button>
+            <button onClick={() => navigate(`/agunan?pengajuanId=${id}`)} className="btn-primary text-xs sm:text-sm px-3"><Building2 className="w-4 h-4" /> Agunan</button>
           )}
           {['DIAJUKAN', 'SURVEY', 'ANALISA'].includes(data.status) && ['ANALIS','ADMIN'].includes(user?.role) && (
-            <button onClick={() => navigate(`/analisa/${data.jenis_kredit === 'KONSUMTIF' ? 'konsumtif' : 'produktif'}?pengajuanId=${id}`)} className="btn-primary text-sm"><Calculator className="w-4 h-4" /> Analisa</button>
+            <button onClick={() => navigate(`/analisa/${data.jenis_kredit === 'KONSUMTIF' ? 'konsumtif' : 'produktif'}?pengajuanId=${id}`)} className="btn-primary text-xs sm:text-sm px-3"><Calculator className="w-4 h-4" /> Analisa</button>
           )}
           {data.status === 'ANALISA' && ['ANALIS','ADMIN'].includes(user?.role) && (
-            <button onClick={() => navigate(`/scoring?pengajuanId=${id}`)} className="btn-primary text-sm"><BarChart3 className="w-4 h-4" /> Scoring</button>
+            <button onClick={() => navigate(`/scoring?pengajuanId=${id}`)} className="btn-primary text-xs sm:text-sm px-3"><BarChart3 className="w-4 h-4" /> Scoring</button>
           )}
           {data.status !== 'DRAFT' && (
-            <button onClick={() => navigate(`/mak/${id}`)} className="btn-secondary text-sm">
-              <FileText className="w-4 h-4 text-gold" /> Cetak / Preview MAK
+            <button onClick={() => navigate(`/mak/${id}`)} className="btn-secondary text-xs sm:text-sm px-3">
+              <FileText className="w-4 h-4 text-gold" /> <span className="hidden sm:inline">Cetak / Preview </span>MAK
             </button>
           )}
         </div>
@@ -156,15 +156,15 @@ export default function PengajuanDetailPage() {
         )}
       </div>
 
-      {/* Section Tabs */}
-      <div className="flex gap-1 overflow-x-auto pb-1">
+      {/* Section Tabs — scrollable on mobile */}
+      <div className="flex gap-1 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
         {SECTIONS.map(s => (
           <button key={s.key} onClick={() => !s.disabled && setActiveSection(s.key)}
             disabled={s.disabled}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0
               ${activeSection === s.key ? 'bg-navy-light text-gold border border-gold/30' :
                 s.disabled ? 'text-slate-700 cursor-not-allowed' : 'text-slate-400 hover:text-white hover:bg-navy-lighter'}`}>
-            <s.icon className="w-4 h-4" /> {s.label}
+            <s.icon className="w-3.5 h-3.5" /> {s.label}
           </button>
         ))}
       </div>
@@ -230,7 +230,15 @@ export default function PengajuanDetailPage() {
               <div key={a.id} className="card">
                 <div className="flex items-center justify-between mb-3">
                   <span className="badge-info">{a.jenis_agunan}</span>
-                  <span className="text-xs text-slate-500">Agunan #{i+1}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500">Agunan #{i+1}</span>
+                    <button
+                      onClick={() => navigate(`/agunan/${a.id}/edit`)}
+                      className="btn-ghost text-xs text-gold flex items-center gap-1 border border-gold/30 px-2 py-1 rounded-lg hover:bg-gold/10"
+                    >
+                      <Pencil className="w-3 h-3" /> Edit
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <InfoRow label="No. Sertifikat" value={a.nomor_sertifikat} mono />
@@ -247,17 +255,141 @@ export default function PengajuanDetailPage() {
         )}
 
         {activeSection === 'slik' && data.slik && (
-          <div className="card">
-            <h3 className="text-sm font-semibold text-gold mb-4">Data SLIK</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <MetricBox label="Kolektibilitas" value={data.slik.kolektibilitas_tertinggi} color={data.slik.kolektibilitas_tertinggi <= 2 ? 'emerald' : 'red'} />
-              <MetricBox label="Total Fasilitas" value={data.slik.total_fasilitas} />
-              <MetricBox label="Total Plafon" value={formatRupiah(data.slik.total_plafon)} />
-              <MetricBox label="Baki Debet" value={formatRupiah(data.slik.total_baki_debet)} />
+          <div className="space-y-4">
+            {/* Summary Cards */}
+            <div className="card">
+              <h3 className="text-sm font-semibold text-gold mb-4">Data SLIK</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <MetricBox label="Kolektibilitas Tertinggi" value={data.slik.kolektibilitas_tertinggi} color={data.slik.kolektibilitas_tertinggi <= 2 ? 'emerald' : 'red'} />
+                <MetricBox label="Total Fasilitas" value={data.slik.total_fasilitas} />
+                <MetricBox label="Total Plafon" value={formatRupiah(data.slik.total_plafon)} />
+                <MetricBox label="Baki Debet" value={formatRupiah(data.slik.total_baki_debet)} />
+              </div>
+              {data.slik.catatan && <InfoRow label="Catatan" value={data.slik.catatan} />}
             </div>
-            {data.slik.catatan && <InfoRow label="Catatan" value={data.slik.catatan} />}
+
+            {/* Detail Fasilitas Table */}
+            {data.slik.detail_slik?.length > 0 && (
+              <div className="card p-0 overflow-hidden">
+                <div className="px-4 py-3 border-b border-navy-border">
+                  <h3 className="text-sm font-semibold text-gold">📋 Tabel Fasilitas & Kolektibilitas</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Rincian fasilitas kredit berdasarkan data SLIK OJK</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-navy-light/50 border-b border-navy-border">
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">No</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Nama Bank / Lembaga</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Jenis Fasilitas</th>
+                        <th className="text-right px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Plafon</th>
+                        <th className="text-right px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Baki Debet</th>
+                        <th className="text-center px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Mulai</th>
+                        <th className="text-center px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Jatuh Tempo</th>
+                        <th className="text-center px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Tenor</th>
+                        <th className="text-center px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Bunga</th>
+                        <th className="text-right px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Angsuran (Anuitas)</th>
+                        <th className="text-center px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Kolektibilitas</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-navy-border">
+                      {(() => {
+                        let totalAngsuran = 0;
+                        const rows = data.slik.detail_slik.map((f, idx) => {
+                          const kol = Number(f.kolektibilitas || 0);
+                          const kolColor = kol === 1 ? 'text-emerald-400 bg-emerald-500/10' :
+                                           kol === 2 ? 'text-amber-400 bg-amber-500/10' :
+                                           kol === 3 ? 'text-orange-400 bg-orange-500/10' :
+                                           kol >= 4  ? 'text-red-400 bg-red-500/10' : 'text-slate-400 bg-slate-500/10';
+                          const kolLabel = kol === 1 ? 'Lancar' : kol === 2 ? 'DPK' : kol === 3 ? 'Kurang Lancar' : kol === 4 ? 'Diragukan' : kol === 5 ? 'Macet' : '-';
+                          const jenisBersih = (f.jenisFasilitas || '-').replace(/^\/PEMBIAYAAN\s+/i, '').replace(/\t/g, ' ').trim();
+                          
+                          // Calculate tenor in months
+                          let tenorBulan = 0;
+                          if (f.tanggalMulai && f.jatuhTempo) {
+                            const start = new Date(f.tanggalMulai);
+                            const end = new Date(f.jatuhTempo);
+                            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                              tenorBulan = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+                            }
+                          }
+                          if (tenorBulan <= 0) tenorBulan = 0;
+
+                          // Annuity monthly installment calculation
+                          let angsuranAnuitas = 0;
+                          const plafon = Number(f.plafon || 0);
+                          const rateTahunan = Number(f.sukuBunga || 0);
+                          if (plafon > 0 && rateTahunan > 0 && tenorBulan > 0) {
+                            const rateBulanan = (rateTahunan / 100) / 12;
+                            angsuranAnuitas = (plafon * rateBulanan * Math.pow(1 + rateBulanan, tenorBulan)) / (Math.pow(1 + rateBulanan, tenorBulan) - 1);
+                            if (isNaN(angsuranAnuitas) || !isFinite(angsuranAnuitas)) {
+                              angsuranAnuitas = 0;
+                            }
+                          }
+                          totalAngsuran += angsuranAnuitas;
+
+                          return (
+                            <tr key={idx} className="hover:bg-navy-light/20 transition-colors">
+                              <td className="px-4 py-3 text-slate-500 text-xs">{idx + 1}</td>
+                              <td className="px-4 py-3 font-medium text-white text-xs">{f.bank || '-'}</td>
+                              <td className="px-4 py-3 text-slate-300 text-xs max-w-48">
+                                <span className="line-clamp-2">{jenisBersih}</span>
+                              </td>
+                              <td className="px-4 py-3 text-right text-xs font-mono text-slate-200">{formatRupiah(f.plafon)}</td>
+                              <td className="px-4 py-3 text-right text-xs font-mono font-semibold text-gold">{formatRupiah(f.bakiDebet)}</td>
+                              <td className="px-4 py-3 text-center text-xs text-slate-300">
+                                {f.tanggalMulai ? new Date(f.tanggalMulai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                              </td>
+                              <td className="px-4 py-3 text-center text-xs text-slate-300">
+                                {f.jatuhTempo ? new Date(f.jatuhTempo).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                              </td>
+                              <td className="px-4 py-3 text-center text-xs text-slate-300">
+                                {tenorBulan ? `${tenorBulan} bln` : '-'}
+                              </td>
+                              <td className="px-4 py-3 text-center text-xs text-slate-300">
+                                {rateTahunan ? `${rateTahunan}%` : '-'}
+                              </td>
+                              <td className="px-4 py-3 text-right text-xs font-mono font-semibold text-emerald-400">
+                                {angsuranAnuitas ? formatRupiah(angsuranAnuitas) : '-'}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${kolColor}`}>
+                                  {kol} - {kolLabel}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        });
+
+                        return (
+                          <>
+                            {rows}
+                            <tr className="bg-navy-light/40 border-t border-navy-border font-bold text-white">
+                              <td colSpan={3} className="px-4 py-3 text-xs font-semibold text-slate-400">TOTAL</td>
+                              <td className="px-4 py-3 text-right text-xs font-mono">{formatRupiah(data.slik.total_plafon)}</td>
+                              <td className="px-4 py-3 text-right text-xs font-mono text-gold">{formatRupiah(data.slik.total_baki_debet)}</td>
+                              <td colSpan={4}></td>
+                              <td className="px-4 py-3 text-right text-xs font-mono text-emerald-400">{formatRupiah(totalAngsuran)}</td>
+                              <td></td>
+                            </tr>
+                          </>
+                        );
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {(!data.slik.detail_slik || data.slik.detail_slik.length === 0) && (
+              <div className="card text-center py-8 text-slate-500 text-sm">
+                Tidak ada detail fasilitas SLIK yang tersedia.
+              </div>
+            )}
           </div>
         )}
+
 
         {activeSection === 'analisa' && (
           <div className="space-y-4">

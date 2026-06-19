@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Calculator, Save, Loader2, ArrowLeft, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { analisaService } from '../../services';
+import { analisaService, slikService } from '../../services';
 import { formatRupiah, formatPercent } from '../../utils/formatters';
 
 export default function AnalisaKonsumtifPage() {
@@ -17,6 +17,83 @@ export default function AnalisaKonsumtifPage() {
     angsuranDiajukan: 0,
   });
 
+  useEffect(() => {
+    if (!pengajuanId) return;
+
+    const loadData = async () => {
+      try {
+        // 1. Fetch SLIK data to compute total installment
+        let slikInstallment = 0;
+        try {
+          const slikRes = await slikService.getByPengajuanId(pengajuanId);
+          const slikData = slikRes.data?.data;
+          if (slikData && slikData.detail_slik) {
+            slikData.detail_slik.forEach(f => {
+              let tenorBulan = 0;
+              if (f.tanggalMulai && f.jatuhTempo) {
+                const start = new Date(f.tanggalMulai);
+                const end = new Date(f.jatuhTempo);
+                if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                  tenorBulan = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+                }
+              }
+              const plafon = Number(f.plafon || 0);
+              const rateTahunan = Number(f.sukuBunga || 0);
+              if (plafon > 0 && rateTahunan > 0 && tenorBulan > 0) {
+                const rateBulanan = (rateTahunan / 100) / 12;
+                const angsuran = (plafon * rateBulanan * Math.pow(1 + rateBulanan, tenorBulan)) / (Math.pow(1 + rateBulanan, tenorBulan) - 1);
+                if (!isNaN(angsuran) && isFinite(angsuran)) {
+                  slikInstallment += angsuran;
+                }
+              }
+            });
+          }
+        } catch (err) {
+          console.error("Failed to load SLIK:", err);
+        }
+
+        // 2. Fetch existing analysis
+        try {
+          const res = await analisaService.getKonsumtif(pengajuanId);
+          if (res.data?.data) {
+            const data = res.data.data;
+            setForm({
+              gajiPokok: Number(data.gaji_pokok || 0),
+              tunjangan: Number(data.tunjangan || 0),
+              bonusRata: Number(data.bonus_rata || 0),
+              usahaSampingan: Number(data.usaha_sampingan || 0),
+              pendapatanPasangan: Number(data.pendapatan_pasangan || 0),
+              listrik: Number(data.listrik || 0),
+              air: Number(data.air || 0),
+              transportasi: Number(data.transportasi || 0),
+              pendidikan: Number(data.pendidikan || 0),
+              cicilanExisting: Number(data.cicilan_existing || Math.round(slikInstallment) || 0),
+              kebutuhanRumahTangga: Number(data.kebutuhan_rumah_tangga || 0),
+              pengeluaranLain: Number(data.pengeluaran_lain || 0),
+              angsuranDiajukan: Number(data.angsuran_diajukan || 0),
+            });
+          } else {
+            // No analysis yet, set default cicilanExisting from SLIK
+            setForm(prev => ({
+              ...prev,
+              cicilanExisting: Math.round(slikInstallment)
+            }));
+          }
+        } catch (err) {
+          // If analysis service fails or returns 404, set default from SLIK
+          setForm(prev => ({
+            ...prev,
+            cicilanExisting: Math.round(slikInstallment)
+          }));
+        }
+      } catch (err) {
+        console.error("Error loading page data:", err);
+      }
+    };
+
+    loadData();
+  }, [pengajuanId]);
+
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
 
   // Real-time calculation
@@ -28,11 +105,40 @@ export default function AnalisaKonsumtifPage() {
     const disposableIncome = totalPenghasilan - totalPengeluaranBase - form.cicilanExisting;
     const dsr = totalPenghasilan > 0 ? (totalCicilan / totalPenghasilan) * 100 : 0;
     const rpc = form.angsuranDiajukan > 0 ? (disposableIncome / form.angsuranDiajukan) * 100 : 0;
-    const maxAngsuran = totalPenghasilan * 0.4 - form.cicilanExisting;
+    const maxAngsuran = disposableIncome * 0.95;
     const layak = dsr <= 40 && rpc >= 110 && form.angsuranDiajukan > 0;
 
     return { totalPenghasilan, totalPengeluaran, totalCicilan, disposableIncome, dsr, rpc, maxAngsuran, layak };
   }, [form]);
+
+  const handleAutoFillPengeluaran = () => {
+    const totalPenghasilan = form.gajiPokok + form.tunjangan + form.bonusRata + form.usahaSampingan + form.pendapatanPasangan;
+    if (totalPenghasilan <= 0) {
+      alert("Masukkan data penghasilan terlebih dahulu.");
+      return;
+    }
+    
+    let pct = 0.50;
+    if (totalPenghasilan <= 2000000) pct = 0.80;
+    else if (totalPenghasilan <= 7000000) pct = 0.75;
+    else if (totalPenghasilan <= 10000000) pct = 0.60;
+    else if (totalPenghasilan <= 15000000) pct = 0.55;
+    
+    const target = totalPenghasilan * pct;
+    
+    // Distribute naturally and round to nearest 1,000 Rp
+    const roundToThousand = (val) => Math.round(val / 1000) * 1000;
+    
+    setForm(prev => ({
+      ...prev,
+      kebutuhanRumahTangga: roundToThousand(target * 0.50),
+      listrik: roundToThousand(target * 0.075),
+      air: roundToThousand(target * 0.075),
+      pendidikan: roundToThousand(target * 0.175),
+      transportasi: roundToThousand(target * 0.125),
+      pengeluaranLain: roundToThousand(target * 0.05)
+    }));
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -85,7 +191,16 @@ export default function AnalisaKonsumtifPage() {
 
           {/* Pengeluaran */}
           <div className="card">
-            <h3 className="text-sm font-semibold text-gold mb-4">📋 Pengeluaran</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-semibold text-gold">📋 Pengeluaran</h3>
+              <button 
+                type="button"
+                onClick={handleAutoFillPengeluaran} 
+                className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5 hover:bg-navy-lighter transition-colors"
+              >
+                ⚡ Auto-fill Pengeluaran
+              </button>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {renderInput('Listrik', 'listrik')}
               {renderInput('Air', 'air')}
@@ -108,7 +223,7 @@ export default function AnalisaKonsumtifPage() {
               <ResultRow label="Total Pengeluaran" value={formatRupiah(calc.totalPengeluaran)} />
               <hr className="border-navy-border" />
               <ResultRow label="Disposable Income" value={formatRupiah(calc.disposableIncome)} highlight />
-              <ResultRow label="Max Angsuran (40%)" value={formatRupiah(calc.maxAngsuran)} />
+              <ResultRow label="Max Angsuran (95%)" value={formatRupiah(calc.maxAngsuran)} />
               <hr className="border-navy-border" />
 
               {/* DSR */}
