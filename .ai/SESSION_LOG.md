@@ -85,9 +85,28 @@
 - [x] Perubahan limit Max Angsuran di Analisa Konsumtif menjadi 95% dari Disposable Income.
 **Keputusan baru:** Max Angsuran dihitung sebesar 95% dari Disposable Income untuk memberikan rasio kelayakan yang lebih fleksibel.
 **File yang diubah:** backend/src/modules/ocr/parsers.js, frontend/src/pages/slik/SlikFormPage.jsx, frontend/src/pages/pengajuan/PengajuanDetailPage.jsx, frontend/src/pages/analisa/AnalisaKonsumtifPage.jsx, backend/src/utils/financialFormulas.js
+**File JANGAN disentuh:** -
 **Bug yang ditemukan:** Broad substring check `"macet"` pada parser SLIK mengoverride data kualitas asli dari OJK. Telah dihapus.
 **Hindari sesi berikutnya:** -
 **Task berikutnya:** Lanjutkan MAK Generator & perbaikan tab lainnya.
+**Kode yang perlu ditempel:** -
+
+---
+
+## Sesi 5 — 2026-06-19 | Model: Antigravity | Modul: Data Debitur & MAK
+**Goal:** Penambahan field isian Ibu Kandung, Hubungan dengan Bank, dan Kredit yang sedang dinikmati.
+**Yang selesai:**
+- [x] Migrasi database PostgreSQL untuk kolom `ibu_kandung`, `hubungan_bank`, dan `kredit_aktif`.
+- [x] Update backend service `debitur.service.js` dan `mak.service.js` untuk query CRUD dan data snapshot MAK.
+- [x] Update frontend `DebiturFormPage.jsx` dengan input field Ibu Kandung (teks), Hubungan dengan Bank (dropdown), dan Kredit yang sedang dinikmati (dropdown).
+- [x] Update frontend `DebiturDetailPage.jsx` untuk menampilkan data field baru di halaman detail debitur.
+- [x] Update frontend `MakPreviewPage.jsx` untuk memetakan data field baru secara dinamis menggantikan data placeholder di tabel Data Umum Pemohon.
+**Keputusan baru:** Dropdown Hubungan dengan Bank memiliki opsi default "Nasabah Baru" dan dropdown Kredit yang sedang dinikmati memiliki opsi default "Tidak Ada".
+**File yang diubah:** backend/src/modules/debitur/debitur.service.js, backend/src/modules/mak/mak.service.js, frontend/src/pages/debitur/DebiturFormPage.jsx, frontend/src/pages/debitur/DebiturDetailPage.jsx, frontend/src/pages/mak/MakPreviewPage.jsx
+**File JANGAN disentuh:** -
+**Bug yang ditemukan:** -
+**Hindari sesi berikutnya:** -
+**Task berikutnya:** Lanjutkan pengerjaan modul MAK Generator (Phase 3).
 **Kode yang perlu ditempel:** -
 
 ---

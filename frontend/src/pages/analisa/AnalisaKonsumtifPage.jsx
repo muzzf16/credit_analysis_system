@@ -131,11 +131,11 @@ export default function AnalisaKonsumtifPage() {
     
     setForm(prev => ({
       ...prev,
-      kebutuhanRumahTangga: roundToThousand(target * 0.50),
-      listrik: roundToThousand(target * 0.075),
-      air: roundToThousand(target * 0.075),
-      pendidikan: roundToThousand(target * 0.175),
-      transportasi: roundToThousand(target * 0.125),
+      kebutuhanRumahTangga: roundToThousand(target * 0.60),
+      listrik: roundToThousand(target * 0.05),
+      air: roundToThousand(target * 0.05),
+      pendidikan: roundToThousand(target * 0.15),
+      transportasi: roundToThousand(target * 0.10),
       pengeluaranLain: roundToThousand(target * 0.05)
     }));
   };

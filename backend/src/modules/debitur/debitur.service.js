@@ -54,13 +54,13 @@ async function create(data, userId) {
     await client.query('BEGIN');
     const { pribadi, pasangan, pekerjaan, usaha } = data;
 
-    // Insert debitur
     const dResult = await client.query(
-      `INSERT INTO debitur (nik, nama, tempat_lahir, tanggal_lahir, gender, status_nikah, pendidikan, agama, alamat, kelurahan, kecamatan, kabupaten, kode_pos, no_hp, no_telp, email, ao_id, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
+      `INSERT INTO debitur (nik, nama, tempat_lahir, tanggal_lahir, gender, status_nikah, pendidikan, agama, alamat, kelurahan, kecamatan, kabupaten, kode_pos, no_hp, no_telp, email, ao_id, created_by, ibu_kandung, hubungan_bank, kredit_aktif)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) RETURNING *`,
       [encrypt(pribadi.nik), pribadi.nama, pribadi.tempatLahir || null, toDate(pribadi.tanggalLahir), pribadi.gender || null, pribadi.statusNikah || null,
        pribadi.pendidikan || null, pribadi.agama || null, pribadi.alamat || null, pribadi.kelurahan || null, pribadi.kecamatan || null, pribadi.kabupaten || null,
-       pribadi.kodePos || null, pribadi.noHp || null, pribadi.noTelp || null, pribadi.email || null, pribadi.aoId || userId, userId]
+       pribadi.kodePos || null, pribadi.noHp || null, pribadi.noTelp || null, pribadi.email || null, pribadi.aoId || userId, userId,
+       pribadi.ibuKandung || null, pribadi.hubunganBank || null, pribadi.kreditAktif || null]
     );
     const debiturId = dResult.rows[0].id;
 
@@ -117,11 +117,14 @@ async function update(id, data, userId) {
         `UPDATE debitur SET nik=COALESCE($1,nik), nama=COALESCE($2,nama), tempat_lahir=COALESCE($3,tempat_lahir), tanggal_lahir=COALESCE($4,tanggal_lahir),
          gender=COALESCE($5,gender), status_nikah=COALESCE($6,status_nikah), pendidikan=COALESCE($7,pendidikan), agama=COALESCE($8,agama),
          alamat=COALESCE($9,alamat), kelurahan=COALESCE($10,kelurahan), kecamatan=COALESCE($11,kecamatan), kabupaten=COALESCE($12,kabupaten),
-         kode_pos=COALESCE($13,kode_pos), no_hp=COALESCE($14,no_hp), email=COALESCE($15,email), updated_at=NOW() WHERE id=$16`,
+         kode_pos=COALESCE($13,kode_pos), no_hp=COALESCE($14,no_hp), email=COALESCE($15,email),
+         ibu_kandung=COALESCE($16,ibu_kandung), hubungan_bank=COALESCE($17,hubungan_bank), kredit_aktif=COALESCE($18,kredit_aktif),
+         updated_at=NOW() WHERE id=$19`,
         [pribadi.nik ? encrypt(pribadi.nik) : null, pribadi.nama || null, pribadi.tempatLahir || null,
          toDate(pribadi.tanggalLahir), pribadi.gender || null, pribadi.statusNikah || null,
          pribadi.pendidikan || null, pribadi.agama || null, pribadi.alamat || null, pribadi.kelurahan || null,
-         pribadi.kecamatan || null, pribadi.kabupaten || null, pribadi.kodePos || null, pribadi.noHp || null, pribadi.email || null, id]
+         pribadi.kecamatan || null, pribadi.kabupaten || null, pribadi.kodePos || null, pribadi.noHp || null, pribadi.email || null,
+         pribadi.ibuKandung || null, pribadi.hubunganBank || null, pribadi.kreditAktif || null, id]
       );
     }
 

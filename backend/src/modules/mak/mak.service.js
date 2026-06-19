@@ -9,6 +9,7 @@ async function getMakData(pengajuanId) {
     `SELECT p.*, d.nama as debitur_nama, d.nik, d.tempat_lahir, d.tanggal_lahir,
             d.gender as jenis_kelamin, d.alamat, d.kelurahan, d.kecamatan, d.kabupaten,
             d.kode_pos, d.no_hp, d.email, d.status_nikah as status_pernikahan,
+            d.ibu_kandung, d.hubungan_bank, d.kredit_aktif,
             u.full_name as ao_nama, NULL as ao_nip
      FROM pengajuan p
      LEFT JOIN debitur d ON p.debitur_id = d.id

@@ -79,6 +79,9 @@ export default function DebiturDetailPage() {
             <InfoRow icon={Phone} label="No HP" value={data.no_hp} />
             <InfoRow icon={Mail} label="Email" value={data.email} />
             <InfoRow label="Kode Pos" value={data.kode_pos} />
+            <InfoRow label="Ibu Kandung" value={data.ibu_kandung} />
+            <InfoRow label="Hubungan dengan Bank" value={data.hubungan_bank} />
+            <InfoRow label="Kredit yang sedang dinikmati" value={data.kredit_aktif} />
             <div className="md:col-span-2 lg:col-span-3">
               <InfoRow icon={MapPin} label="Alamat" value={`${data.alamat || '-'}, ${data.kelurahan || ''}, ${data.kecamatan || ''}, ${data.kabupaten || ''}`} />
             </div>

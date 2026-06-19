@@ -15,7 +15,7 @@ export default function DebiturFormPage() {
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
 
-  const [pribadi, setPribadi] = useState({ nik: '', nama: '', tempatLahir: '', tanggalLahir: '', gender: 'L', statusNikah: 'BELUM_KAWIN', pendidikan: 'SMA', agama: 'Islam', alamat: '', kelurahan: '', kecamatan: '', kabupaten: 'Batang', kodePos: '', noHp: '', email: '' });
+  const [pribadi, setPribadi] = useState({ nik: '', nama: '', tempatLahir: '', tanggalLahir: '', gender: 'L', statusNikah: 'BELUM_KAWIN', pendidikan: 'SMA', agama: 'Islam', alamat: '', kelurahan: '', kecamatan: '', kabupaten: 'Batang', kodePos: '', noHp: '', email: '', ibuKandung: '', hubunganBank: 'Nasabah Baru', kreditAktif: 'Tidak Ada' });
   const [pasangan, setPasangan] = useState({ nama: '', nik: '', tempatLahir: '', tanggalLahir: '', pendidikan: 'SMA', pekerjaan: '', noHp: '' });
   const [pekerjaan, setPekerjaan] = useState({ jenisPekerjaan: 'SWASTA', namaInstansi: '', jabatan: '', masaKerjaTahun: 0, alamatKantor: '', noTelpKantor: '', gajiPokok: 0, tunjangan: 0, penghasilanLain: 0 });
   const [usaha, setUsaha] = useState({ namaUsaha: '', jenisUsaha: '', lamaUsahaTahun: 0, alamatUsaha: '', omsetBulanan: 0, jumlahKaryawan: 0, statusTempatUsaha: 'MILIK' });
@@ -35,7 +35,8 @@ export default function DebiturFormPage() {
           gender: d.gender || 'L', statusNikah: d.status_nikah || 'BELUM_KAWIN',
           pendidikan: d.pendidikan || 'SMA', agama: d.agama || 'Islam',
           alamat: d.alamat || '', kelurahan: d.kelurahan || '', kecamatan: d.kecamatan || '',
-          kabupaten: d.kabupaten || 'Batang', kodePos: d.kode_pos || '', noHp: d.no_hp || '', email: d.email || ''
+          kabupaten: d.kabupaten || 'Batang', kodePos: d.kode_pos || '', noHp: d.no_hp || '', email: d.email || '',
+          ibuKandung: d.ibu_kandung || '', hubunganBank: d.hubungan_bank || 'Nasabah Baru', kreditAktif: d.kredit_aktif || 'Tidak Ada'
         });
         if (d.pasangan) {
           setPasangan({
@@ -203,6 +204,9 @@ export default function DebiturFormPage() {
             {renderInput('Kecamatan', pribadi.kecamatan, v => updateField(setPribadi)('kecamatan', v))}
             {renderInput('Kabupaten', pribadi.kabupaten, v => updateField(setPribadi)('kabupaten', v))}
             {renderInput('Kode Pos', pribadi.kodePos, v => updateField(setPribadi)('kodePos', v))}
+            {renderInput('Ibu Kandung', pribadi.ibuKandung, v => updateField(setPribadi)('ibuKandung', v))}
+            {renderInput('Hubungan dengan Bank', pribadi.hubunganBank, v => updateField(setPribadi)('hubunganBank', v), 'text', ['Nasabah Lama', 'Nasabah Baru'])}
+            {renderInput('Kredit yang sedang dinikmati', pribadi.kreditAktif, v => updateField(setPribadi)('kreditAktif', v), 'text', ['Ada', 'Tidak Ada'])}
           </div>
         )}
 
