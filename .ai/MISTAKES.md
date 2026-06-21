@@ -132,9 +132,9 @@
 ## (Tambahkan di bawah ini saat ditemukan)
 ## ════════════════════════════════════
 
-## [YYYY-MM-DD] Contoh Entry
-- ❌ **Dicoba:** [pendekatan]
-- 🐛 **Masalah:** [yang gagal]
-- ✅ **Benar:** [solusi]
-- 📁 **File:** [file terdampak]
-- 🔒 **Aturan:** [aturan baru]
+## [2026-06-21] OCR engine bergantung pada Python runtime
+- ❌ **Dicoba:** Mengganti OCR dengan asumsi backend Node-only dan hanya memakai dependency npm.
+- 🐛 **Masalah:** PaddleOCR membutuhkan runtime Python serta paket `paddleocr` dan `paddlepaddle`; jika dependency tidak terinstall, endpoint OCR gagal.
+- ✅ **Benar:** Pastikan environment backend memiliki Python dan paket Python yang dibutuhkan sebelum deploy. Di Docker, install dependency Python di image/container.
+- 📁 **File:** backend/src/modules/ocr/ocr.service.js, backend/src/modules/ocr/paddleocr_runner.py
+- 🔒 **Aturan:** Setiap perubahan OCR harus mempertimbangkan dependency runtime (Node + Python) dan dokumentasi instalasi di server/container.

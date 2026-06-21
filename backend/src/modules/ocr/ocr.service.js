@@ -1,9 +1,51 @@
-const Tesseract = require('tesseract.js');
 const { PDFParse } = require('pdf-parse');
 const { parseDocumentText } = require('./parsers');
-const { execSync } = require('child_process');
+const { execFileSync, execSync } = require('child_process');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+
+function getPythonCommand() {
+  const candidates = [process.env.PYTHON_BIN, 'python', 'python3'].filter(Boolean);
+
+  for (const command of candidates) {
+    try {
+      execFileSync(command, ['--version'], { stdio: 'ignore' });
+      return command;
+    } catch (error) {
+      // Try next candidate
+    }
+  }
+
+  throw new Error('Python tidak tersedia untuk menjalankan PaddleOCR.');
+}
+
+function getExtensionFromMime(mimetype = '') {
+  const mapping = {
+    'image/png': '.png',
+    'image/jpeg': '.jpg',
+    'image/jpg': '.jpg',
+    'image/webp': '.webp',
+    'image/tiff': '.tiff'
+  };
+
+  return mapping[mimetype.toLowerCase()] || '.png';
+}
+
+function runPaddleOcr(imagePath) {
+  const pythonCommand = getPythonCommand();
+  const scriptPath = path.join(__dirname, 'paddleocr_runner.py');
+
+  try {
+    return execFileSync(pythonCommand, [scriptPath, imagePath], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
+  } catch (error) {
+    const details = error.stderr ? error.stderr.toString() : error.message;
+    throw new Error(`PaddleOCR gagal: ${details}`);
+  }
+}
 
 /**
  * Process OCR/Text extraction on file buffer
@@ -22,7 +64,6 @@ async function processOCR(buffer, type, mimetype = '') {
     if (mimetype === 'application/pdf' || type.endsWith('.pdf')) {
       if (type === 'slik') {
         console.log(`Extracting text from PDF for type: ${type}`);
-        // Convert Node Buffer to Uint8Array to satisfy strict type checks
         const uint8Array = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
         const pdfParser = new PDFParse(uint8Array);
         const pdfData = await pdfParser.getText();
@@ -30,47 +71,47 @@ async function processOCR(buffer, type, mimetype = '') {
         console.log('PDF text extraction completed. Length:', text.length);
       } else {
         console.log(`Converting PDF to Images for OCR for type: ${type}`);
-        // For scanned PDFs (Agunan, BPKB), rasterize using pdftoppm then run Tesseract
         const tmpId = Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-        const tmpDir = path.join('/tmp', `ocr_${tmpId}`);
+        const tmpDir = path.join(os.tmpdir(), `ocr_${tmpId}`);
         fs.mkdirSync(tmpDir, { recursive: true });
-        
+
         const tmpPdf = path.join(tmpDir, 'source.pdf');
         fs.writeFileSync(tmpPdf, buffer);
-        
+
         try {
-          // Convert up to first 3 pages to PNG
-          execSync(`pdftoppm -png -l 3 "${tmpPdf}" "${tmpDir}/page"`);
-          
+          execSync(`pdftoppm -png -l 3 "${tmpPdf}" "${tmpDir}/page"`, { stdio: 'ignore' });
+
           const files = fs.readdirSync(tmpDir).filter(f => f.endsWith('.png')).sort();
           for (const file of files) {
-            console.log(`Running OCR on ${file}...`);
-            const { data: { text: extractedText } } = await Tesseract.recognize(
-              path.join(tmpDir, file),
-              'ind'
-            );
-            text += '\n' + extractedText;
+            const imagePath = path.join(tmpDir, file);
+            console.log(`Running PaddleOCR on ${file}...`);
+            const extractedText = runPaddleOcr(imagePath);
+            text += `\n${extractedText}`;
           }
         } catch (execErr) {
           console.error('Error during PDF rasterization/OCR:', execErr);
-          // Fallback if poppler fails
         } finally {
-          // Cleanup
           fs.rmSync(tmpDir, { recursive: true, force: true });
         }
+
         console.log('PDF OCR extraction completed. Raw text length:', text.length);
       }
     } else {
-      console.log(`Starting Tesseract OCR process for type: ${type}`);
-      // Tesseract.js recognizes standard image buffers directly
-      const { data: { text: extractedText } } = await Tesseract.recognize(
-        buffer,
-        'ind', // Load Indonesian language data
-        {
-          logger: m => console.log(`[OCR Tesseract] ${m.status}: ${Math.round(m.progress * 100)}%`)
+      console.log(`Starting PaddleOCR process for type: ${type}`);
+      const ext = getExtensionFromMime(mimetype);
+      const tmpPath = path.join(os.tmpdir(), `ocr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`);
+      fs.writeFileSync(tmpPath, buffer);
+
+      try {
+        text = runPaddleOcr(tmpPath);
+      } finally {
+        try {
+          fs.unlinkSync(tmpPath);
+        } catch (cleanupErr) {
+          // Ignore cleanup errors
         }
-      );
-      text = extractedText;
+      }
+
       console.log('OCR text extraction completed. Raw text length:', text.length);
     }
     

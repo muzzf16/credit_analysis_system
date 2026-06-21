@@ -111,6 +111,23 @@
 
 ---
 
+## Sesi 6 — 2026-06-21 | Model: MAI-Code-1-Flash | Modul: OCR
+**Goal:** Ganti engine OCR dari Tesseract ke PaddleOCR tanpa mengubah response API frontend.
+**Yang selesai:**
+- [x] Backend OCR sekarang memanggil PaddleOCR melalui script Python.
+- [x] Dukungan OCR untuk gambar dan PDF (PDF dikonversi lewat pdftoppm lalu diproses OCR).
+- [x] Dependency Tesseract dihapus dari manifest backend.
+- [x] Verifikasi import PaddleOCR berhasil di environment lokal.
+**Keputusan baru:** OCR backend kini bergantung pada runtime Python dan paket `paddleocr`/`paddlepaddle`; tidak lagi mengandalkan `tesseract.js`.
+**File yang diubah:** backend/src/modules/ocr/ocr.service.js, backend/src/modules/ocr/paddleocr_runner.py, backend/package.json, backend/package-lock.json
+**File JANGAN disentuh:** Alur frontend OCR dan endpoint `/ocr` yang sudah dipakai di form debitur, agunan, dan SLIK.
+**Bug yang ditemukan:** Environment awal belum memiliki Python packages PaddleOCR yang dibutuhkan, sehingga integrasi OCR gagal sebelum instalasi.
+**Hindari sesi berikutnya:** Jangan mengubah format response API OCR atau mengembalikan engine OCR yang berbeda tanpa persetujuan.
+**Task berikutnya:** Verifikasi integrasi PaddleOCR di Docker/production, pastikan Python dan dependency terinstall di container.
+**Kode yang perlu ditempel:** backend/src/modules/ocr/ocr.service.js, backend/src/modules/ocr/paddleocr_runner.py
+
+---
+
 ## ════════════════════════════════════
 ## PROGRESS TRACKER PER MODUL
 ## ════════════════════════════════════

@@ -142,10 +142,10 @@ Grade: A=90-100 | B=80-89 | C=70-79 | D=60-69 | E=<60
 ## 🔧 TASK SESI INI
 > Isi bagian ini sebelum mulai setiap sesi
 
-- **Task saat ini:** [Tulis task spesifik di sini]
-- **File yang akan diedit:** [Sebutkan file-nya]
-- **Output yang diharapkan:** [Apa yang harus berfungsi saat selesai]
-- **Modul terkait:** [Modul # berapa dari tabel di atas]
+- **Task saat ini:** Verifikasi dan deploy integrasi PaddleOCR di backend, memastikan OCR endpoint bisa memproses gambar/PDF di environment server/container dengan Python dan paket `paddleocr`/`paddlepaddle` yang terinstall.
+- **File yang akan diedit:** backend/src/modules/ocr/ocr.service.js, backend/src/modules/ocr/paddleocr_runner.py, backend/Dockerfile (jika perlu), docker-compose.yml (jika perlu)
+- **Output yang diharapkan:** OCR tetap berjalan dari form debitur/agunan/SLIK tanpa mengubah response API, baik untuk gambar maupun PDF.
+- **Modul terkait:** Modul 05 (Analisa Kredit) dan modul OCR shared yang dipakai di debitur, agunan, dan SLIK
 
 ---
 
