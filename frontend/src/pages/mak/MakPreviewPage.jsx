@@ -108,40 +108,55 @@ export default function MakPreviewPage() {
   
   // SLIK Mapping
   const slikDetail = Array.isArray(slik.detail_slik) ? slik.detail_slik : [];
+  const slikDetailPasangan = Array.isArray(slik.detail_slik_pasangan) ? slik.detail_slik_pasangan : [];
   
-  // Calculate dynamic slik details
-  const calculatedSlikDetail = slikDetail.map(item => {
-    let tenorBulan = "-";
-    if (item.tanggalMulai && item.jatuhTempo) {
-      const start = new Date(item.tanggalMulai);
-      const end = new Date(item.jatuhTempo);
-      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-        tenorBulan = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+  const calculateSlikDetails = (details) => {
+    return details.map(item => {
+      let tenorBulan = "-";
+      if (item.tanggalMulai && item.jatuhTempo) {
+        const start = new Date(item.tanggalMulai);
+        const end = new Date(item.jatuhTempo);
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+          tenorBulan = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+        }
       }
-    }
-    if (tenorBulan <= 0) tenorBulan = "-";
+      if (tenorBulan <= 0) tenorBulan = "-";
 
-    let angsuranAnuitas = 0;
-    const plafon = Number(item.plafon || 0);
-    const rateTahunan = Number(item.sukuBunga || 0);
-    if (plafon > 0 && rateTahunan > 0 && typeof tenorBulan === 'number' && tenorBulan > 0) {
-      const rateBulanan = (rateTahunan / 100) / 12;
-      angsuranAnuitas = (plafon * rateBulanan * Math.pow(1 + rateBulanan, tenorBulan)) / (Math.pow(1 + rateBulanan, tenorBulan) - 1);
-      if (isNaN(angsuranAnuitas) || !isFinite(angsuranAnuitas)) {
-        angsuranAnuitas = 0;
+      let angsuranAnuitas = 0;
+      const plafon = Number(item.plafon || 0);
+      const rateTahunan = Number(item.sukuBunga || 0);
+      if (plafon > 0 && rateTahunan > 0 && typeof tenorBulan === 'number' && tenorBulan > 0) {
+        const rateBulanan = (rateTahunan / 100) / 12;
+        angsuranAnuitas = (plafon * rateBulanan * Math.pow(1 + rateBulanan, tenorBulan)) / (Math.pow(1 + rateBulanan, tenorBulan) - 1);
+        if (isNaN(angsuranAnuitas) || !isFinite(angsuranAnuitas)) {
+          angsuranAnuitas = 0;
+        }
       }
-    }
 
+      return {
+        ...item,
+        tenorBulan,
+        angsuranAnuitas
+      };
+    });
+  };
+
+  const calculatedSlikDetail = calculateSlikDetails(slikDetail);
+  const calculatedSlikDetailPasangan = calculateSlikDetails(slikDetailPasangan);
+
+  const calculateSlikTotals = (details) => {
     return {
-      ...item,
-      tenorBulan,
-      angsuranAnuitas
+      totalPlafon: details.reduce((sum, item) => sum + (parseFloat(item.plafon) || 0), 0),
+      totalBaki: details.reduce((sum, item) => sum + (parseFloat(item.bakiDebet) || 0), 0),
+      totalAngsuran: details.reduce((sum, item) => sum + (parseFloat(item.angsuranAnuitas) || 0), 0),
+      isBermasalah: details.some(item => parseInt(item.kolektibilitas || 1) >= 3)
     };
-  });
+  };
 
-  const totalPlafonSlik = calculatedSlikDetail.reduce((sum, item) => sum + (parseFloat(item.plafon) || 0), 0);
-  const totalBakiSlik = calculatedSlikDetail.reduce((sum, item) => sum + (parseFloat(item.bakiDebet) || 0), 0);
-  const totalAngsuranSlik = calculatedSlikDetail.reduce((sum, item) => sum + (parseFloat(item.angsuranAnuitas) || 0), 0);
+  const totalsSlik = calculateSlikTotals(calculatedSlikDetail);
+  const totalsSlikPasangan = calculateSlikTotals(calculatedSlikDetailPasangan);
+  const totalAngsuranSlikAll = totalsSlik.totalAngsuran + totalsSlikPasangan.totalAngsuran;
+  const isBermasalah = totalsSlik.isBermasalah || totalsSlikPasangan.isBermasalah;
 
   // Aspek Keuangan Mapping
   const pendapatanPemohon = isKonsumtif ? (parseFloat(financialAnalisa.gaji_pokok || 0) + parseFloat(financialAnalisa.tunjangan || 0)) : parseFloat(financialAnalisa.rata_omset || 0);
@@ -156,15 +171,17 @@ export default function MakPreviewPage() {
   const totalPenghasilan = isKonsumtif ? parseFloat(financialAnalisa.total_penghasilan || 0) : parseFloat(financialAnalisa.laba_bersih || 0);
   const rpcPercent = 90;
   const rpcAmount = (totalPenghasilan * rpcPercent) / 100;
-  const angsuranEksisting = totalAngsuranSlik || (isKonsumtif ? parseFloat(financialAnalisa.cicilan_existing || 0) : 0);
-  const sisaPendapatan = rpcAmount - angsuranEksisting;
+  const angsuranEksisting = totalAngsuranSlikAll || (isKonsumtif ? parseFloat(financialAnalisa.cicilan_existing || 0) : 0);
+  const pengurangAngsuran = parseFloat(financialAnalisa.pengurang_angsuran || parseFloat(financialAnalisa.biaya_hidup || 0));
+  const sisaPendapatan = rpcAmount - (angsuranEksisting + pengurangAngsuran);
   
   const angsuranDiajukan = isKonsumtif ? parseFloat(financialAnalisa.angsuran_diajukan || 0) : parseFloat(pengajuan.angsuran_perbulan || 0);
   const prosentaseAngsuran = totalPenghasilan > 0 ? (angsuranDiajukan / totalPenghasilan) * 100 : 0;
+  const b2RpcAmount = rpcAmount;
   const statusLayak = isKonsumtif ? financialAnalisa.status_kelayakan : financialAnalisa.status_kelayakan;
 
   // Signature names based on roles
-  const pengusulName = pengajuan.ao_nama || "DIAN WICAKSANA ADI";
+  const pengusulName = pengajuan.ao_nama || "DIAN WICAKSANA ADI, ST";
   const kabidName = "EVI NOVIANTI, SE";
   const peKepatuhanName = "DINA SAPTARIANI, SE";
   const direkturName = "IFAN ARDANA, S.E., M.Si.";
@@ -270,7 +287,10 @@ export default function MakPreviewPage() {
                         <td className="px-2 py-1 align-top">{q}</td>
                         <td className="px-2 py-1 w-32 text-right font-semibold whitespace-nowrap align-top">
                           {idx === 3 ? (
-                            <span>ada / <span className="underline relative font-bold text-gray-950">tidak ✔</span></span>
+                            <span>
+                              {isBermasalah ? <span className="underline relative font-bold text-gray-950">ada ✔</span> : 'ada'} / 
+                              {!isBermasalah ? <span className="underline relative font-bold text-gray-950"> tidak ✔</span> : ' tidak'}
+                            </span>
                           ) : idx === 1 ? (
                             <span>terkait / <span className="underline">tidak terkait</span></span>
                           ) : (
@@ -283,17 +303,9 @@ export default function MakPreviewPage() {
                 </table>
               </div>
 
-              {/* Dynamic handwritten opinion simulation */}
-              <div className="border border-gray-800 p-4 min-h-[220px] rounded-sm font-serif italic text-blue-900 bg-blue-50/20 leading-relaxed text-[11px] whitespace-pre-line">
-                {`# Pengajuan pinjaman a.n ${pengajuan.debitur_nama || '-'}
-                - plafon Rp ${(parseFloat(pengajuan.plafon_diajukan || 0)).toLocaleString('id-ID')}.-   - jangka waktu ${pengajuan.jangka_waktu_bulan || '-'} Bulan
-                - suku bunga ${parseFloat(pengajuan.suku_bunga || 0).toFixed(2)}%   - provisi ${parseFloat(pengajuan.provisi || 0).toFixed(2)}%   - jenis kredit ${pengajuan.jenis_kredit || '-'}
+              {/* Empty box for handwritten opinion */}
+              <div className="border border-gray-800 p-4 min-h-[220px] rounded-sm bg-white">
                 
-                Telah sesuai dengan ketentuan dalam SK DIR No. 581/573.1/KPTS/DIR/IV/2025 dan SE No. 09/SE/III/2026. ✔
-                
-                # Agunan ${mainAgunan.jenis_agunan || 'SHM'} a.n ${mainAgunan.atas_nama || pengajuan.debitur_nama || '-'} pastikan untuk dapat dilakukan pengikatan sesuai SK DIR No. 581/582/KPTS/DIR/V/2025 ✔
-                
-                # Pengajuan pinjaman a.n ${pengajuan.debitur_nama || '-'} ${totalBakiSlik > 0 ? 'terdapat pinjaman' : 'tidak terdapat pinjaman bermasalah'} di bank lain, pantau kelancaran pembayaran angsuran ✔`}
               </div>
 
               <div className="text-right mt-6">
@@ -384,15 +396,59 @@ export default function MakPreviewPage() {
                     )}
                     <tr className="font-bold bg-gray-50 border-t border-gray-500">
                       <td className="border-r border-gray-400 px-1.5 py-0.5">TOTAL</td>
-                      <td className="border-r border-gray-400 px-1.5 py-0.5 text-right">{totalPlafonSlik.toLocaleString('id-ID')}</td>
-                      <td className="border-r border-gray-400 px-1.5 py-0.5 text-right">{totalBakiSlik.toLocaleString('id-ID')} ✔</td>
+                      <td className="border-r border-gray-400 px-1.5 py-0.5 text-right">{totalsSlik.totalPlafon.toLocaleString('id-ID')}</td>
+                      <td className="border-r border-gray-400 px-1.5 py-0.5 text-right">{totalsSlik.totalBaki.toLocaleString('id-ID')} ✔</td>
                       <td className="border-r border-gray-400 px-1.5 py-0.5 text-center">-</td>
                       <td className="border-r border-gray-400 px-1.5 py-0.5 text-center">-</td>
                       <td className="border-r border-gray-400 px-1.5 py-0.5 text-center">-</td>
-                      <td className="px-1.5 py-0.5 text-right">{totalAngsuranSlik.toLocaleString('id-ID')}</td>
+                      <td className="px-1.5 py-0.5 text-right">{totalsSlik.totalAngsuran.toLocaleString('id-ID')}</td>
                     </tr>
                   </tbody>
                 </table>
+                {calculatedSlikDetailPasangan.length > 0 && (
+                  <>
+                    <h4 className="font-bold mb-1 mt-2 text-[11px]">Catatan SLIK Pasangan</h4>
+                    <table className="w-full text-[10px] border border-gray-500 border-collapse">
+                      <thead>
+                        <tr className="bg-gray-100 border-b border-gray-500">
+                          <th className="border-r border-gray-500 px-1.5 py-1 text-left">NAMA BANK</th>
+                          <th className="border-r border-gray-500 px-1.5 py-1 text-right">PLAFOND</th>
+                          <th className="border-r border-gray-500 px-1.5 py-1 text-right">BAKI DEBET</th>
+                          <th className="border-r border-gray-500 px-1.5 py-1 text-center">JW</th>
+                          <th className="border-r border-gray-500 px-1.5 py-1 text-center">BUNGA</th>
+                          <th className="border-r border-gray-500 px-1.5 py-1 text-center">KOL</th>
+                          <th className="px-1.5 py-1 text-right">ANGSURAN</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {calculatedSlikDetailPasangan.map((item, idx) => (
+                          <tr key={idx} className="border-b border-gray-400">
+                            <td className="border-r border-gray-400 px-1.5 py-0.5">{item.bank || '-'}</td>
+                            <td className="border-r border-gray-400 px-1.5 py-0.5 text-right">{(parseFloat(item.plafon)||0).toLocaleString('id-ID')}</td>
+                            <td className="border-r border-gray-400 px-1.5 py-0.5 text-right">{(parseFloat(item.bakiDebet)||0).toLocaleString('id-ID')}</td>
+                            <td className="border-r border-gray-400 px-1.5 py-0.5 text-center">{item.tenorBulan || '-'}</td>
+                            <td className="border-r border-gray-400 px-1.5 py-0.5 text-center">{item.sukuBunga ? item.sukuBunga + '%' : '-'}</td>
+                            <td className="border-r border-gray-400 px-1.5 py-0.5 text-center">{item.kolektibilitas || 1}</td>
+                            <td className="px-1.5 py-0.5 text-right">{(Math.round(item.angsuranAnuitas)||0).toLocaleString('id-ID')}</td>
+                          </tr>
+                        ))}
+                        <tr className="font-bold bg-gray-50 border-t border-gray-500">
+                          <td className="border-r border-gray-400 px-1.5 py-0.5">TOTAL</td>
+                          <td className="border-r border-gray-400 px-1.5 py-0.5 text-right">{totalsSlikPasangan.totalPlafon.toLocaleString('id-ID')}</td>
+                          <td className="border-r border-gray-400 px-1.5 py-0.5 text-right">{totalsSlikPasangan.totalBaki.toLocaleString('id-ID')} ✔</td>
+                          <td className="border-r border-gray-400 px-1.5 py-0.5 text-center">-</td>
+                          <td className="border-r border-gray-400 px-1.5 py-0.5 text-center">-</td>
+                          <td className="border-r border-gray-400 px-1.5 py-0.5 text-center">-</td>
+                          <td className="px-1.5 py-0.5 text-right">{totalsSlikPasangan.totalAngsuran.toLocaleString('id-ID')}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </>
+                )}
+                <div className="flex justify-end mt-1 text-[11px] font-bold">
+                  <span className="mr-8">TOTAL ANGSURAN SLIK (PEMOHON + PASANGAN):</span>
+                  <span>Rp {totalAngsuranSlikAll.toLocaleString('id-ID')}</span>
+                </div>
               </div>
 
               <div className="mt-4">
@@ -433,19 +489,19 @@ export default function MakPreviewPage() {
                         <td className="text-right py-0.5">Rp {rpcAmount.toLocaleString('id-ID')}</td>
                       </tr>
                       <tr>
-                        <td className="py-0.5">E. Angsuran Kredit 1 (apabila ada)</td>
+                        <td className="py-0.5">E. Angsuran Kredit (apabila ada)</td>
                         <td></td>
                         <td className="text-right">Rp {angsuranEksisting.toLocaleString('id-ID')}</td>
                       </tr>
                       <tr>
-                        <td className="py-0.5">F. Angsuran Kredit 2 (apabila ada)</td>
+                        <td className="py-0.5">F. Biaya Hidup</td>
                         <td></td>
-                        <td className="text-right">Rp -</td>
+                        <td className="text-right">Rp {pengurangAngsuran.toLocaleString('id-ID')}</td>
                       </tr>
                       <tr>
-                        <td className="py-0.5">G. Total Angsuran Kredit eksisting (apabila ada)</td>
+                        <td className="py-0.5">G. Total Angsuran Kredit dan biaya hidup</td>
                         <td></td>
-                        <td className="text-right py-0.5">Rp {angsuranEksisting.toLocaleString('id-ID')}</td>
+                        <td className="text-right py-0.5">Rp {(angsuranEksisting + pengurangAngsuran).toLocaleString('id-ID')}</td>
                       </tr>
                       <tr className="font-bold border-t border-gray-300">
                         <td className="py-1">H. Sisa pendapatan per bulan</td>
@@ -471,8 +527,8 @@ export default function MakPreviewPage() {
                         <td className="text-right">Rp {sisaPendapatan.toLocaleString('id-ID')}</td>
                       </tr>
                       <tr className="border-b border-gray-200">
-                        <td className="py-0.5">- Status Kelayakan Angsuran</td>
-                        <td className="text-right uppercase font-bold text-emerald-600">{angsuranDiajukan <= sisaPendapatan ? 'LAYAK' : 'TIDAK LAYAK'} ✔</td>
+                        <td className="py-0.5">- Sisa masa kerja =</td>
+                        <td className="text-right font-semibold">{pengajuan.jangka_waktu_bulan || 0} Bulan <span className="ml-4 font-bold text-emerald-600">LAYAK</span></td>
                       </tr>
                       <tr className="border-b border-gray-200">
                         <td className="py-0.5">&gt; diusulkan jangka waktu kredit ( n ) = <span className="font-semibold ml-6">{pengajuan.jangka_waktu_bulan || 0} bulan</span></td>
@@ -487,12 +543,16 @@ export default function MakPreviewPage() {
                         <td className="text-right">Rp {parseFloat(pengajuan.plafon_diajukan || 0).toLocaleString('id-ID')}</td>
                       </tr>
                       <tr className="border-b border-gray-200">
-                        <td className="py-0.5">- Angsuran Kredit/bulan =</td>
+                        <td className="py-0.5">- Angsuran Kredit/bulan ( Tidak lebih besar dari (H)=</td>
                         <td className="text-right">Rp {angsuranDiajukan.toLocaleString('id-ID')}</td>
                       </tr>
                       <tr className="font-bold border-b-2 border-gray-800 bg-gray-50">
-                        <td className="py-1">- Prosentase Angsuran Kredit terhadap penghasilan per bulan</td>
+                        <td className="py-1">- Prosentase Angsuran Kredit</td>
                         <td className="text-right py-1">{prosentaseAngsuran.toFixed(2)}%</td>
+                      </tr>
+                      <tr className="font-bold border-b-2 border-gray-800 bg-gray-50">
+                        <td className="py-1">  terhadap penghasilan per bulan</td>
+                        <td className={`text-right py-1 ${angsuranDiajukan <= sisaPendapatan ? 'text-emerald-600' : 'text-red-600'}`}>{angsuranDiajukan <= sisaPendapatan ? 'LAYAK' : 'TIDAK LAYAK'} ✔</td>
                       </tr>
                     </tbody>
                   </table>
@@ -514,7 +574,7 @@ export default function MakPreviewPage() {
                       <th className="border-r border-gray-500 p-1 text-left">Alamat Jaminan</th>
                       <th className="border-r border-gray-500 p-1 text-center">LT / LB (m2)</th>
                       <th className="border-r border-gray-500 p-1 text-center">Jenis</th>
-                      <th className="border-r border-gray-500 p-1 text-center">Jenis & No Dok</th>
+                      <th className="border-r border-gray-500 p-1 text-center">Jenis/No Dok</th>
                       <th className="p-1 text-left">Atas Nama</th>
                     </tr>
                   </thead>
@@ -537,7 +597,7 @@ export default function MakPreviewPage() {
                       <th className="border-r border-gray-500 p-1 text-right">NJOP</th>
                       <th className="border-r border-gray-500 p-1 text-right">Nilai Taksasi</th>
                       <th className="border-r border-gray-500 p-1 text-center">Jenis Notariil</th>
-                      <th className="border-r border-gray-500 p-1 text-right">Nilai Pengikatan</th>
+                      <th className="border-r border-gray-500 p-1 text-right">Nilai</th>
                       <th className="p-1 text-center">LTV</th>
                     </tr>
                   </thead>
@@ -548,7 +608,7 @@ export default function MakPreviewPage() {
                       <td className="border-r border-gray-400 p-1 text-right">Rp {parseFloat(mainAgunan.nilai_taksasi || 0).toLocaleString('id-ID')}</td>
                       <td className="border-r border-gray-400 p-1 text-center">APHT</td>
                       <td className="border-r border-gray-400 p-1 text-right font-semibold">Rp {parseFloat(mainAgunan.nilai_likuidasi || 0).toLocaleString('id-ID')}</td>
-                      <td className="p-1 text-center font-bold text-emerald-600">{parseFloat(mainAgunan.ltv || 0).toFixed(2)}% AMAN / LAYAK</td>
+                      <td className="p-1 text-center font-bold text-emerald-600">{parseFloat(mainAgunan.ltv || 0).toFixed(2)}%<br/>AMAN / LAYAK</td>
                     </tr>
                   </tbody>
                 </table>
@@ -666,43 +726,63 @@ export default function MakPreviewPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  
-                  {/* Row 1: Pengusul Kredit */}
                   <tr className="border-b border-gray-800">
-                    <td className="border-r border-gray-800 p-2 align-top text-center">
+                    <td className="border-r border-gray-800 p-2 align-top text-center w-1/4">
                       <div className="font-semibold uppercase mb-1">Pengusul Kredit</div>
                       <div className="text-[9px] text-gray-500 mb-10">TTD</div>
                       <div className="font-bold underline text-[9px]">{pengusulName}</div>
                     </td>
-                    <td className="p-2 align-top font-serif italic text-blue-900 bg-blue-50/10 leading-relaxed text-[11px]">
-                      Setuju 75 Jt / 84 Bulan.
+                    <td className="p-2 align-top text-[11px]">
+                      <div className="font-semibold text-center mb-1">SETUJU / <span className="line-through">TIDAK SETUJU</span></div>
+                      {approvalList.length > 0 ? (
+                         <div className="mt-8 text-center italic">Setuju {pengajuan.plafon_diajukan ? (parseFloat(pengajuan.plafon_diajukan)/1000000) + ' jt' : ''} / {pengajuan.jangka_waktu_bulan} bulan</div>
+                      ) : (
+                         <div className="h-16"></div>
+                      )}
                     </td>
                   </tr>
-
-                  {/* Row 2: Kabid Kredit / Komite */}
                   <tr className="border-b border-gray-800">
-                    <td className="border-r border-gray-800 p-2 align-top text-center">
+                    <td className="border-r border-gray-800 p-2 align-top text-center w-1/4">
                       <div className="font-semibold uppercase mb-1">Komite</div>
                       <div className="text-[9px] text-gray-500 mb-10">TTD</div>
                       <div className="font-bold underline text-[9px]">{kabidName}</div>
                     </td>
-                    <td className="p-2 align-top font-serif italic text-blue-900 bg-blue-50/10 leading-relaxed text-[11px]">
-                      Acc 75 Juta / 84 Bulan
+                    <td className="p-2 align-top text-[11px]">
+                      <div className="font-semibold text-center mb-1">SETUJU / <span className="line-through">TIDAK SETUJU</span></div>
+                      {approvalList.length > 0 ? (
+                         <div className="mt-8 text-center italic">Setuju {pengajuan.plafon_diajukan ? (parseFloat(pengajuan.plafon_diajukan)/1000000) + ' jt' : ''} / {pengajuan.jangka_waktu_bulan} bulan</div>
+                      ) : (
+                         <div className="h-16"></div>
+                      )}
                     </td>
                   </tr>
-
-                  {/* Row 3: Direksi / Komite */}
-                  <tr>
-                    <td className="border-r border-gray-800 p-2 align-top text-center">
+                  <tr className="border-b border-gray-800">
+                    <td className="border-r border-gray-800 p-2 align-top text-center w-1/4">
                       <div className="font-semibold uppercase mb-1">Komite</div>
-                      <div className="text-[9px] text-gray-500 mb-10">TTD</div>
+                      <div className="text-[9px] text-gray-500 mb-20">TTD</div>
                       <div className="font-bold underline text-[9px]">{komiteName3}</div>
                     </td>
-                    <td className="p-2 align-top font-serif italic text-blue-900 bg-blue-50/10 leading-relaxed text-[11px]">
-                      {`- Proses SOP\n- Prinsip Kehati-hatian\n- APHT\n- Mitigasi resiko\n- Pastikan repayment capacity/kemampuan\n- Hrs/wajib OTS sblm PK/cair\n- Tertib Adm\n- Monitoring angs`}
+                    <td className="p-2 align-top text-[11px]">
+                      <div className="font-semibold text-center mb-1">SETUJU / <span className="line-through">TIDAK SETUJU</span></div>
+                      {approvalList.length > 0 ? (
+                         <div className="mt-2 ml-4">
+                           <ul className="list-disc list-inside space-y-1 italic text-blue-900">
+                             <li>Cek data dgn benar</li>
+                             <li>Proses SOP</li>
+                             <li>Prinsip kehati-hatian</li>
+                             <li>Mitigasi resiko di awal</li>
+                             <li>Pastikan kemampuan bayar/angsuran</li>
+                             <li>OTS usaha & jaminan</li>
+                             <li>Pasang HT Sempurna</li>
+                             <li>Monitor pasca pencairan & PK</li>
+                             <li>Tertib Adm</li>
+                           </ul>
+                         </div>
+                      ) : (
+                         <div className="h-32"></div>
+                      )}
                     </td>
                   </tr>
-
                 </tbody>
               </table>
             </div>
@@ -766,7 +846,7 @@ export default function MakPreviewPage() {
                       <tr>
                         <td className="w-44 py-0.5">- Lantai Bangunan</td>
                         <td className="w-2">:</td>
-                        <td className="py-0.5">{mainAgunan.lantai_bangunan || '-'}</td>
+                        <td className="py-0.5">{mainAgunan.lantai_bangunan || 'lantai'}</td>
                       </tr>
                       <tr>
                         <td className="py-0.5">- Luas Tanah</td>
@@ -776,7 +856,7 @@ export default function MakPreviewPage() {
                       <tr>
                         <td className="py-0.5">- Luas Bangunan</td>
                         <td>:</td>
-                        <td className="py-0.5 font-semibold">{mainAgunan.luas_bangunan || '-'} m²</td>
+                        <td className="py-0.5 font-semibold">{mainAgunan.luas_bangunan || '0'} m²</td>
                       </tr>
                       <tr>
                         <td className="py-0.5">- Rangka atap</td>
@@ -789,9 +869,29 @@ export default function MakPreviewPage() {
                         <td className="py-0.5">{mainAgunan.penutup_atap || '-'}</td>
                       </tr>
                       <tr>
+                        <td className="py-0.5">- Lantai</td>
+                        <td>:</td>
+                        <td className="py-0.5">-</td>
+                      </tr>
+                      <tr>
                         <td className="py-0.5">- Dinding</td>
                         <td>:</td>
                         <td className="py-0.5">{mainAgunan.dinding || '-'}</td>
+                      </tr>
+                      <tr>
+                        <td className="py-0.5">- Pagar</td>
+                        <td>:</td>
+                        <td className="py-0.5">-</td>
+                      </tr>
+                      <tr>
+                        <td className="py-0.5">- Jenis Plafond</td>
+                        <td>:</td>
+                        <td className="py-0.5">-</td>
+                      </tr>
+                      <tr>
+                        <td className="py-0.5">- Kusen Pintu</td>
+                        <td>:</td>
+                        <td className="py-0.5">-</td>
                       </tr>
                       <tr>
                         <td className="py-0.5">- Fasilitas Listrik</td>
@@ -803,6 +903,16 @@ export default function MakPreviewPage() {
                         <td>:</td>
                         <td className="py-0.5">{mainAgunan.fasilitas_air || '-'}</td>
                       </tr>
+                      <tr>
+                        <td className="py-0.5">- Fasilitas Telepon</td>
+                        <td>:</td>
+                        <td className="py-0.5">-</td>
+                      </tr>
+                      <tr>
+                        <td className="py-0.5">- Sarana Pelengkap lain</td>
+                        <td>:</td>
+                        <td className="py-0.5">-</td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -810,14 +920,58 @@ export default function MakPreviewPage() {
                 <div>
                   <h4 className="font-bold">4. PENILAIAN</h4>
                   <div className="pl-4 space-y-2">
-                    <p><strong>a. NILAI PASAR</strong></p>
+                    <p><strong>a. TANAH</strong></p>
                     <p className="pl-2 leading-relaxed">
-                      Berdasarkan metode pendekatan pasar maka kami berpendapat bahwa Nilai Pasar Wajar (NPW) agunan tersebut pada tanggal {formatDate(new Date())} adalah sebesar <strong>Rp {parseFloat(mainAgunan.nilai_pasar || 0).toLocaleString('id-ID')}</strong> ({formatTerbilangRupiah(mainAgunan.nilai_pasar || 0)}).
+                      Berdasarkan metode pendekatan pasar maka kami berpendapat bahw Nilai Pasar Wajar (NPW) tanah tersebut pada tanggal {formatDate(new Date())} adalah sebesar <strong>Rp. {parseFloat(mainAgunan.nilai_pasar || 0).toLocaleString('id-ID')}</strong> ( {formatTerbilangRupiah(mainAgunan.nilai_pasar || 0)} ) dengan harga taksiran tanah sebesar Rp. 200.000 ( Dua Ratus Ribu Rupiah ) /M2.
                     </p>
-                    <p><strong>b. NILAI TAKSASI</strong></p>
+                    <p><strong>b. BANGUNAN</strong></p>
                     <p className="pl-2 leading-relaxed">
-                      Dengan mempertimbangkan kondisi, letak, dan sarana pelengkap setelah dikurangi penyusutan, maka kami berpendapat bahwa Nilai Taksasi dari agunan tersebut adalah sebesar <strong>Rp {parseFloat(mainAgunan.nilai_taksasi || 0).toLocaleString('id-ID')}</strong> ({formatTerbilangRupiah(mainAgunan.nilai_taksasi || 0)}).
+                      Dengan mempertimbangkan biaya membangun baru dari bangunan serta sarana pelengkap setelah dikurangi penyusutan dan pendekatan pasar/dan pendekatan pendapatan, maka kami berpendapat bahwa nilai pasar wajar dari bangunan pada tanggal {formatDate(new Date())} adalah sebesar Rp. ( Nol Rupiah ) dengan harga taksiran bangunan Rp. ( Nol Rupiah ) /M2.
                     </p>
+                    <p><strong>c. TANAH DAN BANGUNAN</strong></p>
+                    <div className="pl-2">
+                      <table className="w-full text-[10px] border border-gray-500 border-collapse mt-2">
+                        <thead>
+                          <tr className="border-b border-gray-500">
+                            <th className="border-r border-gray-500 py-1"></th>
+                            <th className="border-r border-gray-500 py-1">N P W</th>
+                            <th className="border-r border-gray-500 py-1">NJOP</th>
+                            <th className="border-r border-gray-500 py-1">NILAI TAKSASI</th>
+                            <th className="py-1">NL (80%)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-b border-gray-500 text-center">
+                            <td className="border-r border-gray-500 py-1 font-semibold">Tanah</td>
+                            <td className="border-r border-gray-500 py-1">{parseFloat(mainAgunan.nilai_pasar || 0).toLocaleString('id-ID')}</td>
+                            <td className="border-r border-gray-500 py-1">{parseFloat(mainAgunan.nilai_njop || 0).toLocaleString('id-ID')}</td>
+                            <td className="border-r border-gray-500 py-1">{parseFloat(mainAgunan.nilai_taksasi || 0).toLocaleString('id-ID')}</td>
+                            <td className="py-1">{parseFloat(mainAgunan.nilai_likuidasi || (mainAgunan.nilai_pasar * 0.8)).toLocaleString('id-ID')}</td>
+                          </tr>
+                          <tr className="border-b border-gray-500 text-center">
+                            <td className="border-r border-gray-500 py-1 font-semibold">Bangunan</td>
+                            <td className="border-r border-gray-500 py-1">-</td>
+                            <td className="border-r border-gray-500 py-1">-</td>
+                            <td className="border-r border-gray-500 py-1">-</td>
+                            <td className="py-1">-</td>
+                          </tr>
+                          <tr className="border-b border-gray-500 text-center">
+                            <td className="border-r border-gray-500 py-1 font-semibold">Jumlah</td>
+                            <td className="border-r border-gray-500 py-1">{parseFloat(mainAgunan.nilai_pasar || 0).toLocaleString('id-ID')}</td>
+                            <td className="border-r border-gray-500 py-1">{parseFloat(mainAgunan.nilai_njop || 0).toLocaleString('id-ID')}</td>
+                            <td className="border-r border-gray-500 py-1">{parseFloat(mainAgunan.nilai_taksasi || 0).toLocaleString('id-ID')}</td>
+                            <td className="py-1">{parseFloat(mainAgunan.nilai_likuidasi || (mainAgunan.nilai_pasar * 0.8)).toLocaleString('id-ID')}</td>
+                          </tr>
+                          <tr className="text-center font-semibold bg-gray-50">
+                            <td className="border-r border-gray-500 py-1">Dibulatkan</td>
+                            <td className="border-r border-gray-500 py-1">{parseFloat(mainAgunan.nilai_pasar || 0).toLocaleString('id-ID')}</td>
+                            <td className="border-r border-gray-500 py-1">{parseFloat(mainAgunan.nilai_njop || 0).toLocaleString('id-ID')}</td>
+                            <td className="border-r border-gray-500 py-1">{parseFloat(mainAgunan.nilai_taksasi || 0).toLocaleString('id-ID')}</td>
+                            <td className="py-1">{parseFloat(mainAgunan.nilai_likuidasi || (mainAgunan.nilai_pasar * 0.8)).toLocaleString('id-ID')}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>

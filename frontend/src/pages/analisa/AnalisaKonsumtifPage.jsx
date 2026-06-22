@@ -13,7 +13,7 @@ export default function AnalisaKonsumtifPage() {
 
   const [form, setForm] = useState({
     gajiPokok: 0, tunjangan: 0, bonusRata: 0, usahaSampingan: 0, pendapatanPasangan: 0,
-    listrik: 0, air: 0, transportasi: 0, pendidikan: 0, cicilanExisting: 0, kebutuhanRumahTangga: 0, pengeluaranLain: 0,
+    listrik: 0, air: 0, transportasi: 0, pendidikan: 0, cicilanExisting: 0, pengurangAngsuran: 0, kebutuhanRumahTangga: 0, pengeluaranLain: 0,
     angsuranDiajukan: 0,
   });
 
@@ -68,6 +68,7 @@ export default function AnalisaKonsumtifPage() {
               transportasi: Number(data.transportasi || 0),
               pendidikan: Number(data.pendidikan || 0),
               cicilanExisting: Number(data.cicilan_existing || Math.round(slikInstallment) || 0),
+              pengurangAngsuran: Number(data.pengurang_angsuran || 0),
               kebutuhanRumahTangga: Number(data.kebutuhan_rumah_tangga || 0),
               pengeluaranLain: Number(data.pengeluaran_lain || 0),
               angsuranDiajukan: Number(data.angsuran_diajukan || 0),
@@ -100,9 +101,9 @@ export default function AnalisaKonsumtifPage() {
   const calc = useMemo(() => {
     const totalPenghasilan = form.gajiPokok + form.tunjangan + form.bonusRata + form.usahaSampingan + form.pendapatanPasangan;
     const totalPengeluaranBase = form.listrik + form.air + form.transportasi + form.pendidikan + form.kebutuhanRumahTangga + form.pengeluaranLain;
-    const totalCicilan = form.cicilanExisting + form.angsuranDiajukan;
+    const totalCicilan = form.cicilanExisting + form.pengurangAngsuran + form.angsuranDiajukan;
     const totalPengeluaran = totalPengeluaranBase + totalCicilan;
-    const disposableIncome = totalPenghasilan - totalPengeluaranBase - form.cicilanExisting;
+    const disposableIncome = totalPenghasilan - totalPengeluaranBase - (form.cicilanExisting + form.pengurangAngsuran);
     const dsr = totalPenghasilan > 0 ? (totalCicilan / totalPenghasilan) * 100 : 0;
     const rpc = form.angsuranDiajukan > 0 ? (disposableIncome / form.angsuranDiajukan) * 100 : 0;
     const maxAngsuran = disposableIncome * 0.95;
@@ -207,6 +208,7 @@ export default function AnalisaKonsumtifPage() {
               {renderInput('Transportasi', 'transportasi')}
               {renderInput('Pendidikan', 'pendidikan')}
               {renderInput('Cicilan Existing', 'cicilanExisting')}
+              {renderInput('Pengurang Angsuran', 'pengurangAngsuran')}
               {renderInput('Kebutuhan Rumah Tangga', 'kebutuhanRumahTangga')}
               {renderInput('Pengeluaran Lain', 'pengeluaranLain')}
               {renderInput('Angsuran Diajukan', 'angsuranDiajukan')}

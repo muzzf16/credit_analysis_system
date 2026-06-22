@@ -20,6 +20,7 @@ export const debiturService = {
   getById: (id) => api.get(`/debitur/${id}`),
   create: (data) => api.post('/debitur', data),
   update: (id, data) => api.put(`/debitur/${id}`, data),
+  delete: (id) => api.delete(`/debitur/${id}`),
 };
 
 export const pengajuanService = {
@@ -101,5 +102,8 @@ export const auditService = {
 };
 
 export const ocrService = {
-  process: (formData) => api.post('/ocr', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  process: (formData) => api.post('/ocr', formData, { 
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 300000 // 5 minutes timeout for heavy OCR tasks like PDFs
+  }),
 };

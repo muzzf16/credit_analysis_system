@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Briefcase, Heart, Building2, FileText, Phone, Mail, MapPin, Calendar, Edit } from 'lucide-react';
+import { ArrowLeft, User, Briefcase, Heart, Building2, FileText, Phone, Mail, MapPin, Calendar, Edit, Trash2 } from 'lucide-react';
 import { debiturService } from '../../services';
 import { formatDate, formatRupiah } from '../../utils/formatters';
 import useAuthStore from '../../store/authStore';
@@ -22,6 +22,17 @@ export default function DebiturDetailPage() {
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" /></div>;
   if (!data) return null;
+
+  const handleDelete = async () => {
+    if (window.confirm(`Apakah Anda yakin ingin menghapus debitur ${data.nama}?`)) {
+      try {
+        await debiturService.delete(id);
+        navigate('/debitur');
+      } catch (err) {
+        alert(err.response?.data?.message || 'Gagal menghapus debitur');
+      }
+    }
+  };
 
   const TABS = ['Data Pribadi', 'Pasangan', 'Pekerjaan', 'Usaha', 'Dokumen'];
 
@@ -49,6 +60,7 @@ export default function DebiturDetailPage() {
         <div className="flex gap-2">
           {['ADMIN', 'AO'].includes(user?.role) && (
             <>
+              <button onClick={handleDelete} className="btn-secondary text-red-500 hover:text-red-400 hover:bg-red-500/10 border-red-500/20"><Trash2 className="w-4 h-4" /> Hapus</button>
               <button onClick={() => navigate(`/debitur/${id}/edit`)} className="btn-secondary"><Edit className="w-4 h-4" /> Edit</button>
               <button onClick={() => navigate(`/pengajuan/tambah?debiturId=${id}`)} className="btn-primary"><FileText className="w-4 h-4" /> Buat Pengajuan</button>
             </>

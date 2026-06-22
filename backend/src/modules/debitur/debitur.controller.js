@@ -44,4 +44,14 @@ async function update(req, res) {
   }
 }
 
-module.exports = { getAll, getById, create, update };
+async function remove(req, res) {
+  try {
+    await svc.remove(req.params.id);
+    return success(res, null, 'Debitur berhasil dihapus.');
+  } catch (err) {
+    console.error('[DebiturController] remove error:', err);
+    return error(res, err.message, err.status || 500);
+  }
+}
+
+module.exports = { getAll, getById, create, update, remove };

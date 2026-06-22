@@ -17,16 +17,16 @@ function hitungKonsumtif(data) {
     gajiPokok = 0, tunjangan = 0, bonusRata = 0,
     usahaSampingan = 0, pendapatanPasangan = 0,
     listrik = 0, air = 0, transportasi = 0,
-    pendidikan = 0, cicilanExisting = 0, kebutuhanRumahTangga = 0, pengeluaranLain = 0,
+    pendidikan = 0, cicilanExisting = 0, pengurangAngsuran = 0, kebutuhanRumahTangga = 0, pengeluaranLain = 0,
     angsuranDiajukan = 0, plafon = 0, bungaPerTahun = 0, jangkaWaktuBulan = 0,
   } = data;
 
   const totalPenghasilan = gajiPokok + tunjangan + bonusRata + usahaSampingan + pendapatanPasangan;
   const totalPengeluaranTanpaCicilan = listrik + air + transportasi + pendidikan + kebutuhanRumahTangga + pengeluaranLain;
-  const totalCicilan = cicilanExisting + angsuranDiajukan;
+  const totalCicilan = cicilanExisting + pengurangAngsuran + angsuranDiajukan;
   const totalPengeluaran = totalPengeluaranTanpaCicilan + totalCicilan;
 
-  const disposableIncome = totalPenghasilan - totalPengeluaranTanpaCicilan - cicilanExisting;
+  const disposableIncome = totalPenghasilan - totalPengeluaranTanpaCicilan - (cicilanExisting + pengurangAngsuran);
 
   // DSR = (Total Cicilan semua / Total Penghasilan) * 100 — max 40%
   const dsr = totalPenghasilan > 0 ? (totalCicilan / totalPenghasilan) * 100 : 0;

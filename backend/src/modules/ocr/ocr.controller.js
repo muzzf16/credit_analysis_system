@@ -15,7 +15,8 @@ async function processDocumentOCR(req, res) {
       return error(res, 'Parameter tipe dokumen (type) wajib ditentukan.', 400);
     }
 
-    const result = await ocrService.processOCR(req.file.buffer, type, req.file.mimetype);
+    const isPdf = req.file.mimetype === 'application/pdf' || (req.file.originalname && req.file.originalname.toLowerCase().endsWith('.pdf'));
+    const result = await ocrService.processOCR(req.file.buffer, type, isPdf ? 'application/pdf' : req.file.mimetype);
     return success(res, result, 'OCR berhasil diproses.');
   } catch (err) {
     console.error('Error inside processDocumentOCR:', err);

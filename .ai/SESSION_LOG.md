@@ -128,6 +128,57 @@
 
 ---
 
+## Sesi 7 — 2026-06-22 | Model: Antigravity | Modul: OCR
+**Goal:** Mengatasi masalah timeout OCR PDF dan mengganti PaddleOCR ke Tesseract kembali karena prosesnya terlalu membebani CPU dan lama.
+**Yang selesai:**
+- [x] Memperbaiki frontend Axios timeout dari 120000ms (2 menit) menjadi 300000ms (5 menit).
+- [x] Menghapus `paddleocr_runner.py` dan paket `paddlepaddle` serta Python dari Dockerfile backend.
+- [x] Menginstal `tesseract-ocr`, `tesseract-ocr-ind`, dan `imagemagick` di Dockerfile.
+- [x] Merombak `ocr.service.js` untuk mengeksekusi Tesseract OCR secara native (CLI).
+- [x] Menambahkan preprocessing `ImageMagick` (Grayscale, Normalize, Resize 200%) agar Tesseract mampu membaca gambar bertekstur (seperti KTP) dengan akurasi sangat tinggi.
+- [x] Mengubah logika ekstraksi halaman PDF menjadi asynchronous (`Promise.all`) agar berjalan multi-core/paralel.
+**Keputusan baru:** Tesseract OCR digunakan kembali sebagai standard untuk efisiensi resource. Semua pre-processing gambar diserahkan ke ImageMagick. File PDF diekstrak paralel.
+**File yang diubah:** frontend/src/services/index.js, backend/Dockerfile, backend/src/modules/ocr/ocr.service.js
+**File JANGAN disentuh:** Komponen UI Frontend OCR.
+**Bug yang ditemukan:** Frontend Axios memutus koneksi di menit ke-2 karena ada setting `timeout: 120000` hardcoded, yang membuat seolah-olah server gagal merespons.
+**Hindari sesi berikutnya:** Menggunakan framework machine-learning Python yang sangat berat di dalam image Docker backend Node.js untuk OCR dokumen jika tidak wajib.
+**Task berikutnya:** Lanjutkan pengerjaan MAK Generator (Phase 3) atau modul EWS (Phase 5).
+**Kode yang perlu ditempel:** -
+
+## Sesi 8 — 2026-06-22 | Model: Antigravity | Modul: Analisa & MAK
+**Goal:** Penyesuaian perhitungan Sisa Pendapatan dan field Pengurang Angsuran pada Analisa Konsumtif & MAK.
+**Yang selesai:**
+- [x] Mengubah label "Penghasilan bersih debitur per bulan sebesar" menjadi "Sisa pendapatan per bulan" pada MAK Preview.
+- [x] Memperbarui kalkulasi field "Maksimal Angsuran", "RPC", "Prosentase Angsuran", dan "Status Kelayakan" di MAK Preview agar berbasis Sisa Pendapatan alih-alih Take Home Pay.
+- [x] Menambahkan kolom database `pengurang_angsuran` pada tabel `analisa_konsumtif` dan `analisa_produktif` via ALTER TABLE.
+- [x] Mengubah form input di Analisa Konsumtif & Produktif untuk menangani `pengurang_angsuran`.
+- [x] Mengubah perhitungan `sisaPendapatan` di MAK untuk mengurangi `pengurangAngsuran` bersama dengan `angsuranEksisting`.
+- [x] Mengganti label "F. Angsuran Kredit 2" menjadi "F. Pengurang angsuran".
+**Keputusan baru:** Field "Pengurang Angsuran" ditambahkan untuk menampung kewajiban lain di luar SLIK yang menjadi faktor pengurang sebelum sisa pendapatan akhir.
+**File yang diubah:** backend/src/modules/analisa/analisa.service.js, backend/src/utils/financialFormulas.js, frontend/src/pages/analisa/AnalisaKonsumtifPage.jsx, frontend/src/pages/analisa/AnalisaProduktifPage.jsx, frontend/src/pages/mak/MakPreviewPage.jsx
+**File JANGAN disentuh:** -
+**Bug yang ditemukan:** Error "Connection Refused / 502 Bad Gateway" karena stale IP cache pada container Nginx setelah backend & frontend direbuild. Diselesaikan dengan merestart service Nginx.
+**Hindari sesi berikutnya:** Kelupaan sinkronisasi model backend dengan script migrasi resmi saat menambahkan kolom. Kolom baru perlu segera dibuatkan file migrasinya di sesi selanjutnya.
+**Task berikutnya:** Sinkronisasi kolom `pengurang_angsuran` ke dalam file migrasi resmi dan lanjut modul MAK/EWS.
+**Kode yang perlu ditempel:** -
+
+## Sesi 9 — 2026-06-22 | Model: Antigravity | Modul: MAK
+**Goal:** Menghilangkan data hardcode pada dokumen Memorandum Analisa Kredit (MAK) Preview dan mengatasi masalah caching frontend.
+**Yang selesai:**
+- [x] Mengubah data persetujuan (Jabatan, Keputusan, Plafon, Tenor) di MAK Preview dari data kaku menjadi dinamis yang di-loop dari `approvalList`.
+- [x] Mengubah opsi "Kredit Bermasalah pada Bank Lain" di MAK Preview agar otomatis tercentang berdasar kolektibilitas (Kol >= 3) dari data SLIK.
+- [x] Menghapus blok teks opini kepatuhan yang bersifat _template kaku_ (hardcode kalimat) dan menggantinya dengan kotak (box) kosong agar opini bisa ditulis tangan setelah dokumen dicetak.
+- [x] Menambahkan Cache-Control headers (`no-store`, `no-cache`) pada konfigurasi Nginx frontend agar `index.html` tidak di-_cache_ oleh browser yang menyebabkan user tidak bisa melihat perubahan UI.
+**Keputusan baru:** Teks Opini Kepatuhan yang tadinya di-_generate_ otomatis dengan kalimat standar telah dihapus demi fleksibilitas, menyisakan area kosong untuk catatan manual setelah dicetak.
+**File yang diubah:** frontend/src/pages/mak/MakPreviewPage.jsx, frontend/nginx.conf
+**File JANGAN disentuh:** -
+**Bug yang ditemukan:** Browser men-cache `index.html` dari Nginx, sehingga update frontend tidak terlihat oleh user meskipun Docker container sudah di-_rebuild_.
+**Hindari sesi berikutnya:** Kelupaan setting cache header Nginx untuk file statis seperti HTML.
+**Task berikutnya:** Sinkronisasi kolom `pengurang_angsuran` ke dalam file migrasi resmi dan lanjut modul MAK/EWS.
+**Kode yang perlu ditempel:** -
+
+---
+
 ## ════════════════════════════════════
 ## PROGRESS TRACKER PER MODUL
 ## ════════════════════════════════════

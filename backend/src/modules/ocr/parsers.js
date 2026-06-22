@@ -53,7 +53,7 @@ function parseKTP(text) {
     tempatLahir: '',
     tanggalLahir: '',
     gender: 'L',
-    statusNikah: 'BELUM_KAWIN',
+    statusNikah: '',
     pendidikan: 'SMA',
     alamat: '',
     kelurahan: '',
@@ -62,68 +62,233 @@ function parseKTP(text) {
   };
 
   // 1. Extract NIK (16 digits)
-  const nikMatch = text.replace(/[\s\-_]/g, '').match(/\b\d{16}\b/);
+  // First normalize common OCR digit confusions in a text version stripped of spaces/symbols
+  const normalizedText = text.toUpperCase()
+    .replace(/[\s\-_]/g, '')
+    .replace(/I|L|i|l|\|/g, '1')
+    .replace(/O|D/g, '0')
+    .replace(/B/g, '8')
+    .replace(/S/g, '5')
+    .replace(/G/g, '9');
+  
+  const nikMatch = normalizedText.match(/\b\d{16}\b/) || normalizedText.match(/\d{16}/);
   if (nikMatch) {
     data.nik = nikMatch[0];
   } else {
-    // Fallback search in lines
+    // Fallback: look line by line
     for (const line of lines) {
-      const numOnly = line.replace(/[^0-9]/g, '');
-      if (numOnly.length === 16) {
-        data.nik = numOnly;
+      const normLine = line.toUpperCase()
+        .replace(/I|L|i|l|\|/g, '1')
+        .replace(/O|D/g, '0')
+        .replace(/B/g, '8')
+        .replace(/S/g, '5')
+        .replace(/G/g, '9')
+        .replace(/[^0-9]/g, '');
+      if (normLine.length === 16) {
+        data.nik = normLine;
         break;
       }
     }
   }
 
+  // Helper to check if a line is a label
+  const isLabel = (line) => {
+    return /nik|nama|lahir|kelamin|alamat|rt\/rw|desa|kelurahan|kecamatan|agama|perkawinan|pekerjaan|kewarganegaraan|berlaku|seumur/i.test(line);
+  };
+
   // 2. Extract Nama
-  const namaVal = findValueAfterLabel(lines, /nama/i);
+  let namaVal = findValueAfterLabel(lines, /nama/i);
+  if (!namaVal) {
+    // Heuristic: search lines around the "Nama" label (window of +1 to +4 lines)
+    const idx = lines.findIndex(l => /nama/i.test(l) && !/kecamatan|tempat/i.test(l));
+    if (idx !== -1) {
+      for (let offset = 1; offset <= 4; offset++) {
+        const checkIdx = idx + offset;
+        if (checkIdx < lines.length) {
+          const l = lines[checkIdx];
+          if (!isLabel(l) && !/\d/.test(l) && l.length > 2) {
+            namaVal = l;
+            break;
+          }
+        }
+      }
+    }
+  }
   if (namaVal) {
-    data.nama = namaVal.toUpperCase().replace(/[^A-Z\s.,']/g, '');
+    data.nama = namaVal.toUpperCase().replace(/[^A-Z\s.,']/g, '').trim();
   }
 
   // 3. Extract Tempat & Tanggal Lahir
-  const ttlVal = findValueAfterLabel(lines, /tempat.*lahir|tgl.*lahir/i);
-  if (ttlVal) {
+  let ttlVal = findValueAfterLabel(lines, /tempat.*lahir|tgl.*lahir/i);
+  let dateStr = '';
+  let placeStr = '';
+
+  // Heuristic: find any line containing a date pattern DD-MM-YYYY or DD.MM.YYYY
+  const dateLineIdx = lines.findIndex(l => {
+    const norm = l.toUpperCase().replace(/O/g, '0').replace(/I|L|l/g, '1').replace(/S/g, '5').replace(/B/g, '8');
+    return /(\d{2})[-/.](\d{2})[-/.](\d{4})/.test(norm);
+  });
+
+  if (dateLineIdx !== -1) {
+    const rawLine = lines[dateLineIdx];
+    const normLine = rawLine.toUpperCase()
+      .replace(/O/g, '0')
+      .replace(/I|L|l/g, '1')
+      .replace(/S/g, '5')
+      .replace(/B/g, '8');
+    const match = normLine.match(/(\d{2})[-/.](\d{2})[-/.](\d{4})/);
+    if (match) {
+      dateStr = `${match[3]}-${match[2]}-${match[1]}`;
+      // The place is everything before the date in that line (minus punctuation)
+      placeStr = rawLine.substring(0, rawLine.indexOf(match[0])).replace(/[^A-Za-z\s]/g, '').trim();
+    }
+  }
+
+  if (dateStr) {
+    data.tanggalLahir = dateStr;
+    if (placeStr) {
+      data.tempatLahir = placeStr.toUpperCase();
+    }
+  }
+
+  if (!data.tempatLahir && ttlVal) {
     const parts = ttlVal.split(/[,.]/);
     if (parts.length > 0) {
       data.tempatLahir = parts[0].trim().toUpperCase().replace(/[^A-Z\s]/g, '');
-    }
-    // Search date in format DD-MM-YYYY or similar
-    const dateMatch = ttlVal.match(/(\d{2})[-/](\d{2})[-/](\d{4})/);
-    if (dateMatch) {
-      data.tanggalLahir = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
     }
   }
 
   // 4. Extract Gender
   const genderVal = findValueAfterLabel(lines, /jenis.*kelamin|kelamin/i);
-  if (/perempuan|wanita|p/i.test(genderVal || text)) {
-    data.gender = 'P';
+  if (genderVal) {
+    if (/perempuan|wanita|p/i.test(genderVal)) {
+      data.gender = 'P';
+    } else if (/laki|l/i.test(genderVal)) {
+      data.gender = 'L';
+    }
   } else {
-    data.gender = 'L';
+    // Check if any line matches gender values
+    const hasPerempuan = lines.some(l => /perempuan|wanita/i.test(l) && !isLabel(l));
+    const hasLaki = lines.some(l => /laki-laki|laki/i.test(l) && !isLabel(l));
+    if (hasPerempuan) {
+      data.gender = 'P';
+    } else if (hasLaki) {
+      data.gender = 'L';
+    } else if (/perempuan|wanita/i.test(text)) {
+      data.gender = 'P';
+    } else {
+      data.gender = 'L';
+    }
   }
 
   // 5. Extract Status Perkawinan
   const statusVal = findValueAfterLabel(lines, /status.*perkawinan|kawin/i);
-  if (/belum/i.test(statusVal || text)) {
-    data.statusNikah = 'BELUM_KAWIN';
-  } else if (/cerai.*mati/i.test(statusVal || text)) {
-    data.statusNikah = 'CERAI_MATI';
-  } else if (/cerai.*hidup/i.test(statusVal || text)) {
-    data.statusNikah = 'CERAI_HIDUP';
-  } else if (/kawin|menikah/i.test(statusVal || text)) {
-    data.statusNikah = 'KAWIN';
+  let statusSearchArea = statusVal || text;
+
+  // Heuristic: check if any standalone line contains status values
+  for (const l of lines) {
+    if (/belum\s*kawin/i.test(l)) {
+      data.statusNikah = 'BELUM_KAWIN';
+      break;
+    } else if (/cerai\s*mati/i.test(l)) {
+      data.statusNikah = 'CERAI_MATI';
+      break;
+    } else if (/cerai\s*hidup/i.test(l)) {
+      data.statusNikah = 'CERAI_HIDUP';
+      break;
+    } else if (/kawin|menikah/i.test(l) && !/status/i.test(l)) {
+      data.statusNikah = 'KAWIN';
+      break;
+    }
+  }
+
+  if (!data.statusNikah) {
+    if (/belum/i.test(statusSearchArea)) {
+      data.statusNikah = 'BELUM_KAWIN';
+    } else if (/cerai.*mati/i.test(statusSearchArea)) {
+      data.statusNikah = 'CERAI_MATI';
+    } else if (/cerai.*hidup/i.test(statusSearchArea)) {
+      data.statusNikah = 'CERAI_HIDUP';
+    } else if (/kawin|menikah|kwn/i.test(statusSearchArea)) {
+      data.statusNikah = 'KAWIN';
+    }
   }
 
   // 6. Extract Alamat, Kelurahan, Kecamatan
-  data.alamat = findValueAfterLabel(lines, /^alamat/i).toUpperCase();
-  data.kelurahan = findValueAfterLabel(lines, /kel.*desa|kelurahan|desa/i).toUpperCase();
-  data.kecamatan = findValueAfterLabel(lines, /kecamatan|kec/i).toUpperCase();
+  let alamatVal = findValueAfterLabel(lines, /^alamat/i);
+  if (!alamatVal) {
+    const idx = lines.findIndex(l => /^alamat/i.test(l));
+    if (idx !== -1 && idx + 1 < lines.length) {
+      alamatVal = lines[idx + 1];
+    }
+  }
+  if (alamatVal) {
+    data.alamat = alamatVal.toUpperCase().trim();
+  }
+
+  // Try to append RT/RW to Alamat if found
+  let rtrwVal = findValueAfterLabel(lines, /rt[-/]*rw/i);
+  if (!rtrwVal) {
+    // Heuristic: search for pattern like 000/000 or digits/digits on any line
+    const rtrwLine = lines.find(l => /\b\d{2,3}\s*\/\s*\d{2,3}\b/.test(l));
+    if (rtrwLine) {
+      const match = rtrwLine.match(/\b\d{2,3}\s*\/\s*\d{2,3}\b/);
+      if (match) rtrwVal = match[0];
+    }
+  }
+  if (rtrwVal) {
+    data.alamat = `${data.alamat} RT/RW ${rtrwVal}`.trim().toUpperCase();
+  }
+
+  // Kelurahan / Desa
+  let kelVal = findValueAfterLabel(lines, /kel.*desa|kelurahan|desa/i);
+  if (!kelVal) {
+    const idx = lines.findIndex(l => /kel.*desa|kelurahan|desa/i.test(l));
+    if (idx !== -1) {
+      for (const offset of [1, -1, -2, 2]) {
+        const checkIdx = idx + offset;
+        if (checkIdx >= 0 && checkIdx < lines.length) {
+          const l = lines[checkIdx];
+          if (!isLabel(l) && !/\d/.test(l) && l.length > 2) {
+            kelVal = l;
+            break;
+          }
+        }
+      }
+    }
+  }
+  if (kelVal) {
+    data.kelurahan = kelVal.toUpperCase().trim();
+  }
+
+  // Kecamatan
+  let kecVal = findValueAfterLabel(lines, /kecamatan|kec/i);
+  if (!kecVal) {
+    const idx = lines.findIndex(l => /kecamatan|kec/i.test(l));
+    if (idx !== -1) {
+      for (const offset of [1, -1, 2]) {
+        const checkIdx = idx + offset;
+        if (checkIdx >= 0 && checkIdx < lines.length) {
+          const l = lines[checkIdx];
+          if (!isLabel(l) && !/\d/.test(l) && l.length > 2) {
+            kecVal = l;
+            break;
+          }
+        }
+      }
+    }
+  }
+  if (kecVal) {
+    data.kecamatan = kecVal.toUpperCase().trim();
+  }
   
   const kabMatch = text.match(/(?:kabupaten|kota)\s+([A-Za-z]+)/i);
   if (kabMatch && kabMatch[1]) {
     data.kabupaten = kabMatch[1].toUpperCase();
+  }
+
+  if (!data.statusNikah) {
+    data.statusNikah = 'BELUM_KAWIN';
   }
 
   // Clean empty strings/nulls
@@ -207,30 +372,112 @@ function parseSHM(text) {
     kecamatan: ''
   };
 
-  // 1. Certificate Number
-  // Typically: "HAK MILIK No. 1234"
-  const shmNoMatch = text.match(/(?:hak\s+milik|no|nomor)\.?\s*(\d{4,8})/i);
-  if (shmNoMatch) {
-    data.nomorSertifikat = shmNoMatch[1];
+  // --- 1. OWNER NAME & CERTIFICATE NUMBER ---
+  const pemegangHakIdx = lines.findIndex(l => /pemegang\s*hak|nama\s*pemilik/i.test(l));
+  if (pemegangHakIdx !== -1) {
+    for (let offset = 1; offset <= 5; offset++) {
+      const checkIdx = pemegangHakIdx + offset;
+      if (checkIdx < lines.length) {
+        const l = lines[checkIdx];
+        if (!data.nomorSertifikat) {
+          const numMatch = l.match(/\b(\d{4,8})\b/);
+          if (numMatch) {
+            data.nomorSertifikat = numMatch[1];
+            continue;
+          }
+        }
+        if (!data.atasNama) {
+          const isLabelLine = /no|nomor|desa|kel|kec|kab|tgl|tanggal/i.test(l);
+          const hasDigits = /\d/.test(l);
+          if (!isLabelLine && !hasDigits && l.length > 3) {
+            data.atasNama = l.toUpperCase().replace(/[^A-Z\s.,']/g, '').trim();
+          }
+        }
+      }
+    }
   }
 
-  // 2. Owner Name (Atas Nama / Pemegang Hak)
-  const ownerVal = findValueAfterLabel(lines, /pemegang\s*hak|atas\s*nama|nama\s*pemilik/i);
-  if (ownerVal) {
-    data.atasNama = ownerVal.toUpperCase().replace(/[^A-Z\s.,']/g, '');
+  if (!data.nomorSertifikat) {
+    const shmNoMatch = text.match(/(?:hak\s+milik|no|nomor)\.?\s*(\d{4,8})/i);
+    if (shmNoMatch) {
+      data.nomorSertifikat = shmNoMatch[1];
+    }
   }
 
-  // 3. Land Area (Luas Tanah)
-  // Typically: "Luas 150 m2" or "Luas: 150 M2"
+  if (!data.atasNama) {
+    const ownerVal = findValueAfterLabel(lines, /pemegang\s*hak|atas\s*nama|nama\s*pemilik/i);
+    if (ownerVal) {
+      data.atasNama = ownerVal.toUpperCase().replace(/[^A-Z\s.,']/g, '');
+    }
+  }
+
+  // --- 2. LAND AREA ---
   const areaMatch = text.match(/luas\b.*?(\d+(?:\.\d+)?)\s*(?:m2|m²|meter|m\b)/i);
   if (areaMatch) {
     data.luasTanah = parseFloat(areaMatch[1]) || 0;
+  } else {
+    const luasIdx = lines.findIndex(l => /luas/i.test(l));
+    if (luasIdx !== -1) {
+      for (let offset = -3; offset <= 3; offset++) {
+        const checkIdx = luasIdx + offset;
+        if (checkIdx >= 0 && checkIdx < lines.length) {
+          const l = lines[checkIdx];
+          const m = l.match(/(\d+(?:\.\d+)?)\s*(?:m2|m²|meter|m\b)/i) || l.match(/\b(\d{2,6})\s*[mM]2/);
+          if (m) {
+            data.luasTanah = parseFloat(m[1]) || 0;
+            break;
+          }
+        }
+      }
+    }
   }
 
-  // 4. Location Details
-  data.kecamatan = findValueAfterLabel(lines, /kecamatan|kec/i).toUpperCase();
-  const desa = findValueAfterLabel(lines, /kelurahan|desa|kel/i).toUpperCase();
-  const kab = findValueAfterLabel(lines, /kabupaten|kab/i).toUpperCase();
+  // --- 3. LOCATION / ADDRESS ---
+  let kecamatanVal = findValueAfterLabel(lines, /kecamatan|kec/i);
+  if (!kecamatanVal) {
+    const kecMatch = text.match(/kec(?:amatan)?\.?\s+([A-Z\s]{3,20})/i);
+    if (kecMatch) kecamatanVal = kecMatch[1];
+  }
+  data.kecamatan = kecamatanVal ? kecamatanVal.trim().toUpperCase() : '';
+
+  // Desa / Kelurahan
+  let desaVal = findValueAfterLabel(lines, /kelurahan|desa|kel/i);
+  if (!desaVal) {
+    const desaIdx = lines.findIndex(l => /desa\/kel/i.test(l) || /kelurahan|desa|kel/i.test(l));
+    if (desaIdx !== -1 && desaIdx + 1 < lines.length) {
+      const nextLine = lines[desaIdx + 1];
+      if (!/tgl|tanggal|NIB|letak/i.test(nextLine) && nextLine.length > 2) {
+        desaVal = nextLine;
+      }
+    }
+  }
+  const desa = desaVal ? desaVal.trim().toUpperCase() : '';
+
+  // Kabupaten
+  let kabVal = '';
+  const kabIdx = lines.findIndex(l => /kabupaten\s*[\/\-]\s*kota|kabupaten|kota/i.test(l));
+  if (kabIdx !== -1) {
+    const line = lines[kabIdx];
+    if (line.includes(':')) {
+      const parts = line.split(':');
+      if (parts[1] && parts[1].trim().length > 2) {
+        kabVal = parts[1].trim();
+      }
+    }
+    if (!kabVal && kabIdx + 1 < lines.length) {
+      const nextLine = lines[kabIdx + 1];
+      if (!/tgl|tanggal|ketua|penerbitan/i.test(nextLine) && nextLine.length > 2) {
+        kabVal = nextLine;
+      }
+    }
+  }
+  if (!kabVal) {
+    kabVal = findValueAfterLabel(lines, /kabupaten|kab/i);
+    if (kabVal && (kabVal.toUpperCase().includes('/ KOTA') || kabVal.trim() === '/')) {
+      kabVal = '';
+    }
+  }
+  const kab = kabVal ? kabVal.trim().toUpperCase() : '';
 
   const locationParts = [];
   if (desa) locationParts.push(`DESA ${desa}`);

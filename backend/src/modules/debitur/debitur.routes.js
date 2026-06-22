@@ -9,5 +9,6 @@ router.get('/', ctrl.getAll);
 router.get('/:id', ctrl.getById);
 router.post('/', authorize('ADMIN', 'AO'), auditTrail('debitur'), ctrl.create);
 router.put('/:id', authorize('ADMIN', 'AO'), auditTrail('debitur'), ctrl.update);
+router.delete('/:id', authorize('ADMIN', 'AO'), auditTrail('debitur'), ctrl.remove);
 
 module.exports = router;

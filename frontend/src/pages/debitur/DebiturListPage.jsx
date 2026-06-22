@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Eye, Edit, FileText, ChevronRight } from 'lucide-react';
+import { Plus, Search, Eye, Edit, FileText, ChevronRight, Trash2 } from 'lucide-react';
 import { debiturService } from '../../services';
 import { formatDate, maskNik } from '../../utils/formatters';
 import useAuthStore from '../../store/authStore';
@@ -25,6 +25,17 @@ export default function DebiturListPage() {
   };
 
   useEffect(() => { fetchData(); }, [page, search]);
+
+  const handleDelete = async (id, nama) => {
+    if (window.confirm(`Apakah Anda yakin ingin menghapus debitur ${nama}?`)) {
+      try {
+        await debiturService.delete(id);
+        fetchData();
+      } catch (err) {
+        alert(err.response?.data?.message || 'Gagal menghapus debitur');
+      }
+    }
+  };
 
   const Pagination = () => total > 10 ? (
     <div className="flex items-center justify-between px-4 py-3 border-t border-navy-border">
@@ -86,6 +97,9 @@ export default function DebiturListPage() {
               <button onClick={() => navigate(`/debitur/${d.id}`)} className="btn-ghost p-2"><Eye className="w-4 h-4" /></button>
               <button onClick={() => navigate(`/debitur/${d.id}/edit`)} className="btn-ghost p-2"><Edit className="w-4 h-4" /></button>
               <button onClick={() => navigate(`/pengajuan/tambah?debiturId=${d.id}`)} className="btn-ghost p-2 text-gold"><FileText className="w-4 h-4" /></button>
+              {['ADMIN', 'AO'].includes(user?.role) && (
+                <button onClick={() => handleDelete(d.id, d.nama)} className="btn-ghost p-2 text-red-500 hover:text-red-400 hover:bg-red-500/10"><Trash2 className="w-4 h-4" /></button>
+              )}
             </div>
           </div>
         ))}
@@ -129,6 +143,9 @@ export default function DebiturListPage() {
                       <button onClick={() => navigate(`/debitur/${d.id}`)} className="btn-ghost p-1.5" title="Detail"><Eye className="w-4 h-4" /></button>
                       <button onClick={() => navigate(`/debitur/${d.id}/edit`)} className="btn-ghost p-1.5" title="Edit"><Edit className="w-4 h-4" /></button>
                       <button onClick={() => navigate(`/pengajuan/tambah?debiturId=${d.id}`)} className="btn-ghost p-1.5 text-gold" title="Buat Pengajuan"><FileText className="w-4 h-4" /></button>
+                      {['ADMIN', 'AO'].includes(user?.role) && (
+                        <button onClick={() => handleDelete(d.id, d.nama)} className="btn-ghost p-1.5 text-red-500 hover:text-red-400 hover:bg-red-500/10" title="Hapus"><Trash2 className="w-4 h-4" /></button>
+                      )}
                     </div>
                   </td>
                 </tr>

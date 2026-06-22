@@ -15,7 +15,7 @@ export default function AnalisaProduktifPage() {
     omsetBulan1: 0, omsetBulan2: 0, omsetBulan3: 0,
     hppBulan1: 0, hppBulan2: 0, hppBulan3: 0,
     biayaOpBulan1: 0, biayaOpBulan2: 0, biayaOpBulan3: 0,
-    angsuranPerBulan: 0,
+    angsuranPerBulan: 0, pengurangAngsuran: 0,
   });
 
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
@@ -109,9 +109,15 @@ export default function AnalisaProduktifPage() {
                 </tbody>
               </table>
             </div>
-            <div className="mt-4">
-              <label className="label">Angsuran per Bulan</label>
-              <input type="number" value={form.angsuranPerBulan} onChange={e => update('angsuranPerBulan', e.target.value)} className="input-field text-right max-w-xs" />
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div>
+                <label className="label">Pengurang Angsuran</label>
+                <input type="number" value={form.pengurangAngsuran} onChange={e => update('pengurangAngsuran', e.target.value)} className="input-field text-right" />
+              </div>
+              <div>
+                <label className="label">Angsuran per Bulan</label>
+                <input type="number" value={form.angsuranPerBulan} onChange={e => update('angsuranPerBulan', e.target.value)} className="input-field text-right" />
+              </div>
             </div>
           </div>
 

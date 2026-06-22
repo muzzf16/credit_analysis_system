@@ -142,10 +142,10 @@ Grade: A=90-100 | B=80-89 | C=70-79 | D=60-69 | E=<60
 ## 🔧 TASK SESI INI
 > Isi bagian ini sebelum mulai setiap sesi
 
-- **Task saat ini:** Verifikasi dan deploy integrasi PaddleOCR di backend, memastikan OCR endpoint bisa memproses gambar/PDF di environment server/container dengan Python dan paket `paddleocr`/`paddlepaddle` yang terinstall.
-- **File yang akan diedit:** backend/src/modules/ocr/ocr.service.js, backend/src/modules/ocr/paddleocr_runner.py, backend/Dockerfile (jika perlu), docker-compose.yml (jika perlu)
-- **Output yang diharapkan:** OCR tetap berjalan dari form debitur/agunan/SLIK tanpa mengubah response API, baik untuk gambar maupun PDF.
-- **Modul terkait:** Modul 05 (Analisa Kredit) dan modul OCR shared yang dipakai di debitur, agunan, dan SLIK
+- **Task saat ini:** Menyelesaikan finalisasi fitur cetak / generate dokumen MAK Generator (Phase 3) dan mensinkronkan semua kolom database baru (seperti pengurang_angsuran) dengan script migrasi di PostgreSQL.
+- **File yang akan diedit:** backend/migrations/* dan file terkait modul MAK.
+- **Output yang diharapkan:** MAK bisa dicetak dengan seluruh datanya bersifat dinamis, serta DB schema konsisten dengan migrasi berjalan.
+- **Modul terkait:** Modul 09 (MAK Generator)
 
 ---
 

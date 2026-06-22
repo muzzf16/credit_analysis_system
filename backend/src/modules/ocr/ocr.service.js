@@ -1,24 +1,11 @@
 const { PDFParse } = require('pdf-parse');
 const { parseDocumentText } = require('./parsers');
-const { execFileSync, execSync } = require('child_process');
+const { execFileSync, execSync, execFile } = require('child_process');
+const { promisify } = require('util');
+const execFileAsync = promisify(execFile);
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-
-function getPythonCommand() {
-  const candidates = [process.env.PYTHON_BIN, 'python', 'python3'].filter(Boolean);
-
-  for (const command of candidates) {
-    try {
-      execFileSync(command, ['--version'], { stdio: 'ignore' });
-      return command;
-    } catch (error) {
-      // Try next candidate
-    }
-  }
-
-  throw new Error('Python tidak tersedia untuk menjalankan PaddleOCR.');
-}
 
 function getExtensionFromMime(mimetype = '') {
   const mapping = {
@@ -32,18 +19,29 @@ function getExtensionFromMime(mimetype = '') {
   return mapping[mimetype.toLowerCase()] || '.png';
 }
 
-function runPaddleOcr(imagePath) {
-  const pythonCommand = getPythonCommand();
-  const scriptPath = path.join(__dirname, 'paddleocr_runner.py');
+async function runTesseractOcrAsync(imagePath) {
+  try {
+    // Optimasi gambar KTP/Dokumen untuk Tesseract menggunakan ImageMagick
+    // -colorspace gray: ubah ke hitam putih
+    // -normalize: perbaiki kontras otomatis
+    // -resize 200%: perbesar resolusi agar teks kecil lebih terbaca
+    await execFileAsync('convert', [
+      imagePath, 
+      '-colorspace', 'gray', 
+      '-normalize', 
+      '-resize', '200%', 
+      imagePath
+    ]);
+  } catch (err) {
+    console.warn('ImageMagick preprocessing failed, continuing with raw image', err.message);
+  }
 
   try {
-    return execFileSync(pythonCommand, [scriptPath, imagePath], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe']
-    }).trim();
+    const { stdout } = await execFileAsync('tesseract', [imagePath, 'stdout', '-l', 'ind'], { encoding: 'utf8' });
+    return stdout.trim();
   } catch (error) {
     const details = error.stderr ? error.stderr.toString() : error.message;
-    throw new Error(`PaddleOCR gagal: ${details}`);
+    throw new Error(`Tesseract OCR gagal: ${details}`);
   }
 }
 
@@ -61,7 +59,14 @@ async function processOCR(buffer, type, mimetype = '') {
   try {
     let text = '';
 
-    if (mimetype === 'application/pdf' || type.endsWith('.pdf')) {
+    // Check for PDF signature (%PDF-)
+    const isPdfMagic = buffer.length > 4 && 
+                       buffer[0] === 0x25 && 
+                       buffer[1] === 0x50 && 
+                       buffer[2] === 0x44 && 
+                       buffer[3] === 0x46;
+
+    if (isPdfMagic || mimetype === 'application/pdf' || type.endsWith('.pdf')) {
       if (type === 'slik') {
         console.log(`Extracting text from PDF for type: ${type}`);
         const uint8Array = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
@@ -79,13 +84,24 @@ async function processOCR(buffer, type, mimetype = '') {
         fs.writeFileSync(tmpPdf, buffer);
 
         try {
-          execSync(`pdftoppm -png -l 3 "${tmpPdf}" "${tmpDir}/page"`, { stdio: 'ignore' });
+          const maxPages = type === 'shm' ? 4 : 3;
+          execSync(`pdftoppm -png -r 300 -l ${maxPages} "${tmpPdf}" "${tmpDir}/page"`, { stdio: 'ignore' });
 
           const files = fs.readdirSync(tmpDir).filter(f => f.endsWith('.png')).sort();
-          for (const file of files) {
+          
+          // Proses semua halaman secara paralel/bersamaan
+          const ocrPromises = files.map(async (file) => {
             const imagePath = path.join(tmpDir, file);
-            console.log(`Running PaddleOCR on ${file}...`);
-            const extractedText = runPaddleOcr(imagePath);
+            console.log(`Running Tesseract OCR on ${file} (Parallel)...`);
+            const extractedText = await runTesseractOcrAsync(imagePath);
+            return extractedText;
+          });
+
+          // Tunggu semua halaman selesai diproses
+          const results = await Promise.all(ocrPromises);
+          
+          // Gabungkan teks (urutan array hasil Promise.all sesuai dengan urutan file)
+          for (const extractedText of results) {
             text += `\n${extractedText}`;
           }
         } catch (execErr) {
@@ -97,13 +113,13 @@ async function processOCR(buffer, type, mimetype = '') {
         console.log('PDF OCR extraction completed. Raw text length:', text.length);
       }
     } else {
-      console.log(`Starting PaddleOCR process for type: ${type}`);
+      console.log(`Starting Tesseract OCR process for type: ${type}`);
       const ext = getExtensionFromMime(mimetype);
       const tmpPath = path.join(os.tmpdir(), `ocr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`);
       fs.writeFileSync(tmpPath, buffer);
 
       try {
-        text = runPaddleOcr(tmpPath);
+        text = await runTesseractOcrAsync(tmpPath);
       } finally {
         try {
           fs.unlinkSync(tmpPath);
@@ -115,6 +131,9 @@ async function processOCR(buffer, type, mimetype = '') {
       console.log('OCR text extraction completed. Raw text length:', text.length);
     }
     
+    // Debug log for OCR text
+    console.log(`[OCR DEBUG] Type: ${type}, Raw Text:\n${text}`);
+
     // Parse the extracted text
     const parsedData = parseDocumentText(text, type);
     

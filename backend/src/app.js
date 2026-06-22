@@ -57,7 +57,7 @@ app.use((err, req, res, next) => {
 
 // ─── START SERVER ─────────────────────────────────────────────────────────
 const PORT = config.port;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════════════════╗
 ║  BPR BAPERA BATANG — Sistem Analisa Kredit      ║
@@ -67,5 +67,8 @@ app.listen(PORT, () => {
 ╚══════════════════════════════════════════════════╝
   `);
 });
+
+// Set timeout to 5 minutes (300000 ms) for long-running OCR tasks
+server.setTimeout(300000);
 
 module.exports = app;

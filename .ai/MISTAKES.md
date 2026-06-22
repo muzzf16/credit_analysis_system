@@ -138,3 +138,30 @@
 - ✅ **Benar:** Pastikan environment backend memiliki Python dan paket Python yang dibutuhkan sebelum deploy. Di Docker, install dependency Python di image/container.
 - 📁 **File:** backend/src/modules/ocr/ocr.service.js, backend/src/modules/ocr/paddleocr_runner.py
 - 🔒 **Aturan:** Setiap perubahan OCR harus mempertimbangkan dependency runtime (Node + Python) dan dokumentasi instalasi di server/container.
+
+---
+
+## [2026-06-22] Frontend Axios Hardcoded Timeout
+- ❌ **Dicoba:** Meningkatkan batas timeout Nginx dan Node.js Express menjadi 5 menit agar pemrosesan OCR PDF tidak terputus, tapi melupakan konfigurasi di Axios Frontend.
+- 🐛 **Masalah:** Frontend (browser) otomatis memutus request HTTP tepat di menit ke-2 (120.000 ms) karena *hardcoded timeout*. Muncul error seakan backend *down*, padahal backend sedang bekerja memproses PDF.
+- ✅ **Benar:** Jika menaikkan limit timeout untuk operasi berat (heavy task) di sisi Server/Backend, pastikan nilai `timeout` di *HTTP Client* (Frontend Axios) ikut dinaikkan.
+- 📁 **File terdampak:** frontend/src/services/index.js
+- 🔒 **Aturan baru:** Selalu sinkronkan Nginx Proxy Timeout, Backend Timeout, dan Axios Frontend Timeout pada endpoint yang melakukan pemrosesan berat.
+
+---
+
+## [2026-06-22] Docker Exec salah Container dan User Database
+- ❌ **Dicoba:** Menjalankan `docker compose exec db psql -U bpr_user -d bpr_db` untuk memodifikasi database schema (ALTER TABLE).
+- 🐛 **Masalah:** Container bernama `db` tidak ada (yang benar `postgres`), dan role/user `bpr_user` tidak eksis karena credential sesungguhnya diatur oleh file `.env` (yakni `postgres` & `bpr_bapera`).
+- ✅ **Benar:** Periksa nama service container dengan `docker compose ps` dan lihat credentials DB di file `.env` sebelum menjalankan `psql` command. Eksekusi menjadi `docker compose exec postgres psql -U postgres -d bpr_bapera`.
+- 📁 **File terdampak:** -
+- 🔒 **Aturan baru:** Jangan pernah berasumsi credential database tanpa mengecek file `.env` dan `docker-compose.yml` terlebih dahulu!
+
+---
+
+## [2026-06-22] Frontend Cache Issue setelah Update & Rebuild
+- ❌ **Dicoba:** Hanya melakukan `docker compose up -d --build frontend` untuk menerapkan perubahan UI React ke server, berasumsi user otomatis melihat perubahannya saat reload.
+- 🐛 **Masalah:** Browser meng-cache file `index.html` dari Nginx (karena Nginx tidak punya konfigurasi Cache-Control default). User terus melihat "hardcode" versi lama di layar meski codebase sudah berulang kali diperbarui dan container direbuild.
+- ✅ **Benar:** Menambahkan header `Cache-Control "no-store, no-cache, must-revalidate"` pada block `location /` di `nginx.conf` khusus untuk memastikan `index.html` selalu ditarik baru oleh browser setiap di-_refresh_.
+- 📁 **File terdampak:** frontend/nginx.conf
+- 🔒 **Aturan baru:** Saat mendeploy perubahan frontend SPA, selalu pastikan konfigurasi proxy atau web server memiliki instruksi anti-cache minimal untuk file root index HTML-nya.

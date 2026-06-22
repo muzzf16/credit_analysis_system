@@ -41,7 +41,7 @@ nginx/                    → Reverse proxy config
 
 ## Formula Kredit — TIDAK BOLEH DIUBAH
 ```
-DSR  = (Total Cicilan / Total Penghasilan) × 100   → Maks 40%
+DSR  = (Total Cicilan / Total Penghasilan) × 100   → Maks 95%
 RPC  = (Disposable Income / Angsuran) × 100         → Min 110%
 DSCR = Laba Bersih / Total Kewajiban                → Min 1.2
 

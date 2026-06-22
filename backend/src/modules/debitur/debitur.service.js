@@ -167,4 +167,32 @@ async function update(id, data, userId) {
   }
 }
 
-module.exports = { getAll, getById, create, update };
+async function remove(id) {
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+    
+    const pengajuan = await client.query('SELECT id FROM pengajuan WHERE debitur_id = $1 LIMIT 1', [id]);
+    if (pengajuan.rows.length > 0) {
+      throw { status: 400, message: 'Tidak dapat menghapus debitur karena memiliki data pengajuan.' };
+    }
+
+    await client.query('DELETE FROM pasangan WHERE debitur_id = $1', [id]);
+    await client.query('DELETE FROM pekerjaan WHERE debitur_id = $1', [id]);
+    await client.query('DELETE FROM usaha WHERE debitur_id = $1', [id]);
+    await client.query("DELETE FROM dokumen WHERE referensi_id = $1 AND referensi_tipe = 'DEBITUR'", [id]);
+    
+    const res = await client.query('DELETE FROM debitur WHERE id = $1', [id]);
+    if (res.rowCount === 0) throw { status: 404, message: 'Debitur tidak ditemukan.' };
+
+    await client.query('COMMIT');
+    return true;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = { getAll, getById, create, update, remove };
