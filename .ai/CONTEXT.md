@@ -142,10 +142,10 @@ Grade: A=90-100 | B=80-89 | C=70-79 | D=60-69 | E=<60
 ## 🔧 TASK SESI INI
 > Isi bagian ini sebelum mulai setiap sesi
 
-- **Task saat ini:** Menyelesaikan finalisasi fitur cetak / generate dokumen MAK Generator (Phase 3) dan mensinkronkan semua kolom database baru (seperti pengurang_angsuran) dengan script migrasi di PostgreSQL.
-- **File yang akan diedit:** backend/migrations/* dan file terkait modul MAK.
-- **Output yang diharapkan:** MAK bisa dicetak dengan seluruh datanya bersifat dinamis, serta DB schema konsisten dengan migrasi berjalan.
-- **Modul terkait:** Modul 09 (MAK Generator)
+- **Task saat ini:** Verifikasi kesiapan modul MAK Generator (Phase 3) untuk skenario ekspor ke PDF, atau mulai kerjakan inisiasi setup dasar untuk modul EWS (Early Warning System) Phase 5.
+- **File yang akan diedit:** Fitur PDF export di frontend (contohnya `react-to-print` atau `jspdf`) ATAU file terkait EWS backend & frontend.
+- **Output yang diharapkan:** Kesepakatan langkah selanjutnya; apakah langsung lompat ke Phase 5 (EWS) atau melengkapi fungsi "Print/Export to PDF" pada MAK Preview.
+- **Modul terkait:** Modul 09 (MAK Generator) / Modul 11 (EWS)
 
 ---
 

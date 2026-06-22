@@ -165,3 +165,12 @@
 - ✅ **Benar:** Menambahkan header `Cache-Control "no-store, no-cache, must-revalidate"` pada block `location /` di `nginx.conf` khusus untuk memastikan `index.html` selalu ditarik baru oleh browser setiap di-_refresh_.
 - 📁 **File terdampak:** frontend/nginx.conf
 - 🔒 **Aturan baru:** Saat mendeploy perubahan frontend SPA, selalu pastikan konfigurasi proxy atau web server memiliki instruksi anti-cache minimal untuk file root index HTML-nya.
+
+---
+
+## [2026-06-22] ReferenceError Setelah Refactoring Variabel
+- ❌ **Dicoba:** Mengubah tipe data/nama variabel yang cukup sering dipakai di berbagai baris (misal `totalPlafonSlik` menjadi `totalsSlik.totalPlafon`) lewat script regex atau replacement parsial.
+- 🐛 **Masalah:** Ada beberapa pemanggilan lama (`totalPlafonSlik`) yang tertinggal di baris lain di UI yang luput diganti, sehingga UI *crash* (`ReferenceError: totalPlafonSlik is not defined`).
+- ✅ **Benar:** Selalu lakukan *global search* atau cek `grep_search` terhadap nama variabel lama di seluruh file setelah refactoring sebelum menyimpan atau mendeploy file tersebut, guna memastikan tidak ada string variabel *orphan* yang tertinggal.
+- 📁 **File terdampak:** frontend/src/pages/mak/MakPreviewPage.jsx
+- 🔒 **Aturan baru:** DILARANG keras merefactor nama variabel tanpa mengecek tuntas *semua references* dari variabel tersebut.

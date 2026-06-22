@@ -179,6 +179,24 @@
 
 ---
 
+## Sesi 10 — 2026-06-22 | Model: Antigravity | Modul: MAK
+**Goal:** Menyelaraskan layout MAK yang lama dengan desain/tabel baru (SLIK Pasangan, struktur penilaian jaminan, dll) dan update environment Docker production.
+**Yang selesai:**
+- [x] Merombak struktur tabel Pemohon dan menambahkan tabel SLIK Pasangan di `MakPreviewPage.jsx`.
+- [x] Menyempurnakan layout Aspek Keuangan, agunan tanah & bangunan, serta total nilai likuidasi agar rapi dan dinamis.
+- [x] Membuat blok tanda tangan komite pemutus kredit beserta persetujuannya agar dinamis dan sesuai dengan format standar BPR.
+- [x] Melakukan `docker compose up -d --build` untuk menerapkan kode terbaru ke dalam Docker container.
+- [x] Menjalankan skrip migrasi kolom `pengurang_angsuran` (`005_add_pengurang_angsuran.sql`) langsung dari dalam environment container backend (`docker compose exec backend npm run migrate`).
+**Keputusan baru:** Template layout UI MAK sepenuhnya disesuaikan dengan desain screenshot yang diberikan dengan agregasi tabel SLIK baru.
+**File yang diubah:** frontend/src/pages/mak/MakPreviewPage.jsx, backend/migrations/005_add_pengurang_angsuran.sql
+**File JANGAN disentuh:** -
+**Bug yang ditemukan:** ReferenceError karena kelupaan mengganti variabel lama (`totalPlafonSlik`) menjadi variabel bersarang yang baru (`totalsSlik.totalPlafon`) di UI rendering.
+**Hindari sesi berikutnya:** Menghapus atau merefactor nama-nama state variable/object tanpa melakukan pencarian global/full-file replacement untuk memastikan tidak ada pemanggilan variabel usang yang tersisa.
+**Task berikutnya:** Cek fungsionalitas MAK Generator apakah perlu integrasi simpan PDF atau lanjut ke modul EWS (Phase 5).
+**Kode yang perlu ditempel:** -
+
+---
+
 ## ════════════════════════════════════
 ## PROGRESS TRACKER PER MODUL
 ## ════════════════════════════════════
