@@ -127,10 +127,8 @@ export default function MakPreviewPage() {
       const rateTahunan = Number(item.sukuBunga || 0);
       if (plafon > 0 && rateTahunan > 0 && typeof tenorBulan === 'number' && tenorBulan > 0) {
         const rateBulanan = (rateTahunan / 100) / 12;
-        angsuranAnuitas = (plafon * rateBulanan * Math.pow(1 + rateBulanan, tenorBulan)) / (Math.pow(1 + rateBulanan, tenorBulan) - 1);
-        if (isNaN(angsuranAnuitas) || !isFinite(angsuranAnuitas)) {
-          angsuranAnuitas = 0;
-        }
+        const calculated = (plafon * rateBulanan * Math.pow(1 + rateBulanan, tenorBulan)) / (Math.pow(1 + rateBulanan, tenorBulan) - 1);
+        angsuranAnuitas = isNaN(calculated) || !isFinite(calculated) ? 0 : Math.round(calculated);
       }
 
       return {
@@ -171,9 +169,17 @@ export default function MakPreviewPage() {
   const totalPenghasilan = isKonsumtif ? parseFloat(financialAnalisa.total_penghasilan || 0) : parseFloat(financialAnalisa.laba_bersih || 0);
   const rpcPercent = 90;
   const rpcAmount = (totalPenghasilan * rpcPercent) / 100;
-  const angsuranEksisting = totalAngsuranSlikAll || (isKonsumtif ? parseFloat(financialAnalisa.cicilan_existing || 0) : 0);
-  const pengurangAngsuran = parseFloat(financialAnalisa.pengurang_angsuran || parseFloat(financialAnalisa.biaya_hidup || 0));
-  const sisaPendapatan = rpcAmount - (angsuranEksisting + pengurangAngsuran);
+  const angsuranEksisting = isKonsumtif ? parseFloat(financialAnalisa.cicilan_existing || 0) : (totalAngsuranSlikAll || 0);
+  const pengurangAngsuran = isKonsumtif ? parseFloat(financialAnalisa.pengurang_angsuran || 0) : 0;
+  const biayaHidup = isKonsumtif
+    ? (parseFloat(financialAnalisa.listrik || 0) +
+       parseFloat(financialAnalisa.air || 0) +
+       parseFloat(financialAnalisa.transportasi || 0) +
+       parseFloat(financialAnalisa.pendidikan || 0) +
+       parseFloat(financialAnalisa.kebutuhan_rumah_tangga || 0) +
+       parseFloat(financialAnalisa.pengeluaran_lain || 0))
+    : 0;
+  const sisaPendapatan = rpcAmount - (angsuranEksisting + biayaHidup + pengurangAngsuran);
   
   const angsuranDiajukan = isKonsumtif ? parseFloat(financialAnalisa.angsuran_diajukan || 0) : parseFloat(pengajuan.angsuran_perbulan || 0);
   const prosentaseAngsuran = totalPenghasilan > 0 ? (angsuranDiajukan / totalPenghasilan) * 100 : 0;
@@ -491,17 +497,24 @@ export default function MakPreviewPage() {
                       <tr>
                         <td className="py-0.5">E. Angsuran Kredit (apabila ada)</td>
                         <td></td>
-                        <td className="text-right">Rp {angsuranEksisting.toLocaleString('id-ID')}</td>
+                        <td className="text-right">{angsuranEksisting > 0 ? `Rp ${angsuranEksisting.toLocaleString('id-ID')}` : 'Rp -'}</td>
                       </tr>
                       <tr>
                         <td className="py-0.5">F. Biaya Hidup</td>
                         <td></td>
-                        <td className="text-right">Rp {pengurangAngsuran.toLocaleString('id-ID')}</td>
+                        <td className="text-right">Rp {biayaHidup.toLocaleString('id-ID')}</td>
                       </tr>
+                      {pengurangAngsuran > 0 && (
+                        <tr>
+                          <td className="py-0.5">F.2. Pengurang Angsuran</td>
+                          <td></td>
+                          <td className="text-right">Rp {pengurangAngsuran.toLocaleString('id-ID')}</td>
+                        </tr>
+                      )}
                       <tr>
-                        <td className="py-0.5">G. Total Angsuran Kredit dan biaya hidup</td>
+                        <td className="py-0.5">G. Total Angsuran Kredit, biaya hidup, dan pengurang</td>
                         <td></td>
-                        <td className="text-right py-0.5">Rp {(angsuranEksisting + pengurangAngsuran).toLocaleString('id-ID')}</td>
+                        <td className="text-right py-0.5">Rp {(angsuranEksisting + biayaHidup + pengurangAngsuran).toLocaleString('id-ID')}</td>
                       </tr>
                       <tr className="font-bold border-t border-gray-300">
                         <td className="py-1">H. Sisa pendapatan per bulan</td>

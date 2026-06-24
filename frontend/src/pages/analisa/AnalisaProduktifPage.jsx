@@ -50,12 +50,22 @@ export default function AnalisaProduktifPage() {
     setLoading(false);
   };
 
-  const ri = (label, field) => (
-    <div>
-      <label className="label text-xs">{label}</label>
-      <input type="number" value={form[field]} onChange={e => update(field, e.target.value)} className="input-field text-right text-sm" />
-    </div>
-  );
+  const ri = (label, field) => {
+    const displayValue = form[field] ? form[field].toLocaleString('id-ID') : '';
+    const handleChange = (e) => {
+      const rawValue = e.target.value.replace(/\D/g, '');
+      update(field, rawValue);
+    };
+    return (
+      <div>
+        <label className="label text-xs">{label}</label>
+        <div className="relative">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-xs">Rp</span>
+          <input type="text" value={displayValue} onChange={handleChange} className="input-field text-right text-sm pl-7" />
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -112,11 +122,17 @@ export default function AnalisaProduktifPage() {
             <div className="mt-4 grid grid-cols-2 gap-4">
               <div>
                 <label className="label">Pengurang Angsuran</label>
-                <input type="number" value={form.pengurangAngsuran} onChange={e => update('pengurangAngsuran', e.target.value)} className="input-field text-right" />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">Rp</span>
+                  <input type="text" value={form.pengurangAngsuran ? form.pengurangAngsuran.toLocaleString('id-ID') : ''} onChange={e => update('pengurangAngsuran', e.target.value.replace(/\D/g, ''))} className="input-field text-right pl-10" />
+                </div>
               </div>
               <div>
                 <label className="label">Angsuran per Bulan</label>
-                <input type="number" value={form.angsuranPerBulan} onChange={e => update('angsuranPerBulan', e.target.value)} className="input-field text-right" />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">Rp</span>
+                  <input type="text" value={form.angsuranPerBulan ? form.angsuranPerBulan.toLocaleString('id-ID') : ''} onChange={e => update('angsuranPerBulan', e.target.value.replace(/\D/g, ''))} className="input-field text-right pl-10" />
+                </div>
               </div>
             </div>
           </div>

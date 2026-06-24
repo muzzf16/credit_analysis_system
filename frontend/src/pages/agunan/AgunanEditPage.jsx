@@ -170,7 +170,7 @@ export default function AgunanEditPage() {
             <label className="btn-primary flex items-center gap-2 cursor-pointer">
               {ocrLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
               {ocrLoading ? 'Memproses OCR...' : 'Unggah Dokumen'}
-              <input type="file" accept="image/*,application/pdf" onChange={handleOcr} className="hidden" disabled={ocrLoading} />
+              <input type="file" accept="image/*,.pdf,application/pdf" onChange={handleOcr} className="hidden" disabled={ocrLoading} />
             </label>
           </div>
 

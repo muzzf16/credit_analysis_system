@@ -3,11 +3,18 @@
  * Konsumtif & Produktif
  */
 
-// ─── ANGSURAN (FLAT) ───────────────────────────────────────────────────────
-function hitungAngsuran(plafon, bungaPerTahun, jangkaWaktuBulan) {
-  const bungaBulan = bungaPerTahun / 12 / 100;
+// ─── ANGSURAN (FLAT & ANUITAS) ────────────────────────────────────────────────
+function hitungAngsuran(plafon, bungaPerTahun, jangkaWaktuBulan, sistemAngsuran = 'FLAT') {
+  if (plafon <= 0 || bungaPerTahun <= 0 || jangkaWaktuBulan <= 0) return 0;
+  const rateBulanan = bungaPerTahun / 100 / 12;
+  
+  if (sistemAngsuran === 'ANUITAS') {
+    return Math.round((plafon * rateBulanan * Math.pow(1 + rateBulanan, jangkaWaktuBulan)) / (Math.pow(1 + rateBulanan, jangkaWaktuBulan) - 1));
+  }
+  
+  // Default: FLAT
   const pokok = plafon / jangkaWaktuBulan;
-  const bunga = plafon * bungaBulan;
+  const bunga = plafon * rateBulanan;
   return Math.round(pokok + bunga);
 }
 
@@ -19,29 +26,45 @@ function hitungKonsumtif(data) {
     listrik = 0, air = 0, transportasi = 0,
     pendidikan = 0, cicilanExisting = 0, pengurangAngsuran = 0, kebutuhanRumahTangga = 0, pengeluaranLain = 0,
     angsuranDiajukan = 0, plafon = 0, bungaPerTahun = 0, jangkaWaktuBulan = 0,
+    useDsr = false, sistemAngsuran = 'FLAT'
   } = data;
 
   const totalPenghasilan = gajiPokok + tunjangan + bonusRata + usahaSampingan + pendapatanPasangan;
   const totalPengeluaranTanpaCicilan = listrik + air + transportasi + pendidikan + kebutuhanRumahTangga + pengeluaranLain;
   const totalCicilan = cicilanExisting + pengurangAngsuran + angsuranDiajukan;
-  const totalPengeluaran = totalPengeluaranTanpaCicilan + totalCicilan;
+  const totalPengeluaran = totalPengeluaranTanpaCicilan + cicilanExisting;
 
   const disposableIncome = totalPenghasilan - totalPengeluaranTanpaCicilan - (cicilanExisting + pengurangAngsuran);
 
-  // DSR = (Total Cicilan semua / Total Penghasilan) * 100 — max 40%
+  // DSR = (Total Cicilan semua / Total Penghasilan) * 100
   const dsr = totalPenghasilan > 0 ? (totalCicilan / totalPenghasilan) * 100 : 0;
+
+  // Tentukan Max DSR berdasarkan Total Penghasilan (Tiered DSR)
+  let maxDsr = 40;
+  if (totalPenghasilan <= 5000000) maxDsr = 30;
+  else if (totalPenghasilan <= 15000000) maxDsr = 40;
+  else if (totalPenghasilan <= 50000000) maxDsr = 50;
+  else maxDsr = 60;
 
   // RPC = Disposable Income / Angsuran Diajukan * 100 — min 110%
   const rpc = angsuranDiajukan > 0 ? (disposableIncome / angsuranDiajukan) * 100 : 0;
 
   // Maximum kredit berdasarkan disposable income (95% of disposable income)
   const maxAngsuran = disposableIncome * 0.95;
-  const angsuranEfektif = plafon > 0 ? hitungAngsuran(plafon, bungaPerTahun, jangkaWaktuBulan) : angsuranDiajukan;
+  const angsuranEfektif = plafon > 0 ? hitungAngsuran(plafon, bungaPerTahun, jangkaWaktuBulan, sistemAngsuran) : angsuranDiajukan;
   const maxKredit = bungaPerTahun > 0 && jangkaWaktuBulan > 0
-    ? Math.max(0, Math.floor((maxAngsuran / hitungAngsuran(1000000, bungaPerTahun, jangkaWaktuBulan)) * 1000000))
+    ? Math.max(0, Math.floor((maxAngsuran / hitungAngsuran(1000000, bungaPerTahun, jangkaWaktuBulan, sistemAngsuran)) * 1000000))
     : maxAngsuran * jangkaWaktuBulan;
 
-  const layak = dsr <= 40 && rpc >= 110;
+  const layak = useDsr ? (dsr <= maxDsr && rpc >= 110) : (rpc >= 110);
+
+  let keterangan = 'Debitur memenuhi syarat kelayakan kredit konsumtif.';
+  if (!layak) {
+    if (useDsr && dsr > maxDsr) keterangan = `DSR (${dsr.toFixed(2)}%) melebihi maksimal ${maxDsr}%. `;
+    else keterangan = '';
+    
+    if (rpc < 110) keterangan += `RPC (${rpc.toFixed(2)}%) kurang dari 110%.`;
+  }
 
   return {
     totalPenghasilan,
@@ -49,13 +72,13 @@ function hitungKonsumtif(data) {
     totalCicilan,
     disposableIncome,
     dsr: parseFloat(dsr.toFixed(2)),
+    maxDsr,
+    useDsr,
     rpc: parseFloat(rpc.toFixed(2)),
     angsuranEfektif,
     maxKredit,
     statusKelayakan: layak ? 'LAYAK' : 'TIDAK_LAYAK',
-    keterangan: !layak
-      ? `${dsr > 40 ? 'DSR melebihi 40%. ' : ''}${rpc < 110 ? 'RPC kurang dari 110%.' : ''}`
-      : 'Debitur memenuhi syarat kelayakan kredit konsumtif.',
+    keterangan: keterangan.trim(),
   };
 }
 

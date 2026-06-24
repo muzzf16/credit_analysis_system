@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Calculator, Save, Loader2, ArrowLeft, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { analisaService, slikService } from '../../services';
+import { analisaService, slikService, pengajuanService } from '../../services';
 import { formatRupiah, formatPercent } from '../../utils/formatters';
 
 export default function AnalisaKonsumtifPage() {
@@ -10,6 +10,7 @@ export default function AnalisaKonsumtifPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [useDsr, setUseDsr] = useState(false);
 
   const [form, setForm] = useState({
     gajiPokok: 0, tunjangan: 0, bonusRata: 0, usahaSampingan: 0, pendapatanPasangan: 0,
@@ -22,8 +23,17 @@ export default function AnalisaKonsumtifPage() {
 
     const loadData = async () => {
       try {
-        // 1. Fetch SLIK data to compute total installment
+        // 1. Fetch SLIK data and Pengajuan data
         let slikInstallment = 0;
+        let angsuranDariPengajuan = 0;
+
+        try {
+          const pRes = await pengajuanService.getById(pengajuanId);
+          if (pRes.data?.data?.angsuran_perbulan) {
+            angsuranDariPengajuan = Number(pRes.data.data.angsuran_perbulan);
+          }
+        } catch(e) { console.error("Failed to load pengajuan", e); }
+
         try {
           const slikRes = await slikService.getByPengajuanId(pengajuanId);
           const slikData = slikRes.data?.data;
@@ -71,20 +81,23 @@ export default function AnalisaKonsumtifPage() {
               pengurangAngsuran: Number(data.pengurang_angsuran || 0),
               kebutuhanRumahTangga: Number(data.kebutuhan_rumah_tangga || 0),
               pengeluaranLain: Number(data.pengeluaran_lain || 0),
-              angsuranDiajukan: Number(data.angsuran_diajukan || 0),
+              angsuranDiajukan: Number(data.angsuran_diajukan) > 0 ? Number(data.angsuran_diajukan) : angsuranDariPengajuan || 0,
             });
+            setUseDsr(data.use_dsr !== undefined ? data.use_dsr : false);
           } else {
-            // No analysis yet, set default cicilanExisting from SLIK
+            // No analysis yet, set default
             setForm(prev => ({
               ...prev,
-              cicilanExisting: Math.round(slikInstallment)
+              cicilanExisting: Math.round(slikInstallment),
+              angsuranDiajukan: angsuranDariPengajuan
             }));
           }
         } catch (err) {
-          // If analysis service fails or returns 404, set default from SLIK
+          // If analysis service fails or returns 404, set default
           setForm(prev => ({
             ...prev,
-            cicilanExisting: Math.round(slikInstallment)
+            cicilanExisting: Math.round(slikInstallment),
+            angsuranDiajukan: angsuranDariPengajuan
           }));
         }
       } catch (err) {
@@ -102,15 +115,24 @@ export default function AnalisaKonsumtifPage() {
     const totalPenghasilan = form.gajiPokok + form.tunjangan + form.bonusRata + form.usahaSampingan + form.pendapatanPasangan;
     const totalPengeluaranBase = form.listrik + form.air + form.transportasi + form.pendidikan + form.kebutuhanRumahTangga + form.pengeluaranLain;
     const totalCicilan = form.cicilanExisting + form.pengurangAngsuran + form.angsuranDiajukan;
-    const totalPengeluaran = totalPengeluaranBase + totalCicilan;
+    const totalPengeluaran = totalPengeluaranBase + form.cicilanExisting;
     const disposableIncome = totalPenghasilan - totalPengeluaranBase - (form.cicilanExisting + form.pengurangAngsuran);
     const dsr = totalPenghasilan > 0 ? (totalCicilan / totalPenghasilan) * 100 : 0;
+    
+    let maxDsr = 40;
+    if (totalPenghasilan <= 5000000) maxDsr = 30;
+    else if (totalPenghasilan <= 15000000) maxDsr = 40;
+    else if (totalPenghasilan <= 50000000) maxDsr = 50;
+    else maxDsr = 60;
+
     const rpc = form.angsuranDiajukan > 0 ? (disposableIncome / form.angsuranDiajukan) * 100 : 0;
     const maxAngsuran = disposableIncome * 0.95;
-    const layak = dsr <= 40 && rpc >= 110 && form.angsuranDiajukan > 0;
+    const layak = useDsr 
+      ? (dsr <= maxDsr && rpc >= 110 && form.angsuranDiajukan > 0) 
+      : (rpc >= 110 && form.angsuranDiajukan > 0);
 
-    return { totalPenghasilan, totalPengeluaran, totalCicilan, disposableIncome, dsr, rpc, maxAngsuran, layak };
-  }, [form]);
+    return { totalPenghasilan, totalPengeluaran, totalCicilan, disposableIncome, dsr, maxDsr, rpc, maxAngsuran, layak };
+  }, [form, useDsr]);
 
   const handleAutoFillPengeluaran = () => {
     const totalPenghasilan = form.gajiPokok + form.tunjangan + form.bonusRata + form.usahaSampingan + form.pendapatanPasangan;
@@ -144,19 +166,34 @@ export default function AnalisaKonsumtifPage() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      await analisaService.saveKonsumtif({ ...form, pengajuanId });
+      await analisaService.saveKonsumtif({ ...form, useDsr, pengajuanId });
       setSaved(true);
     } catch (err) { alert(err.response?.data?.message || 'Gagal menyimpan'); }
     setLoading(false);
   };
 
-  const renderInput = (label, field) => (
-    <div>
-      <label className="label">{label}</label>
-      <input type="number" value={form[field]} onChange={e => update(field, e.target.value)}
-        className="input-field text-right" placeholder="0" />
-    </div>
-  );
+  const renderInput = (label, field) => {
+    const displayValue = form[field] ? form[field].toLocaleString('id-ID') : '';
+    const handleChange = (e) => {
+      const rawValue = e.target.value.replace(/\D/g, '');
+      update(field, rawValue);
+    };
+    return (
+      <div>
+        <label className="label">{label}</label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">Rp</span>
+          <input 
+            type="text" 
+            value={displayValue} 
+            onChange={handleChange}
+            className="input-field text-right pl-10" 
+            placeholder="0" 
+          />
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -211,7 +248,6 @@ export default function AnalisaKonsumtifPage() {
               {renderInput('Pengurang Angsuran', 'pengurangAngsuran')}
               {renderInput('Kebutuhan Rumah Tangga', 'kebutuhanRumahTangga')}
               {renderInput('Pengeluaran Lain', 'pengeluaranLain')}
-              {renderInput('Angsuran Diajukan', 'angsuranDiajukan')}
             </div>
           </div>
         </div>
@@ -226,13 +262,23 @@ export default function AnalisaKonsumtifPage() {
               <hr className="border-navy-border" />
               <ResultRow label="Disposable Income" value={formatRupiah(calc.disposableIncome)} highlight />
               <ResultRow label="Max Angsuran (95%)" value={formatRupiah(calc.maxAngsuran)} />
+              
+              <div className="pt-2">
+                {renderInput('Angsuran Diajukan', 'angsuranDiajukan')}
+              </div>
               <hr className="border-navy-border" />
 
               {/* DSR */}
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-400">DSR</span>
-                <span className={`text-sm font-bold ${calc.dsr <= 40 ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {formatPercent(calc.dsr)} {calc.dsr <= 40 ? '✓' : '✗'} (max 40%)
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-400" title="Aktifkan/Matikan aturan DSR">DSR</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={useDsr} onChange={(e) => setUseDsr(e.target.checked)} className="sr-only peer" />
+                    <div className="w-7 h-4 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                  </label>
+                </div>
+                <span className={`text-sm font-bold ${!useDsr ? 'text-slate-400' : (calc.dsr <= calc.maxDsr ? 'text-emerald-400' : 'text-red-400')}`}>
+                  {formatPercent(calc.dsr)} {!useDsr ? '(Diabaikan)' : (calc.dsr <= calc.maxDsr ? '✓' : '✗')} {useDsr && `(max ${calc.maxDsr}%)`}
                 </span>
               </div>
 

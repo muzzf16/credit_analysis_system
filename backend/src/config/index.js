@@ -7,4 +7,6 @@ module.exports = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   encryptionKey: process.env.ENCRYPTION_KEY || '00000000000000000000000000000000',
+  ocrEngine: process.env.OCR_ENGINE || 'lfm',
+  lfmApiUrl: process.env.LFM_API_URL || 'http://localhost:1976',
 };

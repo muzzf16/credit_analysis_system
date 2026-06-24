@@ -75,12 +75,12 @@ async function getById(id) {
 
 async function create(data, userId) {
   const nomorPengajuan = await generateNomor();
-  const { debiturId, jenisKredit, tujuanKredit, plafonDiajukan, jangkaWaktuBulan, sukuBunga, angsuranPerbulan } = data;
+  const { debiturId, jenisKredit, tujuanKredit, plafonDiajukan, jangkaWaktuBulan, sukuBunga, angsuranPerbulan, sistemAngsuran } = data;
 
   const result = await db.query(
-    `INSERT INTO pengajuan (nomor_pengajuan, debitur_id, jenis_kredit, tujuan_kredit, plafon_diajukan, jangka_waktu_bulan, suku_bunga, angsuran_perbulan, status, ao_id, created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'DIAJUKAN',$9,$9) RETURNING *`,
-    [nomorPengajuan, debiturId, toStr(jenisKredit), toStr(tujuanKredit), toNum(plafonDiajukan), toInt(jangkaWaktuBulan), toNum(sukuBunga), toNum(angsuranPerbulan), userId]
+    `INSERT INTO pengajuan (nomor_pengajuan, debitur_id, jenis_kredit, tujuan_kredit, plafon_diajukan, jangka_waktu_bulan, suku_bunga, angsuran_perbulan, sistem_angsuran, status, ao_id, created_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'DIAJUKAN',$10,$10) RETURNING *`,
+    [nomorPengajuan, debiturId, toStr(jenisKredit), toStr(tujuanKredit), toNum(plafonDiajukan), toInt(jangkaWaktuBulan), toNum(sukuBunga), toNum(angsuranPerbulan), toStr(sistemAngsuran || 'FLAT'), userId]
   );
   return result.rows[0];
 }

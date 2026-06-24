@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect } from 'react';
-import { Save, Loader2, ArrowLeft, Camera } from 'lucide-react';
-import { debiturService, ocrService } from '../../services';
+import { Save, Loader2, ArrowLeft, Camera, Sparkles } from 'lucide-react';
+import { debiturService, ocrService, documentService } from '../../services';
 import { GENDER, STATUS_NIKAH, PENDIDIKAN, JENIS_PEKERJAAN } from '../../utils/constants';
 
 const TABS = ['Data Pribadi', 'Pasangan', 'Pekerjaan', 'Usaha'];
@@ -22,6 +22,7 @@ export default function DebiturFormPage() {
 
   const updateField = (setter) => (field, value) => setter(prev => ({ ...prev, [field]: value }));
   const [ocrLoading, setOcrLoading] = useState(false);
+  const [vlmEngine, setVlmEngine] = useState(null); // 'lfm' | 'tesseract' | null
 
   useEffect(() => {
     if (id) {
@@ -65,38 +66,89 @@ export default function DebiturFormPage() {
     }
   }, [id]);
 
+  // Normalisasi nilai jenis_kelamin dari VLM (LAKI-LAKI/PEREMPUAN) ke state gender (L/P)
+  const normalizeGender = (val) => {
+    if (!val) return '';
+    const v = val.toUpperCase();
+    if (v === 'LAKI-LAKI' || v === 'LAKI' || v === 'L') return 'L';
+    if (v === 'PEREMPUAN' || v === 'P') return 'P';
+    return val;
+  };
+
+  // Normalisasi status_perkawinan dari VLM ke statusNikah state
+  const normalizeStatus = (val) => {
+    if (!val) return '';
+    const v = val.toUpperCase();
+    if (v.includes('BELUM')) return 'BELUM_KAWIN';
+    if (v === 'KAWIN' || v.includes('KAWIN')) return 'KAWIN';
+    if (v.includes('CERAI HIDUP')) return 'CERAI_HIDUP';
+    if (v.includes('CERAI MATI')) return 'CERAI_MATI';
+    return val;
+  };
+
+  // Normalisasi tanggal lahir ke YYYY-MM-DD untuk input type="date"
+  const normalizeDate = (val) => {
+    if (!val) return '';
+    const cleanVal = val.trim();
+    // Cari pola DD-MM-YYYY atau DD/MM/YYYY di dalam string (non-anchored)
+    const dmyMatch = cleanVal.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+    if (dmyMatch) {
+      const [, d, m, y] = dmyMatch;
+      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+    // Jika VLM mengembalikan format YYYY-MM-DD
+    const ymdMatch = cleanVal.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+    if (ymdMatch) {
+      const [, y, m, d] = ymdMatch;
+      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+    // Fallback original value
+    return cleanVal;
+  };
+
   const handleOcrScan = async (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setOcrLoading(true);
     setError('');
+    setVlmEngine(null);
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('type', type);
 
     try {
-      const res = await ocrService.process(formData);
-      const extracted = res.data.data.data;
-      
       if (type === 'ktp') {
+        // Gunakan endpoint VLM baru
+        const res = await documentService.extractKtp(formData);
+        const result = res.data.data;
+        const d = result.data || {};
+        setVlmEngine(result.engineUsed || 'lfm');
+
         setPribadi(prev => ({
           ...prev,
-          nik: extracted.nik || prev.nik,
-          nama: extracted.nama || prev.nama,
-          tempatLahir: extracted.tempatLahir || prev.tempatLahir,
-          tanggalLahir: extracted.tanggalLahir || prev.tanggalLahir,
-          gender: extracted.gender || prev.gender,
-          statusNikah: extracted.statusNikah || prev.statusNikah,
-          alamat: extracted.alamat || prev.alamat,
-          kelurahan: extracted.kelurahan || prev.kelurahan,
-          kecamatan: extracted.kecamatan || prev.kecamatan,
-          kabupaten: extracted.kabupaten || prev.kabupaten,
+          nik:          d.nik          || prev.nik,
+          nama:         d.nama         || prev.nama,
+          tempatLahir:  d.tempat_lahir || prev.tempatLahir,
+          tanggalLahir: normalizeDate(d.tanggal_lahir) || prev.tanggalLahir,
+          gender:       normalizeGender(d.jenis_kelamin) || prev.gender,
+          statusNikah:  normalizeStatus(d.status_perkawinan) || prev.statusNikah,
+          agama:        d.agama        || prev.agama,
+          alamat:       d.alamat       || prev.alamat,
+          kelurahan:    d.kelurahan    || prev.kelurahan,
+          kecamatan:    d.kecamatan    || prev.kecamatan,
         }));
       } else if (type === 'surat_nikah') {
-        const suamiMatches = extracted.suamiNama && pribadi.nama && 
+        // Tetap pakai OCR lama untuk Surat Nikah (belum ada endpoint VLM)
+        const legacyFormData = new FormData();
+        legacyFormData.append('file', file);
+        legacyFormData.append('type', type);
+        const res = await ocrService.process(legacyFormData);
+        const extracted = res.data.data.data;
+        setVlmEngine('tesseract');
+
+        const suamiMatches = extracted.suamiNama && pribadi.nama &&
           (extracted.suamiNama.includes(pribadi.nama) || pribadi.nama.includes(extracted.suamiNama));
-        
+
         if (suamiMatches) {
           setPasangan(prev => ({
             ...prev,
@@ -114,7 +166,7 @@ export default function DebiturFormPage() {
         }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal memproses OCR dokumen.');
+      setError(err.response?.data?.message || 'Gagal memproses dokumen. Pastikan file foto jelas dan tidak terlalu besar.');
     } finally {
       setOcrLoading(false);
     }
@@ -181,13 +233,29 @@ export default function DebiturFormPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 flex items-center justify-between bg-navy-light/30 border border-navy-border p-4 rounded-xl">
               <div>
-                <h3 className="text-sm font-semibold text-gold">Scan KTP Otomatis (OCR)</h3>
-                <p className="text-xs text-slate-400">Unggah foto KTP debitur untuk mengisi formulir secara otomatis</p>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-gold">Scan KTP Otomatis</h3>
+                  {vlmEngine === 'lfm' && (
+                    <span className="inline-flex items-center gap-1 text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full px-2 py-0.5">
+                      <Sparkles className="w-3 h-3" /> VLM AI
+                    </span>
+                  )}
+                  {vlmEngine === 'tesseract' && (
+                    <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full px-2 py-0.5">OCR</span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {ocrLoading
+                    ? 'Model AI sedang menganalisa gambar KTP...'
+                    : vlmEngine
+                    ? `✓ Berhasil diekstrak via ${vlmEngine === 'lfm' ? 'VLM AI' : 'OCR Tesseract'}. Periksa dan lengkapi field di bawah.`
+                    : 'Unggah foto KTP debitur untuk mengisi formulir secara otomatis'}
+                </p>
               </div>
-              <label className="btn-primary flex items-center gap-2 cursor-pointer">
+              <label className={`btn-primary flex items-center gap-2 cursor-pointer ${ocrLoading ? 'opacity-70 cursor-not-allowed' : ''}`}>
                 {ocrLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-                {ocrLoading ? 'Memproses OCR...' : 'Unggah KTP'}
-                <input type="file" accept="image/*,application/pdf" onChange={(e) => handleOcrScan(e, 'ktp')} className="hidden" disabled={ocrLoading} />
+                {ocrLoading ? 'Menganalisa...' : 'Scan KTP'}
+                <input type="file" accept="image/*,.pdf,application/pdf" onChange={(e) => handleOcrScan(e, 'ktp')} className="hidden" disabled={ocrLoading} />
               </label>
             </div>
 
@@ -220,7 +288,7 @@ export default function DebiturFormPage() {
               <label className="btn-primary flex items-center gap-2 cursor-pointer">
                 {ocrLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                 {ocrLoading ? 'Memproses OCR...' : 'Unggah Surat Nikah'}
-                <input type="file" accept="image/*,application/pdf" onChange={(e) => handleOcrScan(e, 'surat_nikah')} className="hidden" disabled={ocrLoading} />
+                <input type="file" accept="image/*,.pdf,application/pdf" onChange={(e) => handleOcrScan(e, 'surat_nikah')} className="hidden" disabled={ocrLoading} />
               </label>
             </div>
 

@@ -166,7 +166,7 @@ export default function AgunanFormPage() {
               <label className="btn-primary flex items-center gap-2 cursor-pointer">
                 {ocrLoadingIndex === i ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                 {ocrLoadingIndex === i ? 'Memproses OCR...' : 'Unggah Dokumen'}
-                <input type="file" accept="image/*,application/pdf" onChange={(e) => handleAgunanOcrScan(e, i)} className="hidden" disabled={ocrLoadingIndex !== null} />
+                <input type="file" accept="image/*,.pdf,application/pdf" onChange={(e) => handleAgunanOcrScan(e, i)} className="hidden" disabled={ocrLoadingIndex !== null} />
               </label>
             </div>
 

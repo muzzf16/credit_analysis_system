@@ -110,9 +110,10 @@ Grade: A=90-100 | B=80-89 | C=70-79 | D=60-69 | E=<60
 | 08 | Workflow Approval | ✅ Selesai | Phase 1 |
 | 09 | MAK Generator | 🔄 In Progress | Phase 3 |
 | 10 | Dashboard Kredit | ✅ Selesai | Phase 1 |
-| 11 | EWS | 🔄 Belum mulai | Phase 5 |
+| 11 | EWS | ⬜ Belum mulai | Phase 5 |
 | 12 | Laporan | 🔄 Basic only | Phase 1 |
-| 13 | AI Credit Analyst | 🔄 Belum mulai | Phase 4 |
+| 13 | AI Credit Analyst | ⬜ Belum mulai | Phase 4 |
+| 14 | Document AI (VLM) | ✅ Production-ready | Phase 3 |
 
 ---
 
@@ -125,6 +126,8 @@ Grade: A=90-100 | B=80-89 | C=70-79 | D=60-69 | E=<60
 - Styling: TailwindCSS only — no inline styles
 - Error handling: try/catch + response standar `{ success, message, data }`
 - Semua perubahan data tercatat di tabel `audit_logs`
+- **VLM llama-server**: `LFM_API_URL` di `docker-compose.yml` harus pakai IP gateway docker (`172.22.0.1:1976`) — JANGAN `localhost` karena tidak bisa diakses dari dalam container
+- **3 llama-server** berjalan di host: port 1976 (VLM/LFM2.5-VL), port 1977 (embedding/nomic), port 1978 (LLM/Qwen3.5)
 
 ---
 
@@ -136,16 +139,19 @@ Grade: A=90-100 | B=80-89 | C=70-79 | D=60-69 | E=<60
 - ❌ Jangan upload file langsung ke filesystem — wajib MinIO
 - ❌ Jangan ubah struktur response API yang sudah ada (bisa break frontend)
 - ❌ Jangan hapus atau rename tabel yang sudah ada di production
+- ❌ Jangan gunakan `localhost` untuk URL service yang berjalan di host — dari container harus pakai `172.22.0.1` atau `host.docker.internal`
+- ❌ Setelah `docker cp` file ke container, wajib `docker restart` sebelum test — Node.js cache module lama di RAM
 
 ---
 
 ## 🔧 TASK SESI INI
 > Isi bagian ini sebelum mulai setiap sesi
 
-- **Task saat ini:** Verifikasi kesiapan modul MAK Generator (Phase 3) untuk skenario ekspor ke PDF, atau mulai kerjakan inisiasi setup dasar untuk modul EWS (Early Warning System) Phase 5.
-- **File yang akan diedit:** Fitur PDF export di frontend (contohnya `react-to-print` atau `jspdf`) ATAU file terkait EWS backend & frontend.
-- **Output yang diharapkan:** Kesepakatan langkah selanjutnya; apakah langsung lompat ke Phase 5 (EWS) atau melengkapi fungsi "Print/Export to PDF" pada MAK Preview.
-- **Modul terkait:** Modul 09 (MAK Generator) / Modul 11 (EWS)
+- **Task saat ini:** [TULIS TASK BARU DI SINI]
+- **File kunci yang sudah diubah sesi sebelumnya:**
+  - `frontend/src/pages/analisa/AnalisaKonsumtifPage.jsx` — refactor renderInput ke format currency
+  - `frontend/src/pages/analisa/AnalisaProduktifPage.jsx` — refactor renderInput & input form ke format currency
+  - `.ai/SESSION_LOG.md` & `.ai/MISTAKES.md`
 
 ---
 
@@ -171,7 +177,6 @@ Ikuti aturan berikut dengan ketat:
 
 ## 🎯 TASK HARI INI
 ```
-[Contoh: "Tambahkan validasi DSR di komponen AnalisaKonsumtif.jsx.
-Jika DSR > 40%, tampilkan warning merah di bawah field.
-Jangan ubah file lain selain AnalisaKonsumtif.jsx."]
+BUG FIX KRITIS (Dari Sesi 17): 
+Perbaiki proses penyimpanan data di `AnalisaKonsumtifPage.jsx` agar memuat data `suku_bunga`, `jangka_waktu_bulan`, `plafon_diajukan`, dan `sistem_angsuran` dari API Pengajuan, kemudian state form tersebut disertakan ke dalam `analisaService.saveKonsumtif` agar backend (`financialFormulas.js`) dapat mengkalkulasi "Max Kredit" dengan benar. Jangan lupa perhatikan nilai return default bila `0`.
 ```

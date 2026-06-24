@@ -21,6 +21,15 @@
 
 ---
 
+## [2026-06-24] Bug Perhitungan Max Kredit di Analisa Konsumtif
+- ❌ **Yang dicoba:** Menambahkan parameter `sistemAngsuran` pada backend `hitungKonsumtif` untuk menghitung `maxKredit` dengan fungsi anuitas/flat.
+- 🐛 **Yang salah:** Frontend `AnalisaKonsumtifPage.jsx` ternyata tidak mengirimkan `sistemAngsuran`, `bungaPerTahun`, `jangkaWaktuBulan`, atau `plafon` ke backend `saveKonsumtif`. Akibatnya, `bungaPerTahun` bernilai `0` dan backend menggunakan default `FLAT`, sehingga nilai `maxKredit` bisa salah (bahkan bernilai 0).
+- ✅ **Yang benar:** Frontend `AnalisaKonsumtifPage.jsx` perlu memuat (load) data `suku_bunga`, `jangka_waktu_bulan`, `plafon_diajukan`, dan `sistem_angsuran` dari `pengajuanService`, menyimpannya ke `form`, dan mengirimkannya kembali saat `analisaService.saveKonsumtif`.
+- 📁 **File terdampak:** `frontend/src/pages/analisa/AnalisaKonsumtifPage.jsx`
+- 🔒 **Aturan baru:** Saat backend function bergantung pada field pengajuan (plafon, tenor, bunga, sistem_angsuran), pastikan field tersebut di-pass down dari frontend atau diambil ulang dari DB di backend.
+
+---
+
 ## ════════════════════════════════════
 ## KESALAHAN UMUM — STACK (PRE-FILLED)
 ## ════════════════════════════════════
@@ -174,3 +183,57 @@
 - ✅ **Benar:** Selalu lakukan *global search* atau cek `grep_search` terhadap nama variabel lama di seluruh file setelah refactoring sebelum menyimpan atau mendeploy file tersebut, guna memastikan tidak ada string variabel *orphan* yang tertinggal.
 - 📁 **File terdampak:** frontend/src/pages/mak/MakPreviewPage.jsx
 - 🔒 **Aturan baru:** DILARANG keras merefactor nama variabel tanpa mengecek tuntas *semua references* dari variabel tersebut.
+
+---
+
+## [2026-06-24] Greediness pada Regex Pembersihan OCR Fallback
+- ❌ **Yang dicoba:** Menggunakan regex greedy `[A-Z\s\/.-]*` di bagian akhir untuk membersihkan karakter spasi atau tanda baca setelah kata kunci (seperti `LAHIR` atau `TEMPAT`).
+- 🐛 **Yang salah:** Karakter `[A-Z]` mencakup semua huruf besar, sehingga regex greedy tersebut ikut menghapus seluruh teks hasil ekstraksi sesudah kata kunci (misal `"TEMPATTGL LAHIR  BATANG"` terhapus sepenuhnya menjadi `""` karena `"BATANG"` cocok dengan `[A-Z]`).
+- ✅ **Yang benar:** Batasi karakter pembersih setelah kata kunci hanya untuk spasi atau tanda baca menggunakan `[\s\/.-]*` alih-alih menyertakan huruf alfabet `[A-Z]`.
+- 📁 **File terdampak:** backend/src/services/document-ai/document-ai.service.js
+- 🔒 **Aturan baru:** Hindari penggunaan pencocokan greedy `[A-Z]*` atau `.*` untuk membersihkan teks jika teks tersebut diikuti oleh data dinamis yang bertipe alfabet. Gunakan character class yang spesifik (seperti spasi dan tanda baca).
+
+
+---
+
+## [2026-06-24] Docker Container Tidak Bisa Akses Host Service via `localhost`
+
+- ❌ **Yang dicoba:** Konfigurasi `LFM_API_URL=http://localhost:1976` di backend untuk memanggil llama-server yang berjalan di host machine.
+- 🐛 **Yang salah:** Dari dalam Docker container, `localhost` merujuk ke network loopback *container itu sendiri*, bukan host machine. Akibatnya semua request ke VLM LFM gagal dengan connection refused, dan sistem selalu fallback ke Tesseract OCR secara diam-diam tanpa error yang jelas di UI.
+- ✅ **Yang benar:** Gunakan IP gateway docker bridge (`172.22.0.1`) atau `host.docker.internal` (dengan `extra_hosts: host.docker.internal:host-gateway`) untuk menjangkau service di host dari dalam container. Tambahkan env var eksplisit di `docker-compose.yml` — jangan andalkan fallback nilai default dari `config/index.js` karena fallback tersebut menggunakan `localhost`.
+- 📁 **File terdampak:** `docker-compose.yml`, `.env`, `backend/src/config/index.js`
+- 🔒 **Aturan baru:** Setiap service eksternal (AI model, queue, cache, dll.) yang berjalan di host harus dikonfigurasi eksplisit di `docker-compose.yml` dengan URL yang dapat dijangkau dari dalam container. JANGAN hardcode `localhost` untuk service di luar container.
+
+---
+
+## [2026-06-24] Perubahan Kode Node.js Tidak Efektif Tanpa Restart Container
+
+- ❌ **Yang dicoba:** Menyalin file JS yang sudah dimodifikasi ke dalam container yang sedang berjalan (`docker cp`) langsung dan menjalankan test tanpa restart.
+- 🐛 **Yang salah:** Node.js menyimpan cache module yang sudah di-require. File yang di-copy baru akan digunakan, tapi proses Node.js yang sudah berjalan masih menggunakan versi lama dari RAM cache. Test menunjukkan hasil dari kode lama.
+- ✅ **Yang benar:** Setelah `docker cp` file baru ke container, selalu lakukan `docker restart <container>` sebelum menjalankan test agar Node.js memuat ulang module dari disk.
+- 📁 **File terdampak:** `backend/src/services/document-ai/document-ai.service.js`
+- 🔒 **Aturan baru:** Urutan yang benar: (1) edit file di host → (2) `docker cp` ke container → (3) `docker restart <container>` → (4) baru test.
+
+---
+
+## [2026-06-24] Field Mapping Mismatch antara Backend VLM Output dan Frontend State
+
+- ❌ **Yang terjadi:** Frontend menggunakan field names `camelCase` (`tempatLahir`, `tanggalLahir`, `gender`, `statusNikah`) sesuai konvensi React state, tapi VLM backend mengembalikan `snake_case` (`tempat_lahir`, `tanggal_lahir`, `jenis_kelamin`, `status_perkawinan`). Selain itu, nilai enum juga berbeda: VLM output `"LAKI-LAKI"` sementara state React mengharapkan `"L"`.
+- 🐛 **Dampak:** Semua field autofill kosong meski VLM berhasil mengekstrak — `extracted.tempatLahir` selalu `undefined` karena key yang benar adalah `extracted.tempat_lahir`.
+- ✅ **Yang benar:** Buat helper functions normalisasi di frontend sebelum mengassign ke state: `normalizeGender()` (`LAKI-LAKI` → `L`), `normalizeStatus()` (`KAWIN` → `KAWIN`, `BELUM KAWIN` → `BELUM_KAWIN`), `normalizeDate()` (`DD-MM-YYYY` → `YYYY-MM-DD`). Mapping field eksplisit: `d.tempat_lahir → tempatLahir`, `d.jenis_kelamin → normalizeGender() → gender`.
+- 📁 **File terdampak:** `frontend/src/pages/debitur/DebiturFormPage.jsx`
+- 🔒 **Aturan baru:** Setiap kali backend mengembalikan data baru (terutama dari AI/VLM), selalu cek format field names dan nilai enum **sebelum** assign ke React state. Jangan berasumsi format sama.
+
+## [2026-06-24] File Picker Browser Menyembunyikan PDF
+- ❌ **Yang dicoba:** Menggunakan `accept="image/*,application/pdf"` pada elemen `<input type="file">`.
+- 🐛 **Yang salah:** Pada beberapa sistem operasi (seperti Windows), kombinasi `image/*` dengan MIME type spesifik `application/pdf` membuat file picker terkadang menyembunyikan file PDF secara default.
+- ✅ **Yang benar:** Tambahkan ekstensi file secara eksplisit `.pdf` di dalam atribut accept: `accept="image/*,.pdf,application/pdf"`.
+- 📁 **File terdampak:** `frontend/src/pages/debitur/DebiturFormPage.jsx` dan file lain dengan fitur OCR.
+- 🔒 **Aturan baru:** Jika input file diharapkan menerima gambar dan PDF, pastikan atribut `accept` menyertakan string literal ekstensi `.pdf` agar tidak membatasi OS file picker.
+
+## [2026-06-24] Input Currency dengan type="number"
+- ❌ **Yang dicoba:** Menggunakan `<input type="number">` untuk field input nilai mata uang (Rupiah).
+- 🐛 **Yang salah:** `type="number"` tidak mendukung formatting pemisah ribuan (titik/koma) saat pengguna mengetik, sehingga menyulitkan pembacaan angka besar (misal 2500000).
+- ✅ **Yang benar:** Gunakan `<input type="text">`, lalu format `value` dengan `.toLocaleString('id-ID')` dan parsing ulang input numerik di `onChange` menggunakan `.replace(/\D/g, '')`.
+- 📁 **File terdampak:** Komponen input form (terutama di Analisa).
+- 🔒 **Aturan baru:** Semua input yang mewakili nilai uang (Rupiah) WAJIB menggunakan text input dengan formatting otomatis ribuan (titik) demi kenyamanan UI/UX pengguna.

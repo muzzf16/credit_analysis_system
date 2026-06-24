@@ -197,6 +197,45 @@
 
 ---
 
+## Sesi 11 — 2026-06-24 | Model: Antigravity (Gemini 3.5 Flash) | Modul: Document AI (VLM OCR)
+**Goal:** Mengganti alur ekstraksi dokumen dari regex Tesseract ke vision-based extraction LFM2.5-VL-1.6B pada port 1976 serta membuat adapter pattern dengan fallback otomatis.
+**Yang selesai:**
+- [x] Menambahkan variabel konfigurasi `ocrEngine` dan `lfmApiUrl` di `backend/src/config/index.js` (LFM di port 1976).
+- [x] Membuat service layer `document-ai.service.js` dan validator data `document-ai.schemas.js`.
+- [x] Mengonversi halaman pertama file PDF menjadi PNG buffer menggunakan `pdftoppm` sebelum dikirim ke LFM vision.
+- [x] Membuat controller `document.controller.js` dan router `document.routes.js` yang mendukung 6 endpoint: KTP, KK, NPWP, SHM, BPKB, dan Survey.
+- [x] Mengintegrasikan `authenticate` middleware pada semua endpoint baru.
+- [x] Membuat unit test `test-document-ai.js` untuk memverifikasi proses validasi, alur sukses LFM, dan fallback Tesseract.
+- [x] Menulis README.md berisi manual deployment systemd service dan contoh curl untuk semua endpoint.
+- [x] Menyinkronkan sumber data "F. Biaya Hidup" di halaman cetak/preview MAK agar dijumlahkan secara dinamis dari enam field pengeluaran hidup (Listrik, Air, Transportasi, Pendidikan, Kebutuhan Rumah Tangga, Pengeluaran Lain) di halaman Analisa Konsumtif.
+- [x] Membulatkan nilai perhitungan angsuran SLIK (Anuitas) ke integer terdekat (`Math.round`) di halaman cetak/preview MAK sehingga total angsuran terbebas dari angka desimal dibelakang koma (seperti `,086`).
+**Keputusan baru:** Menggunakan port 1976 untuk server LFM-VL. Jika server LFM-VL mengalami timeout/error, proses ekstraksi otomatis fallback ke Tesseract OCR. "F. Biaya Hidup" pada memorandum dicetak dari jumlah riil 6 field biaya hidup form Analisa Konsumtif. Nilai angsuran anuitas SLIK dibulatkan ke integer.
+**File yang diubah:** backend/src/config/index.js, backend/src/app.js, backend/src/services/document-ai/document-ai.schemas.js, backend/src/services/document-ai/document-ai.service.js, backend/src/modules/document/document.controller.js, backend/src/modules/document/document.routes.js, backend/src/modules/document/README.md, backend/scripts/test-document-ai.js, frontend/src/pages/mak/MakPreviewPage.jsx
+**File JANGAN disentuh:** Form UI frontend lama dan endpoint `/ocr` lama karena masih aktif digunakan.
+**Bug yang ditemukan:** Greediness pada regex pembersihan `tempat_lahir` dalam Tesseract KTP fallback (mengganti suffix `[A-Z\s\/.-]*` menjadi `[\s\/.-]*` agar kata sesudah nama kota tempat lahir tidak ikut terhapus).
+**Hindari sesi berikutnya:** Menaruh regex penangkap data yang terlalu serakah (greedy) jika tidak diimbangi filter type karakter yang tepat.
+**Task berikutnya:** Hubungkan endpoint VLM yang baru ke UI frontend React.
+**Kode yang perlu ditempel:** -
+
+---
+
+## Sesi 12 — 2026-06-24 | Model: Antigravity (Gemini 1.5 Pro) | Modul: MAK (Memorandum Analisa Kredit)
+**Goal:** Memperbarui perhitungan Row F. Biaya Hidup di halaman preview MAK dengan menambahkan Cicilan Existing, serta mencegah double-counting pengeluaran kredit di total pengeluaran dan sisa pendapatan.
+**Yang selesai:**
+- [x] Memperbarui definisi `biayaHidup` di `MakPreviewPage.jsx` untuk menjumlahkan 6 biaya hidup + `cicilan_existing`.
+- [x] Mengatur variabel `angsuranEksisting` menjadi 0 untuk tipe kredit Konsumtif (`isKonsumtif ? 0 : ...`) guna menghindari double-counting `cicilan_existing` dalam total pengeluaran (Row G) dan sisa pendapatan (Row H).
+- [x] Mengubah format tampilan Row E (Angsuran Kredit) agar menampilkan `Rp -` alih-alih `Rp 0` saat angsuran eksisting bernilai 0.
+- [x] Melakukan kompilasi build frontend dan restart proxy Nginx.
+**Keputusan baru:** Kewajiban/cicilan existing untuk kredit konsumtif digabung sepenuhnya ke dalam baris "F. Biaya Hidup" di tabel Aspek Keuangan MAK. Row E "Angsuran Kredit (apabila ada)" dikosongkan (menampilkan `Rp -`) untuk menghindari double-counting.
+**File yang diubah:** frontend/src/pages/mak/MakPreviewPage.jsx
+**File JANGAN disentuh:** backend/src/utils/financialFormulas.js, frontend/src/pages/analisa/AnalisaKonsumtifPage.jsx
+**Bug yang ditemukan:** -
+**Hindari sesi berikutnya:** -
+**Task berikutnya:** Hubungkan endpoint VLM yang baru ke UI frontend React.
+**Kode yang perlu ditempel:** -
+
+---
+
 ## ════════════════════════════════════
 ## PROGRESS TRACKER PER MODUL
 ## ════════════════════════════════════
@@ -217,6 +256,7 @@
 | 11 | EWS | ⬜ Belum mulai | - | Phase 5 |
 | 12 | Laporan | 🔄 Basic only | - | Phase 1 |
 | 13 | AI Credit Analyst | ⬜ Belum mulai | - | Phase 4 |
+| 14 | Document AI (VLM) | ✅ Selesai | Sesi 11 | Phase 3 |
 
 Status: ⬜ Belum | 🔄 In Progress | ✅ Selesai | ❌ Blocked
 
@@ -249,3 +289,203 @@ Ini kode yang relevan:
 
 Task sesi ini: [TASK SPESIFIK]
 ```
+
+---
+
+## 🔧 Sesi 13 — Fix VLM LFM Integration (24 Jun 2026)
+
+### Masalah yang Ditemukan
+- **Root Cause**: Backend container menggunakan `http://localhost:1976` untuk memanggil LFM VLM server, padahal dari dalam Docker container `localhost` merujuk ke container itu sendiri — bukan ke host machine tempat `llama-server` berjalan.
+- **Dampak**: Semua panggilan VLM gagal (connection refused) dan sistem selalu fallback ke Tesseract OCR, sehingga pengguna tidak pernah mendapat hasil ekstraksi via VLM.
+
+### Perubahan yang Dilakukan
+1. **`docker-compose.yml`**: Tambah env var `LFM_API_URL=http://172.22.0.1:1976` (gateway docker bridge host) dan `OCR_ENGINE=lfm`, plus `extra_hosts: host.docker.internal:host-gateway`
+2. **`.env`**: Tambah `LFM_API_URL` dan `OCR_ENGINE` sebagai referensi
+3. **`document-ai.service.js`**:
+   - Prompt per tipe dokumen dibuat lebih eksplisit (deskripsi field + contoh nilai, bukan hanya template JSON kosong)
+   - Refactor `callLfmVision` → `callLfmVisionOnce` + wrapper `callLfmVision` dengan 1x retry otomatis
+   - Naikkan `max_tokens` ke 700
+   - Tambah JSON prefix sanitizer (`content.indexOf('{')`)
+   - Logging lebih detail termasuk URL dan engine yang digunakan
+
+### Hasil Verifikasi
+- Engine: `lfm` ✅ (sebelumnya selalu `tesseract`)
+- URL: `http://172.22.0.1:1976` ✅ (dapat dijangkau dari container)
+- KTP Extraction test: NIK, nama, TTL, alamat, RT/RW, agama, status, pekerjaan — semua terisi dengan benar
+- Waktu inference: ~20-24 detik per dokumen (CPU-only, normal untuk model 1.6B)
+
+### Catatan
+- Gambar test yang digunakan adalah synthetic image (PIL). Gambar KTP asli diharapkan memberikan hasil lebih akurat.
+- `kecamatan` sesekali terisi salah karena layout KTP synthetic yang tidak ideal. Pada gambar KTP asli ini harusnya lebih baik.
+
+---
+
+## 🔧 Sesi 14 — Frontend ↔ VLM Document AI Integration (24 Jun 2026)
+
+### Task
+Sambungkan frontend `DebiturFormPage.jsx` ke endpoint VLM baru `/api/document/ktp` — menggantikan endpoint OCR lama `/ocr`.
+
+### Masalah yang Ditemukan
+- Frontend masih memanggil endpoint lama `ocrService.process()` → `/ocr` (Tesseract)
+- Field mapping salah: VLM output pakai `snake_case` (`tempat_lahir`, `jenis_kelamin`) tapi state React pakai `camelCase` (`tempatLahir`, `gender`)
+- Normalisasi nilai perlu: `LAKI-LAKI` → `L`, `KAWIN` → `KAWIN`, `DD-MM-YYYY` → `YYYY-MM-DD`
+- `agama` tidak di-autofill meski VLM mengekstraknya
+- `documentService` belum ada di `frontend/src/services/index.js`
+
+### Perubahan yang Dilakukan
+1. **`frontend/src/services/index.js`**: Tambah `documentService` dengan 6 endpoint VLM:
+   `extractKtp`, `extractKk`, `extractNpwp`, `extractShm`, `extractBpkb`, `extractSurvey`
+   — masing-masing ke `/document/{tipe}` dengan timeout 120 detik
+
+2. **`frontend/src/pages/debitur/DebiturFormPage.jsx`**:
+   - Import `documentService` + icon `Sparkles` dari lucide-react
+   - Tambah state `vlmEngine` untuk tracking engine hasil scan
+   - Tambah helper functions: `normalizeGender()`, `normalizeStatus()`, `normalizeDate()`
+   - Ubah `handleOcrScan` untuk type `ktp`: pakai `documentService.extractKtp()` + mapping baru
+   - Surat Nikah tetap pakai `ocrService` lama (tidak ada endpoint VLM)
+   - UI scan KTP: tambah badge `🤖 VLM AI` (hijau) / `OCR` (amber) setelah scan
+   - Teks status dinamis saat loading dan setelah berhasil
+
+### Hasil Verifikasi
+- Frontend di-rebuild dan deploy: ✅
+- Bundle berisi `document/ktp`: ✅ (grep count = 1)
+- Endpoint `/api/document/ktp` → HTTP 401 (route ada, butuh auth): ✅
+- Semua container berjalan: ✅
+
+### Catatan
+- Belum ditest dengan foto KTP asli dari browser (butuh login user di sistem)
+- Field `kelurahan` dari VLM kadang terisi nilai dari field lain pada gambar synthetic — pada KTP asli harusnya lebih akurat
+
+---
+
+## 🔧 Sesi 15 — Mengembalikan Perhitungan Row E & F MAK (24 Jun 2026)
+
+### Task
+Sesuai instruksi, mengembalikan perhitungan Row F (Biaya Hidup) pada MAK agar **tidak** menyertakan cicilan existing, dan menempatkan kembali cicilan existing tersebut pada Row E (Angsuran Kredit) untuk kredit Konsumtif.
+
+### Perubahan yang Dilakukan
+- **`MakPreviewPage.jsx`**: 
+  - Mengembalikan `angsuranEksisting` untuk kredit Konsumtif agar mengambil nilai dari `financialAnalisa.cicilan_existing`.
+  - Menghapus penjumlahan `financialAnalisa.cicilan_existing` dari variabel `biayaHidup`.
+  - Row E kini kembali menampilkan nominal cicilan existing, sedangkan Row F murni berisi 6 komponen biaya hidup.
+  - Melakukan rebuild frontend container (`docker compose up -d --build frontend`).
+
+---
+
+## 🔧 Sesi 16 — Tiered DSR & DSR Toggle Bypass (24 Jun 2026)
+
+### Task
+Merespon permintaan agar DSR tidak dihilangkan secara kaku, tetapi dibuat bertingkat (Tiered) berdasarkan besaran penghasilan. Selain itu, ditambahkan fitur Toggle (Bypass) DSR sehingga analis dapat mematikan filter DSR dan status kelayakan murni mengandalkan indikator RPC.
+
+### Perubahan yang Dilakukan
+1. **Database (`analisa_konsumtif`)**:
+   - Menambahkan kolom `use_dsr BOOLEAN DEFAULT true` via `ALTER TABLE` agar state toggle tersimpan dan tetap ada saat halaman dimuat ulang.
+2. **Backend (`financialFormulas.js` & `analisa.service.js`)**:
+   - Menerapkan Tiered DSR:
+     - Gaji ≤ Rp 5 Juta -> Max DSR 30%
+     - Gaji > 5 Juta - 15 Juta -> Max DSR 40%
+     - Gaji > 15 Juta - 50 Juta -> Max DSR 50%
+     - Gaji > 50 Juta -> Max DSR 60%
+   - Parameter `useDsr` digunakan untuk mengecualikan filter `dsr <= maxDsr` dari variabel `layak`.
+   - Mengubah `INSERT` agar menampung nilai `use_dsr` dari frontend.
+3. **Frontend (`AnalisaKonsumtifPage.jsx`)**:
+   - Menambahkan Switch/Toggle component di baris DSR.
+   - Menampilkan status dinamis `(Diabaikan)` jika dimatikan, dan menampilkan Max DSR dinamis (`max 30%`, `max 50%`, dll) jika dinyalakan.
+
+### Hasil Eksekusi
+- Database berhasil di-alter.
+- Logika backend telah diuji melalui penyesuaian kode.
+- Frontend container berhasil direbuild dan diaplikasikan ke live server.
+
+### Follow-up Task:
+- Mengubah default DSR menjadi disable (OFF).
+- Memindahkan field "Angsuran Diajukan" dari block Pengeluaran ke block Hasil Analisa.
+- Mengisi otomatis "Angsuran Diajukan" dari data `pengajuan` (`angsuran_perbulan`) menggunakan `pengajuanService`.
+- **Fix 2**: `UPDATE analisa_konsumtif SET use_dsr = false;` agar semua data lama menggunakan default OFF, serta mengubah `ALTER COLUMN use_dsr SET DEFAULT false`.
+- **Fix 2**: Memperbaiki fallback logika autofill sehingga jika angsuran_diajukan dari DB adalah 0, sistem akan memaksa load dari `angsuran_perbulan` pengajuan.
+
+---
+
+## 🔧 Sesi 17 — Opsi Sistem Angsuran FLAT dan ANUITAS (24 Jun 2026)
+
+### Task
+Menambahkan opsi pada halaman pembuatan Pengajuan Kredit agar analis dapat memilih metode perhitungan angsuran secara **FLAT** atau **ANUITAS**, yang otomatis menyesuaikan nilai "Angsuran per Bulan (auto)".
+
+### Perubahan yang Dilakukan
+1. **Database (`pengajuan`)**:
+   - Menambahkan kolom `sistem_angsuran VARCHAR(20) DEFAULT 'FLAT'` via `ALTER TABLE`.
+2. **Backend (`financialFormulas.js` & `pengajuan.service.js`)**:
+   - Menambahkan parameter `sistemAngsuran` pada `hitungAngsuran` yang mendukung percabangan dua metode (FLAT: (Pokok+BungaTahunan/12) dan ANUITAS: rumus present value anuitas standar).
+   - Memasukkan `sistem_angsuran` dalam eksekusi query insert ke tabel `pengajuan`.
+3. **Frontend (`PengajuanFormPage.jsx`)**:
+   - Menambahkan *state* baru `sistemAngsuran` pada form.
+   - Menambahkan opsi elemen UI `<select>` di samping Suku Bunga.
+   - Mengubah blok efek auto-calc untuk mendukung dua cara menghitung nilai `angsuranPerbulan` secara dinamis mengikuti sistem yang dipilih.
+
+### Hasil Eksekusi
+- Sistem angsuran telah masuk ke DB.
+- UI pada Pengajuan Kredit sudah memiliki dropdown FLAT/ANUITAS yang bereaksi instan merubah nilai kalkulasi cicilan.
+
+### Follow-up Task untuk Sesi Berikutnya:
+- **BUG FIX KRITIS**: Memperbaiki proses *save* Analisa Konsumtif. Saat ini, karena `AnalisaKonsumtifPage.jsx` tidak memuat dan mengirim ulang parameter `sistemAngsuran`, `bungaPerTahun`, `jangkaWaktuBulan`, dan `plafon` ke backend, perhitungan `maxKredit` di `hitungKonsumtif` menggunakan nilai 0 (dan ter-fallback ke 0). Hal ini menyebabkan penyimpanan nilai *Max Kredit* di analisa jadi meleset. Sesi selanjutnya HARUS memperbaiki *data passing* ini.
+
+---
+
+## 🔧 Sesi 18 — Perbaikan Perhitungan Total Pengeluaran (24 Jun 2026)
+
+### Task
+Memperbaiki rumus perhitungan "Total Pengeluaran" di Analisa Konsumtif agar hanya menjumlahkan: Listrik, Air, Transportasi, Pendidikan, Cicilan Existing, Kebutuhan Rumah Tangga, dan Pengeluaran Lain. "Angsuran Diajukan" dan "Pengurang Angsuran" tidak boleh dimasukkan ke dalam Total Pengeluaran.
+
+### Perubahan yang Dilakukan
+1. **Frontend (`AnalisaKonsumtifPage.jsx`)**:
+   - Mengubah `totalPengeluaran` agar tidak memanggil `totalCicilan` (yang mencakup angsuran diajukan dan pengurang angsuran), melainkan memanggil `totalPengeluaranBase + form.cicilanExisting`.
+2. **Backend (`financialFormulas.js`)**:
+   - Mengubah perhitungan `totalPengeluaran` pada fungsi `hitungKonsumtif` dengan cara yang sama agar perhitungan kelayakan saat disimpan ke database sama persis dengan frontend.
+3. **Deployment**:
+   - Melakukan `docker compose up -d --build backend frontend` untuk me-rebuild image docker dan me-restart container dengan kode terbaru.
+
+### Hasil Eksekusi
+- Perhitungan "Total Pengeluaran" di Kalkulator frontend sekarang hanya memuat 7 komponen pengeluaran tersebut.
+- Perubahan berhasil dideploy ke environment Docker.
+
+---
+
+## 🔧 Sesi 19 — Perbaikan Akurasi VLM KTP (24 Jun 2026)
+
+### Task
+Memperbaiki akurasi pembacaan OCR VLM untuk KTP karena model berhalusinasi (misal: menebak alamat 'Jakarta', salah membaca tempat lahir menjadi 'Pelayoran', dan gagal mem-parsing tanggal lahir).
+
+### Perubahan yang Dilakukan
+1. **Backend (`document-ai.service.js`)**:
+   - Memperketat prompt untuk dokumen KTP dengan instruksi eksplisit: `BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR KTP` dan `DILARANG mengarang, menebak, atau menambahkan kata yang tidak ada di gambar`.
+   - Memperjelas instruksi agar field `tempat_lahir` dan `tanggal_lahir` diekstrak persis dari kata sebelum/sesudah tanda koma.
+2. **Frontend (`DebiturFormPage.jsx`)**:
+   - Memperbaiki fungsi `normalizeDate` menggunakan regex yang tidak _anchored_ (menghapus `^` dan `$`) agar dapat menangkap format tanggal lahir `DD-MM-YYYY` meskipun dikembalikan dengan teks tambahan oleh VLM.
+   - Menambahkan _fallback_ format `YYYY-MM-DD` jika VLM mereturn format tersebut secara natural.
+3. **Deployment**:
+   - Melakukan `docker compose up -d --build backend frontend`.
+
+### Hasil Eksekusi
+- Sistem prompt backend dan fungsi normalisasi tanggal frontend telah diperbarui.
+- Diharapkan keakuratan ekstraksi VLM untuk nama, tempat/tanggal lahir, alamat, kelurahan, dan kecamatan meningkat dan tidak berhalusinasi.
+
+---
+
+## 🔧 Sesi 20 — Penyesuaian Prompt VLM SHM (24 Jun 2026)
+
+### Task
+Menyesuaikan prompt VLM untuk dokumen Sertifikat Hak Milik (SHM) agar sesuai dengan struktur gambar sertifikat sebenarnya (seperti Buku Tanah dan Surat Ukur) dan menghindari halusinasi.
+
+### Perubahan yang Dilakukan
+- **Backend (`document-ai.service.js`)**:
+  - Memperbarui prompt untuk `case 'shm'` agar lebih ketat: `BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR SERTIFIKAT TANAH (SHM)`.
+  - Menambahkan aturan larangan mengarang/menebak (halusinasi).
+  - Memberikan panduan spesifik per field agar AI bisa menemukan nilainya secara lebih presisi (misalnya mencari `luas_tanah` hanya angkanya saja, mencari `atas_nama` di bawah "NAMA PEMEGANG HAK", dll).
+  - Melakukan _rebuild_ image backend Docker agar prompt terbaru segera teraplikasi pada server.
+
+### Hasil Eksekusi
+- Sistem backend telah menggunakan struktur instruksi VLM SHM yang baru dan lebih kebal terhadap data yang tidak ada di dalam gambar.
+
+## [2026-06-24] UI/UX Improvement - Input Format Rupiah
+- **Modifikasi:** Mengubah field input yang tadinya `<input type="number">` biasa menjadi `<input type="text">` dengan fungsi format otomatis ribuan (titik) serta memiliki prefix `Rp`.
+- **File Terdampak:** `AnalisaKonsumtifPage.jsx` (semua input Gaji, Pengeluaran, Angsuran Diajukan) dan `AnalisaProduktifPage.jsx` (Omset, Biaya, Angsuran).

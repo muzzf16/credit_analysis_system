@@ -76,6 +76,12 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-BprMinio@2024}
       MINIO_BUCKET: bpr-bapera
       MINIO_USE_SSL: false
+      # Document AI / VLM — llama.cpp server berjalan di host, bukan di container
+      # 172.22.0.1 = docker bridge gateway → host machine
+      LFM_API_URL: http://172.22.0.1:1976
+      OCR_ENGINE: lfm
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "5000:5000"
     depends_on:

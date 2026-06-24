@@ -13,13 +13,13 @@ async function saveKonsumtif(data, userId) {
      gaji_pokok, tunjangan, bonus_rata, usaha_sampingan, pendapatan_pasangan, total_penghasilan,
      listrik, air, transportasi, pendidikan, cicilan_existing, pengurang_angsuran, kebutuhan_rumah_tangga, pengeluaran_lain, total_pengeluaran,
      disposable_income, angsuran_diajukan, dsr, rpc, max_kredit,
-     status_kelayakan, catatan, analis_id)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24) RETURNING *`,
+     status_kelayakan, catatan, analis_id, use_dsr)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25) RETURNING *`,
     [pengajuanId,
      data.gajiPokok || 0, data.tunjangan || 0, data.bonusRata || 0, data.usahaSampingan || 0, data.pendapatanPasangan || 0, calc.totalPenghasilan,
      data.listrik || 0, data.air || 0, data.transportasi || 0, data.pendidikan || 0, data.cicilanExisting || 0, data.pengurangAngsuran || 0, data.kebutuhanRumahTangga || 0, data.pengeluaranLain || 0, calc.totalPengeluaran,
      calc.disposableIncome, data.angsuranDiajukan || calc.angsuranEfektif, calc.dsr, calc.rpc, calc.maxKredit,
-     calc.statusKelayakan, data.catatan || calc.keterangan, userId]
+     calc.statusKelayakan, data.catatan || calc.keterangan, userId, data.useDsr !== undefined ? data.useDsr : true]
   );
 
   // Update pengajuan status

@@ -24,6 +24,7 @@ export default function PengajuanFormPage() {
     plafonDiajukan: 0,
     jangkaWaktuBulan: 12,
     sukuBunga: 18,
+    sistemAngsuran: 'FLAT',
     angsuranPerbulan: 0,
   });
 
@@ -47,16 +48,22 @@ export default function PengajuanFormPage() {
     }
   }, [debiturSearch]);
 
-  // Auto-calc angsuran (flat)
+  // Auto-calc angsuran
   useEffect(() => {
-    const { plafonDiajukan, sukuBunga, jangkaWaktuBulan } = form;
+    const { plafonDiajukan, sukuBunga, jangkaWaktuBulan, sistemAngsuran } = form;
     if (plafonDiajukan > 0 && jangkaWaktuBulan > 0) {
-      const bungaBulan = sukuBunga / 12 / 100;
-      const pokok = plafonDiajukan / jangkaWaktuBulan;
-      const bunga = plafonDiajukan * bungaBulan;
-      setForm(prev => ({ ...prev, angsuranPerbulan: Math.round(pokok + bunga) }));
+      const rateBulanan = sukuBunga / 12 / 100;
+      let angsuran = 0;
+      if (sistemAngsuran === 'ANUITAS') {
+        angsuran = (plafonDiajukan * rateBulanan * Math.pow(1 + rateBulanan, jangkaWaktuBulan)) / (Math.pow(1 + rateBulanan, jangkaWaktuBulan) - 1);
+      } else {
+        const pokok = plafonDiajukan / jangkaWaktuBulan;
+        const bunga = plafonDiajukan * rateBulanan;
+        angsuran = pokok + bunga;
+      }
+      setForm(prev => ({ ...prev, angsuranPerbulan: Math.round(angsuran) }));
     }
-  }, [form.plafonDiajukan, form.sukuBunga, form.jangkaWaktuBulan]);
+  }, [form.plafonDiajukan, form.sukuBunga, form.jangkaWaktuBulan, form.sistemAngsuran]);
 
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
@@ -160,6 +167,13 @@ export default function PengajuanFormPage() {
           <div>
             <label className="label">Suku Bunga (% / tahun)</label>
             <input type="number" step="0.5" value={form.sukuBunga} onChange={e => update('sukuBunga', parseFloat(e.target.value) || 0)} className="input-field text-right" />
+          </div>
+          <div>
+            <label className="label">Sistem Angsuran</label>
+            <select value={form.sistemAngsuran} onChange={e => update('sistemAngsuran', e.target.value)} className="input-field bg-navy">
+              <option value="FLAT">FLAT</option>
+              <option value="ANUITAS">ANUITAS</option>
+            </select>
           </div>
           <div>
             <label className="label">Angsuran per Bulan (auto)</label>

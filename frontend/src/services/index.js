@@ -107,3 +107,15 @@ export const ocrService = {
     timeout: 300000 // 5 minutes timeout for heavy OCR tasks like PDFs
   }),
 };
+
+// Document AI — VLM LFM2.5-VL (engine aktif di backend, lihat document-ai.service.js)
+// Timeout 120 detik karena model butuh ~20-25 detik inference di CPU
+export const documentService = {
+  extractKtp:    (formData) => api.post('/document/ktp',    formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 }),
+  extractKk:     (formData) => api.post('/document/kk',     formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 }),
+  extractNpwp:   (formData) => api.post('/document/npwp',   formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 }),
+  extractShm:    (formData) => api.post('/document/shm',    formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 }),
+  extractBpkb:   (formData) => api.post('/document/bpkb',   formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 }),
+  extractSurvey: (formData) => api.post('/document/survey', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 }),
+};
+
