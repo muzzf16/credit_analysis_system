@@ -1,0 +1,17 @@
+{
+  "document": "ktp",
+  "labels": {
+    "N1K": "NIK",
+    "M1K": "NIK",
+    "Kabupalen": "Kabupaten",
+    "Tempat / Tgl": "Tempat/Tgl",
+    "Tempat/ Tgl": "Tempat/Tgl",
+    "Agama:": "Agama",
+    "0esa": "Desa",
+    "RTRW": "RT/RW",
+    "RT RW": "RT/RW",
+    "RT / RW": "RT/RW",
+    "Kelamin": "Jenis Kelamin",
+    "Gol. Darah": "Gol. Darah"
+  }
+}

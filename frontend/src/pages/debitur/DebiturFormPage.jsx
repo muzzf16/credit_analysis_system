@@ -15,7 +15,7 @@ export default function DebiturFormPage() {
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
 
-  const [pribadi, setPribadi] = useState({ nik: '', nama: '', tempatLahir: '', tanggalLahir: '', gender: 'L', statusNikah: 'BELUM_KAWIN', pendidikan: 'SMA', agama: 'Islam', alamat: '', kelurahan: '', kecamatan: '', kabupaten: 'Batang', kodePos: '', noHp: '', email: '', ibuKandung: '', hubunganBank: 'Nasabah Baru', kreditAktif: 'Tidak Ada' });
+  const [pribadi, setPribadi] = useState({ nik: '', nama: '', tempatLahir: '', tanggalLahir: '', gender: 'L', statusNikah: 'BELUM_KAWIN', pendidikan: 'SMA', agama: 'ISLAM', pekerjaan: '', kewarganegaraan: 'WNI', berlakuHingga: 'SEUMUR HIDUP', alamat: '', rt: '', rw: '', kelurahan: '', kecamatan: '', kabupaten: 'Batang', kodePos: '', noHp: '', email: '', ibuKandung: '', hubunganBank: 'Nasabah Baru', kreditAktif: 'Tidak Ada' });
   const [pasangan, setPasangan] = useState({ nama: '', nik: '', tempatLahir: '', tanggalLahir: '', pendidikan: 'SMA', pekerjaan: '', noHp: '' });
   const [pekerjaan, setPekerjaan] = useState({ jenisPekerjaan: 'SWASTA', namaInstansi: '', jabatan: '', masaKerjaTahun: 0, alamatKantor: '', noTelpKantor: '', gajiPokok: 0, tunjangan: 0, penghasilanLain: 0 });
   const [usaha, setUsaha] = useState({ namaUsaha: '', jenisUsaha: '', lamaUsahaTahun: 0, alamatUsaha: '', omsetBulanan: 0, jumlahKaryawan: 0, statusTempatUsaha: 'MILIK' });
@@ -118,7 +118,6 @@ export default function DebiturFormPage() {
 
     try {
       if (type === 'ktp') {
-        // Gunakan endpoint VLM baru
         const res = await documentService.extractKtp(formData);
         const result = res.data.data;
         const d = result.data || {};
@@ -129,22 +128,24 @@ export default function DebiturFormPage() {
           nik:          d.nik          || prev.nik,
           nama:         d.nama         || prev.nama,
           tempatLahir:  d.tempat_lahir || prev.tempatLahir,
-          tanggalLahir: normalizeDate(d.tanggal_lahir) || prev.tanggalLahir,
-          gender:       normalizeGender(d.jenis_kelamin) || prev.gender,
-          statusNikah:  normalizeStatus(d.status_perkawinan) || prev.statusNikah,
-          agama:        d.agama        || prev.agama,
+          tanggalLahir: d.tanggal_lahir|| prev.tanggalLahir,
+          gender:       (d.jenis_kelamin?.includes('PEREMPUAN') ? 'P' : 'L') || prev.gender,
+          statusNikah:  d.status_perkawinan?.replace(' ', '_') || prev.statusNikah,
           alamat:       d.alamat       || prev.alamat,
+          rt:           d.rt           || prev.rt,
+          rw:           d.rw           || prev.rw,
           kelurahan:    d.kelurahan    || prev.kelurahan,
           kecamatan:    d.kecamatan    || prev.kecamatan,
+          agama:        d.agama        || prev.agama,
+          pekerjaan:    d.pekerjaan    || prev.pekerjaan,
+          kewarganegaraan: d.kewarganegaraan || prev.kewarganegaraan,
+          berlakuHingga: d.berlaku_hingga || prev.berlakuHingga,
         }));
       } else if (type === 'surat_nikah') {
-        // Tetap pakai OCR lama untuk Surat Nikah (belum ada endpoint VLM)
-        const legacyFormData = new FormData();
-        legacyFormData.append('file', file);
-        legacyFormData.append('type', type);
-        const res = await ocrService.process(legacyFormData);
-        const extracted = res.data.data.data;
-        setVlmEngine('tesseract');
+        const res = await documentService.extractSuratNikah(formData);
+        const result = res.data.data;
+        const extracted = result.data || {};
+        setVlmEngine(result.engineUsed || 'lfm');
 
         const suamiMatches = extracted.suamiNama && pribadi.nama &&
           (extracted.suamiNama.includes(pribadi.nama) || pribadi.nama.includes(extracted.suamiNama));
@@ -264,13 +265,21 @@ export default function DebiturFormPage() {
             {renderInput('Tempat Lahir', pribadi.tempatLahir, v => updateField(setPribadi)('tempatLahir', v))}
             {renderInput('Tanggal Lahir', pribadi.tanggalLahir, v => updateField(setPribadi)('tanggalLahir', v), 'date')}
             {renderInput('Jenis Kelamin', pribadi.gender, v => updateField(setPribadi)('gender', v), 'text', GENDER)}
+            {renderInput('Agama', pribadi.agama, v => updateField(setPribadi)('agama', v), 'text', ['ISLAM', 'KRISTEN', 'KATOLIK', 'HINDU', 'BUDDHA', 'KONGHUCU'])}
             {renderInput('Status Nikah', pribadi.statusNikah, v => updateField(setPribadi)('statusNikah', v), 'text', STATUS_NIKAH)}
+            {renderInput('Pekerjaan', pribadi.pekerjaan, v => updateField(setPribadi)('pekerjaan', v))}
+            {renderInput('Kewarganegaraan', pribadi.kewarganegaraan, v => updateField(setPribadi)('kewarganegaraan', v), 'text', ['WNI', 'WNA'])}
+            {renderInput('Berlaku Hingga', pribadi.berlakuHingga, v => updateField(setPribadi)('berlakuHingga', v))}
+            <div className="md:col-span-2 flex gap-4">
+               <div className="flex-[3]">{renderInput('Alamat', pribadi.alamat, v => updateField(setPribadi)('alamat', v))}</div>
+               <div className="flex-1">{renderInput('RT', pribadi.rt, v => updateField(setPribadi)('rt', v))}</div>
+               <div className="flex-1">{renderInput('RW', pribadi.rw, v => updateField(setPribadi)('rw', v))}</div>
+            </div>
+            {renderInput('Kelurahan/Desa', pribadi.kelurahan, v => updateField(setPribadi)('kelurahan', v))}
+            {renderInput('Kecamatan', pribadi.kecamatan, v => updateField(setPribadi)('kecamatan', v))}
+            {renderInput('Kabupaten/Kota', pribadi.kabupaten, v => updateField(setPribadi)('kabupaten', v))}
             {renderInput('Pendidikan', pribadi.pendidikan, v => updateField(setPribadi)('pendidikan', v), 'text', PENDIDIKAN)}
             {renderInput('No HP *', pribadi.noHp, v => updateField(setPribadi)('noHp', v))}
-            <div className="md:col-span-2">{renderInput('Alamat', pribadi.alamat, v => updateField(setPribadi)('alamat', v))}</div>
-            {renderInput('Kelurahan', pribadi.kelurahan, v => updateField(setPribadi)('kelurahan', v))}
-            {renderInput('Kecamatan', pribadi.kecamatan, v => updateField(setPribadi)('kecamatan', v))}
-            {renderInput('Kabupaten', pribadi.kabupaten, v => updateField(setPribadi)('kabupaten', v))}
             {renderInput('Kode Pos', pribadi.kodePos, v => updateField(setPribadi)('kodePos', v))}
             {renderInput('Ibu Kandung', pribadi.ibuKandung, v => updateField(setPribadi)('ibuKandung', v))}
             {renderInput('Hubungan dengan Bank', pribadi.hubunganBank, v => updateField(setPribadi)('hubunganBank', v), 'text', ['Nasabah Lama', 'Nasabah Baru'])}

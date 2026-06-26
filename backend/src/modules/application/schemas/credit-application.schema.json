@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CreditApplication",
+  "type": "object",
+  "properties": {
+    "applicationId": {
+      "type": "string"
+    },
+    "product": {
+      "type": "string",
+      "enum": ["KREDIT_MODAL_KERJA", "KREDIT_KONSUMTIF", "KREDIT_PEGAWAI"]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "DATA_COLLECTION",
+        "SURVEY",
+        "ASSESSMENT",
+        "COMMITTEE",
+        "APPROVED",
+        "REJECTED",
+        "CANCELLED"
+      ]
+    },
+    "ao": {
+      "type": "string"
+    },
+    "submittedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": ["createdAt", "createdBy", "source", "version"]
+    }
+  },
+  "required": ["applicationId", "product", "status", "ao", "submittedAt", "metadata"],
+  "additionalProperties": false
+}

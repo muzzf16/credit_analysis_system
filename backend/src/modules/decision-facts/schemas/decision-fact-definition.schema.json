@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DecisionFact Definition Schema",
+  "type": "object",
+  "properties": {
+    "code": { "type": "string" },
+    "name": { "type": "string" },
+    "type": { "type": "string", "enum": ["BOOLEAN", "STRING", "NUMBER"] },
+    "description": { "type": "string" }
+  },
+  "required": ["code", "name", "type", "description"],
+  "additionalProperties": false
+}

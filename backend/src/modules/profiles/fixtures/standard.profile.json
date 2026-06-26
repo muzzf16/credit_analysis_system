@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "code": "STANDARD_FINANCIAL",
+    "version": "1.0.0",
+    "status": "ACTIVE"
+  },
+  "stage": "FINANCIAL",
+  "rules": [
+    {
+      "code": "DSR_MAX",
+      "parameters": {
+        "threshold": 0.40
+      }
+    }
+  ]
+}

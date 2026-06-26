@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pipeline Plan Schema",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "version": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE", "DRAFT"] }
+      },
+      "required": ["code", "version", "status"]
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "profile": { "type": "string" }
+        },
+        "required": ["code", "profile"]
+      },
+      "minItems": 1
+    }
+  },
+  "required": ["metadata", "stages"],
+  "additionalProperties": false
+}

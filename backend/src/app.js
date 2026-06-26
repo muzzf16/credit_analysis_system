@@ -36,7 +36,9 @@ app.use('/mak', require('./modules/mak/mak.routes'));
 app.use('/notifikasi', require('./modules/notifikasi/notifikasi.routes'));
 app.use('/monitoring', require('./modules/monitoring/monitoring.routes'));
 app.use('/audit', require('./modules/audit/audit.routes'));
-app.use('/ocr', require('./modules/ocr/ocr.routes'));
+app.use('/ocr', require('./modules/ocr/routes/ocr.routes'));
+app.use('/ocr', require('./modules/ocr/learning/feedback.routes'));
+app.use('/intelligence', require('./modules/document-intelligence/routes/document-intelligence.routes'));
 app.use('/document', require('./modules/document/document.routes'));
 
 // ─── 404 HANDLER ──────────────────────────────────────────────────────────

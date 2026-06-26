@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AssessmentContext",
+  "type": "object",
+  "properties": {
+    "assessmentId": { "type": "string" },
+    "assessmentVersion": { "type": "integer", "minimum": 1 },
+    "applicationId": { "type": "string" },
+    "caseRevisionId": { "type": "string" },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "purpose": { "type": "string" },
+        "product": { "type": "string" },
+        "simulation": { "type": "boolean" }
+      },
+      "required": ["purpose", "product", "simulation"]
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "pack": { "type": "string" },
+        "version": { "type": "string" },
+        "fingerprint": { "type": "string" }
+      },
+      "required": ["pack", "version", "fingerprint"]
+    },
+    "quality": {
+      "type": "object",
+      "properties": {
+        "completeness": { "type": "number" },
+        "readiness": {
+          "type": "object",
+          "properties": {
+            "readyForScoring": { "type": "boolean" },
+            "readyForCommittee": { "type": "boolean" }
+          },
+          "required": ["readyForScoring", "readyForCommittee"]
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "required": ["completeness", "readiness", "capabilities"]
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "required": ["code", "description"]
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "caseSnapshot": {
+      "type": "object"
+    },
+    "integrity": {
+      "type": "object",
+      "properties": {
+        "fingerprint": { "type": "string" },
+        "algorithm": { "type": "string", "enum": ["SHA-256"] }
+      },
+      "required": ["fingerprint", "algorithm"]
+    }
+  },
+  "required": [
+    "assessmentId",
+    "assessmentVersion",
+    "applicationId",
+    "caseRevisionId",
+    "scope",
+    "policy",
+    "quality",
+    "assumptions",
+    "constraints",
+    "caseSnapshot",
+    "integrity"
+  ],
+  "additionalProperties": false
+}

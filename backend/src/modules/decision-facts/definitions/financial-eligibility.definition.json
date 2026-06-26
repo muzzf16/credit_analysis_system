@@ -1,0 +1,6 @@
+{
+  "code": "FINANCIAL_ELIGIBILITY",
+  "name": "Financial Eligibility",
+  "type": "BOOLEAN",
+  "description": "Menandakan apakah aplikasi memenuhi syarat finansial dasar untuk diproses."
+}

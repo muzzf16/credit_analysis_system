@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pipeline Result Schema",
+  "type": "object",
+  "properties": {
+    "pipeline": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["PASSED", "FAILED", "WARNING", "SKIPPED"]
+    },
+    "score": { "type": ["number", "null"] },
+    "fingerprints": {
+      "type": "object",
+      "properties": {
+        "policy": { "type": "string" },
+        "pipeline": { "type": "string" },
+        "profiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["policy", "pipeline", "profiles"]
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "reasonCodes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["pipeline", "status", "score", "fingerprints", "stages", "reasonCodes"],
+  "additionalProperties": false
+}

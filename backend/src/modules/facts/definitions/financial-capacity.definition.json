@@ -1,0 +1,15 @@
+{
+  "code": "FINANCIAL_CAPACITY",
+  "type": "ENUM",
+  "allowedValues": [
+    "ADEQUATE",
+    "LIMITED",
+    "INADEQUATE"
+  ],
+  "description": "Kemampuan pembayaran debitur berdasarkan keseluruhan profil keuangan (RPC, DSR, DSCR).",
+  "consumer": [
+    "DecisionBuilder",
+    "AI",
+    "Dashboard"
+  ]
+}

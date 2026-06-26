@@ -1,0 +1,58 @@
+{
+  "caseId": "CASE-2026-ABCD",
+  "revisionId": "CASE-2026-ABCD-R0002",
+  "revision": 2,
+  "data": {
+    "application": {
+      "applicationId": "PK-2026-0001"
+    },
+    "debitur": {
+      "nama": "Budi Santoso",
+      "nik": "3271234567890001"
+    },
+    "agunan": [
+      { "jenis": "SHM", "luas": 150 }
+    ],
+    "creditExposure": null
+  },
+  "sources": {
+    "debitur.identity.nik": "DOC-KTP-001",
+    "agunan[0].luas": "DOC-SHM-002"
+  },
+  "provenance": {
+    "debitur.identity.nik": {
+      "source": "OCR",
+      "engine": "GLM",
+      "confidence": 99,
+      "verified": true
+    },
+    "agunan[0].luas": {
+      "source": "APPRAISER",
+      "engine": "MANUAL",
+      "confidence": 100,
+      "verified": true
+    }
+  },
+  "quality": {
+    "identity": {
+      "completeness": 100,
+      "confidence": 99,
+      "verification": "VERIFIED"
+    },
+    "agunan[0]": {
+      "completeness": 100,
+      "confidence": 100,
+      "verification": "VERIFIED"
+    }
+  },
+  "trace": {
+    "applicationId": "PK-2026-0001",
+    "pipelineFingerprint": "SHA456",
+    "builderVersion": "1.0.0",
+    "createdFromEvents": ["ApplicationSubmitted", "AppraisalCompleted"]
+  },
+  "integrity": {
+    "hash": "sha256-dummy",
+    "algorithm": "SHA-256"
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Credit Policy Pack",
+  "description": "Defines the business policy, its capabilities, and referenced rules for the credit decision pipeline.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Version of this JSON schema structure",
+      "default": "1.0"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "pack": { "type": "string" },
+        "version": { "type": "string" },
+        "description": { "type": "string" },
+        "effectiveDate": { "type": "string", "format": "date" },
+        "priority": { "type": "integer", "default": 0 },
+        "products": { "type": "array", "items": { "type": "string" } },
+        "supports": { "type": "array", "items": { "type": "string" } },
+        "segments": { "type": "array", "items": { "type": "string" } },
+        "channels": { "type": "array", "items": { "type": "string" } },
+        "regions": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["pack", "version", "effectiveDate", "products", "supports"]
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "stage": {
+            "type": "string",
+            "enum": ["ELIGIBILITY", "FINANCIAL", "COLLATERAL", "COMPLIANCE", "SCORING"]
+          },
+          "enabled": { "type": "boolean", "default": true },
+          "parameters": {
+            "type": "object",
+            "description": "Optional thresholds or configuration values for the rule"
+          }
+        },
+        "required": ["code", "stage"]
+      }
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "enum": ["ELIGIBILITY", "FINANCIAL", "COLLATERAL", "COMPLIANCE", "SCORING"] },
+          "profile": { "type": "string", "description": "The Stage Profile code (e.g., STANDARD_FINANCIAL)" }
+        },
+        "required": ["code", "profile"]
+      }
+    }
+  },
+  "required": ["schemaVersion", "metadata"],
+  "additionalProperties": false
+}

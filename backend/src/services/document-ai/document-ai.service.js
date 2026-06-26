@@ -11,6 +11,53 @@ const ocrService = require('../../modules/ocr/ocr.service');
 const parsers = require('../../modules/ocr/parsers');
 
 /**
+ * Preprocess image for OCR using ImageMagick
+ * @param {Buffer} imageBuffer 
+ * @param {string} type - Tipe dokumen
+ * @returns {Promise<Buffer>} Preprocessed Image Buffer
+ */
+async function preprocessImage(imageBuffer, type) {
+  const tmpId = Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+  const tmpDir = path.join(os.tmpdir(), `img_prep_${tmpId}`);
+  fs.mkdirSync(tmpDir, { recursive: true });
+
+  const tmpIn = path.join(tmpDir, 'input.img');
+  const tmpOut = path.join(tmpDir, 'output.png');
+  fs.writeFileSync(tmpIn, imageBuffer);
+
+  try {
+    const args = [tmpIn, '-resize', '1600x1600>'];
+
+    // KTP memiliki watermark biru. Jika digrayscale/normalize, watermark menjadi gelap dan merusak teks.
+    if (type === 'ktp') {
+      args.push('-deskew', '40%', '-sharpen', '0x1');
+    } else {
+      args.push('-colorspace', 'gray', '-normalize', '-deskew', '40%', '-sharpen', '0x1');
+    }
+    args.push(tmpOut);
+
+    await execFileAsync('convert', args);
+    
+    if (fs.existsSync(tmpOut)) {
+      const processedBuffer = fs.readFileSync(tmpOut);
+      return processedBuffer;
+    } else {
+      console.warn(`[Document AI] Preprocessing failed to generate output, returning original buffer.`);
+      return imageBuffer;
+    }
+  } catch (err) {
+    console.error(`[Document AI] Error during ImageMagick preprocess:`, err.message);
+    return imageBuffer; // Fallback to original
+  } finally {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch (e) {
+      console.error(`[Document AI] Failed to clean up temp dir: ${tmpDir}`, e.message);
+    }
+  }
+}
+
+/**
  * Convert PDF to PNG Buffer (First page only)
  * @param {Buffer} pdfBuffer 
  * @returns {Promise<Buffer>} PNG Buffer
@@ -52,70 +99,128 @@ async function convertPdfToPngBuffer(pdfBuffer) {
 function getPromptForType(type) {
   switch (type.toLowerCase()) {
     case 'ktp':
-      return `Kamu adalah sistem OCR dokumen Indonesia. BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR KTP.
-ATURAN SANGAT KETAT:
-1. DILARANG mengarang, menebak, atau menambahkan kata yang tidak ada di gambar (contoh: jangan tambah "JAKARTA" jika tidak tertulis).
-2. Perhatikan ejaan huruf demi huruf dengan sangat teliti!
-3. Jika teks tidak terbaca/tidak ada, kembalikan string kosong "".
+      return `Baca KTP Indonesia secara akurat.
+ATURAN: Jangan menebak. Jika tidak terbaca isi string kosong "". HANYA JSON.
 
-Ekstrak nilai-nilai berikut dari gambar:
-- nik: 16 digit angka NIK
-- nama: nama lengkap persis seperti di KTP
-- tempat_lahir: HANYA nama kota/kabupaten (kata sebelum tanda koma pada baris "Tempat/Tgl Lahir")
-- tanggal_lahir: HANYA tanggal lahir dalam format DD-MM-YYYY (kata setelah tanda koma pada baris "Tempat/Tgl Lahir")
-- jenis_kelamin: "LAKI-LAKI" atau "PEREMPUAN"
-- alamat: teks persis setelah tulisan "Alamat"
-- rt: angka RT saja (dari RT/RW)
-- rw: angka RW saja (dari RT/RW)
-- kelurahan: teks persis setelah tulisan "Kel/Desa"
-- kecamatan: teks persis setelah tulisan "Kecamatan"
-- agama: (ISLAM/KRISTEN/KATOLIK/HINDU/BUDHA/KONGHUCU)
-- status_perkawinan: BELUM KAWIN / KAWIN / CERAI HIDUP / CERAI MATI
-- pekerjaan: jenis pekerjaan
-- kewarganegaraan: WNI atau WNA
+Output JSON:
+{"nik":"","nama":"","tempat_tgl_lahir":"","jenis_kelamin":"","alamat":"","rt_rw":"","kel_desa":"","kecamatan":"","agama":"","status_perkawinan":"","pekerjaan":"","kewarganegaraan":"","berlaku_hingga":""}`;
 
-Kembalikan HANYA JSON valid tanpa markdown:
-{"nik":"...","nama":"...","tempat_lahir":"...","tanggal_lahir":"...","jenis_kelamin":"...","alamat":"...","rt":"...","rw":"...","kelurahan":"...","kecamatan":"...","agama":"...","status_perkawinan":"...","pekerjaan":"...","kewarganegaraan":"..."}`;
-
-    case 'kk':
-      return `Kamu adalah sistem OCR dokumen Indonesia. Ekstrak data dari gambar Kartu Keluarga (KK) ini.
-Kembalikan HANYA JSON valid tanpa markdown, tanpa komentar.
-Gunakan format persis berikut:
-{"nomor_kk":"","kepala_keluarga":"","alamat":"","rt":"","rw":"","kelurahan":"","kecamatan":"","kabupaten":"","provinsi":"","anggota":[{"nik":"","nama":"","jenis_kelamin":"","tempat_lahir":"","tanggal_lahir":"","agama":"","pendidikan":"","jenis_pekerjaan":"","hubungan_keluarga":"","kewarganegaraan":""}]}
-Isi setiap field dari teks yang terlihat. Field kosong isi string kosong.`;
-
-    case 'npwp':
-      return `Kamu adalah sistem OCR dokumen Indonesia. Ekstrak data dari gambar NPWP ini.
-Kembalikan HANYA JSON valid tanpa markdown, tanpa komentar.
-Gunakan format persis berikut:
-{"nomor_npwp":"","nama":"","alamat":""}
-Untuk nomor_npwp sertakan tanda titik dan strip (contoh: 12.345.678.9-012.000).
-Isi setiap field dari teks yang terlihat. Field kosong isi string kosong.`;
-
-    case 'shm':
-      return `Kamu adalah sistem OCR dokumen Indonesia. BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR SERTIFIKAT TANAH (SHM).
+    case 'surat_nikah':
+      return `Kamu adalah sistem OCR dokumen Indonesia. BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR KUTIPAN AKTA NIKAH / BUKU NIKAH.
 ATURAN SANGAT KETAT:
 1. DILARANG mengarang, menebak, atau menambahkan kata yang tidak ada di gambar.
-2. Jika teks tidak terbaca/tidak ada, kembalikan string kosong "".
+2. Jika ada field yang blur, buram, tertutup, atau tidak terbaca dengan yakin, ISI DENGAN STRING KOSONG "".
+3. Jangan memperbaiki ejaan nama jika tertulis salah di dokumen.
+4. Kembalikan HANYA JSON valid tanpa markdown, tanpa komentar.
 
 Ekstrak nilai-nilai berikut dari gambar:
-- nomor_sertifikat: angka/nomor sertifikat (biasanya 5 digit setelah "No.")
-- jenis_hak: "HAK MILIK" atau jenis hak lainnya
-- atas_nama: nama pemegang hak (biasanya ada di bagian "NAMA PEMEGANG HAK")
-- luas_tanah: angka luas tanah dalam meter persegi (hanya angkanya saja)
-- desa: teks setelah "DESA / KELURAHAN"
-- kecamatan: teks setelah "KECAMATAN"
-- kabupaten: teks setelah "KABUPATEN / KOTA"
+- suamiNama: Nama Suami
+- suamiNik: NIK Suami (biasanya 16 digit)
+- istriNama: Nama Istri
+- istriNik: NIK Istri (biasanya 16 digit)
+- tanggalNikah: Tanggal pendaftaran pernikahan (format teks bebas dari gambar)
 
-Kembalikan HANYA JSON valid tanpa markdown:
-{"nomor_sertifikat":"","jenis_hak":"HAK MILIK","atas_nama":"","luas_tanah":"","desa":"","kecamatan":"","kabupaten":""}`;
+Gunakan format persis berikut:
+{"suamiNama":"","suamiNik":"","istriNama":"","istriNik":"","tanggalNikah":""}`;
+
+    case 'kk':
+      return `Kamu adalah sistem OCR dokumen Indonesia. BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR KARTU KELUARGA (KK).
+ATURAN SANGAT KETAT:
+1. DILARANG mengarang, menebak, atau menambahkan kata yang tidak ada di gambar.
+2. Jika ada field yang blur atau tidak terbaca, ISI DENGAN STRING KOSONG "".
+3. Kembalikan HANYA JSON valid tanpa markdown, tanpa komentar.
+
+Ekstrak nilai-nilai berikut:
+- nomor_kk: Angka Nomor KK (biasanya 16 digit besar di bagian atas)
+- kepala_keluarga: Nama Kepala Keluarga
+- alamat: Alamat lengkap
+- anggota: array berisi objek anggota keluarga (hanya ambil "nama" dan "nik")
+
+Gunakan format persis berikut:
+{"nomor_kk":"","kepala_keluarga":"","alamat":"","anggota":[{"nama":"","nik":""}]}`;
+
+    case 'npwp':
+      return `Kamu adalah sistem OCR dokumen Indonesia. BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR KARTU NPWP.
+ATURAN SANGAT KETAT:
+1. DILARANG mengarang, menebak, atau menambahkan kata yang tidak ada di gambar.
+2. Jika field blur atau terpotong, ISI DENGAN STRING KOSONG "".
+3. Kembalikan HANYA JSON valid tanpa markdown, tanpa komentar.
+
+Ekstrak:
+- nomor_npwp: Angka NPWP
+- nama: Nama Wajib Pajak
+- alamat: Alamat Wajib Pajak
+
+Gunakan format persis berikut:
+{"nomor_npwp":"","nama":"","alamat":""}`;
+
+    case 'shm':
+      return `Kamu adalah sistem OCR dokumen Indonesia yang ahli membaca Sertifikat Hak Milik (SHM) Indonesia.
+ATURAN KETAT:
+1. DILARANG mengarang, menebak, atau menambah data yang tidak tertulis di gambar.
+2. Jika field tidak terbaca atau tidak ada di gambar ini, isi dengan string kosong "" atau null.
+3. Kembalikan HANYA JSON valid tanpa markdown, tanpa komentar.
+
+Gambar ini mungkin salah satu halaman SHM: Cover (DAFTAR ISIAN 206), Pendaftaran Pertama, Peralihan Hak/HT, atau Surat Ukur (DAFTAR ISIAN 207). Ekstrak semua yang terlihat.
+
+PANDUAN BACA:
+- Pojok kiri/kanan atas: KODE DOKUMEN format 3 huruf+6 angka (contoh: AAW579903)
+- "HAK : MILIK  No. XXXXX" = jenis_hak dan nomor_sertifikat
+- Barcode kotak-kotak bawah = NIB format 11.32.08.05.XXXXX (baca tiap kotak, titik = pemisah)
+- "f) NAMA PEMEGANG HAK" = nama_pemegang_hak (huruf kapital)
+- "Tanggal lahir / akta pendirian" di bawah nama = tanggal_lahir_pemegang (format DD-MM-YYYY, 31051992 = 31-05-1992)
+- "b) NIB" = nib
+- "e) SURAT UKUR  No." = nomor_surat_ukur (format XXXXX/NamaDesa/TAHUN)
+- "Luas :" atau "e) Luas:" = luas dalam m²
+- "DAFTAR ISIAN 307 No." dan "DAFTAR ISIAN 208 No." = nomor pencatatan
+- "HAK TANGGUNGAN Nomor XXXXX/YYYY" di tabel peralihan = nomor_ht
+- Nama bank/kreditur di kolom kanan tabel peralihan = nama_kreditur_ht
+
+Kembalikan JSON persis berikut (isi apa yang terbaca, kosongkan yang tidak ada):
+{
+  "kode_dokumen": "",
+  "nomor_sertifikat": "",
+  "jenis_hak": "HAK MILIK",
+  "nib": "",
+  "nama_pemegang_hak": "",
+  "tanggal_lahir_pemegang": "",
+  "provinsi": "",
+  "kabupaten_kota": "",
+  "kecamatan": "",
+  "desa_kelurahan": "",
+  "kantor_pertanahan": "",
+  "luas_m2": 0,
+  "luas_terbilang": "",
+  "keadaan_tanah": "",
+  "nomor_surat_ukur": "",
+  "tanggal_surat_ukur": "",
+  "asal_hak": "",
+  "tanggal_pembukuan": "",
+  "daftar_isian_307": "",
+  "daftar_isian_208": "",
+  "hak_tanggungan_aktif": false,
+  "nama_kreditur_ht": "",
+  "nomor_ht": ""
+}`;
 
     case 'bpkb':
-      return `Kamu adalah sistem OCR dokumen Indonesia. Ekstrak data dari gambar BPKB (Buku Pemilik Kendaraan Bermotor) ini.
-Kembalikan HANYA JSON valid tanpa markdown, tanpa komentar.
+      return `Kamu adalah sistem OCR dokumen Indonesia. BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR BPKB KENDARAAN.
+ATURAN SANGAT KETAT:
+1. DILARANG mengarang atau menebak data.
+2. Jika data tidak terbaca, ISI STRING KOSONG "".
+3. Kembalikan HANYA JSON valid tanpa markdown.
+
+Ekstrak:
+- nomor_bpkb: Nomor BPKB (biasanya di sudut/atas)
+- nomor_polisi: Nomor Registrasi Kendaraan
+- merk: Merk Kendaraan
+- tipe: Tipe Kendaraan
+- tahun: Tahun Pembuatan (4 digit)
+- atas_nama: Nama Pemilik
+- alamat: Alamat Pemilik
+
 Gunakan format persis berikut:
-{"nomor_bpkb":"","nomor_polisi":"","merk":"","tipe":"","tahun":"","nomor_rangka":"","nomor_mesin":"","atas_nama":"","alamat":""}
-Isi setiap field dari teks yang terlihat. Field kosong isi string kosong.`;
+{"nomor_bpkb":"","nomor_polisi":"","merk":"","tipe":"","tahun":"","nomor_rangka":"","nomor_mesin":"","atas_nama":"","alamat":""}`;
 
     case 'survey':
       return `Kamu adalah sistem analisis foto usaha untuk bank perkreditan rakyat.
@@ -124,6 +229,43 @@ Kembalikan HANYA JSON valid tanpa markdown, tanpa komentar.
 Gunakan format persis berikut:
 {"jenis_usaha":"","perkiraan_skala":"kecil/menengah/besar","kondisi_bangunan":"baik/sedang/kurang","indikasi_aktif":true,"catatan":""}
 Pada field catatan, tuliskan observasi singkat tentang kondisi usaha yang terlihat di foto.`;
+
+    case 'shm_cover':
+      return `Baca HALAMAN COVER Sertifikat Hak Milik (SHM).
+ATURAN: Baca secara akurat. HANYA JSON.
+
+Output JSON:
+{"kode_dokumen":"","nomor_sertifikat":"","jenis_hak":"HAK MILIK","nib":"","provinsi":"","kabupaten_kota":"","kecamatan":"","desa_kelurahan":"","kantor_pertanahan":"","daftar_isian_307":"","daftar_isian_208":""}`;
+
+    // ── SHM: Halaman Pendaftaran Pertama ────────────────────────────────────
+    case 'shm_pendaftaran':
+      return `Baca halaman PENDAFTARAN - PERTAMA Sertifikat Hak Milik.
+ATURAN: Baca tulisan tangan/ketikan di kotak secara akurat. HANYA JSON.
+
+Output JSON:
+{"nama_pemegang_hak":"","tanggal_lahir_pemegang":"","nib":"","nomor_sertifikat":"","desa_kelurahan":"","asal_hak":"","luas_m2":0,"keadaan_tanah":"","nomor_surat_ukur":"","tanggal_surat_ukur":"","tanggal_pembukuan":""}`;
+
+    // ── SHM: Halaman Peralihan Hak / Hak Tanggungan ─────────────────────────
+    case 'shm_peralihan':
+      return `Baca tabel PENDAFTARAN PERALIHAN HAK/HAK TANGGUNGAN di SHM.
+ATURAN: Deteksi semua kejadian (HAK TANGGUNGAN, Jual Beli, Pewarisan, dll) di tabel. HANYA JSON.
+
+Output JSON:
+{"hak_tanggungan_aktif":false,"nama_kreditur_ht":"","nomor_ht":"","tanggal_apht":"","apht_ppat":"","kejadian":[]}`;
+
+    // ── SHM: Halaman Surat Ukur (DAFTAR ISIAN 207) ──────────────────────────
+    case 'shm_surat_ukur':
+      return `Baca SURAT UKUR di Sertifikat Hak Milik. HANYA JSON.
+
+Output JSON:
+{"kode_dokumen":"","nib":"","nomor_surat_ukur":"","provinsi":"","kabupaten_kota":"","kecamatan":"","desa_kelurahan":"","peta_lembar":"","peta_kotak":"","keadaan_tanah":"","luas_m2":0,"luas_terbilang":"","koordinat":""}`;
+
+    // ── SHM: Halaman Peta Bidang ─────────────────────────────────────────────
+    case 'shm_peta':
+      return `Baca PETA BIDANG TANAH / SURAT UKUR di SHM. HANYA JSON.
+
+Output JSON:
+{"skala":"","nomor_bidang_utama":"","nama_tetangga":[],"label_objek":[],"koordinat":"","penjelasan_legenda":""}`;
 
     default:
       return `Ekstrak semua teks dan data dari dokumen ini. Kembalikan JSON valid tanpa markdown.`;
@@ -244,6 +386,15 @@ function parseTesseractFallback(rawText, type) {
         kabupaten
       };
     }
+    case 'shm_cover':
+    case 'shm_pendaftaran':
+    case 'shm_peralihan':
+    case 'shm_surat_ukur':
+    case 'shm_peta': {
+      // Tesseract tidak efektif untuk ekstraksi per-halaman SHM — return kosong
+      console.warn(`[Document AI] Tesseract fallback tidak mendukung tipe ${type}. Kembalikan empty object.`);
+      return {};
+    }
     case 'bpkb': {
       const parsed = parsers.parseBPKB(rawText);
       let nomor_polisi = '';
@@ -306,7 +457,7 @@ async function callLfmVisionOnce(buffer, mimetype, type, timeoutMs = 90000) {
       }
     ],
     temperature: 0.0,
-    max_tokens: 700,
+    max_tokens: 1024,
     response_format: { type: "json_object" }
   };
 
@@ -403,6 +554,10 @@ async function extractDocumentData(fileBuffer, type, mimetype = '', originalname
     processingMime = 'image/png';
   }
 
+  // Preprocess Image (ImageMagick)
+  console.log(`[Document AI] Pre-processing image for better OCR accuracy...`);
+  processingBuffer = await preprocessImage(processingBuffer, type);
+
   const selectedEngine = config.ocrEngine;
   console.log(`[Document AI] Engine terpilih: ${selectedEngine} | URL VLM: ${config.lfmApiUrl} | tipe: ${type}`);
 
@@ -411,7 +566,7 @@ async function extractDocumentData(fileBuffer, type, mimetype = '', originalname
       const rawResult = await callLfmVision(processingBuffer, processingMime, type);
       console.log(`[Document AI] ✅ LFM berhasil. Validasi JSON schema...`);
       const cleaned = validateAndClean(rawResult, type);
-      console.log(`[Document AI] ✅ Ekstraksi selesai via LFM. Fields:`, Object.keys(cleaned).join(', '));
+      console.log(`[Document AI] ✅ Ekstraksi selesai via LFM. Hasil:`, JSON.stringify(cleaned, null, 2));
       return {
         engineUsed: 'lfm',
         success: true,

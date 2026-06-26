@@ -1,0 +1,49 @@
+{
+  "assessmentId": "ASM-2026-ABCD",
+  "assessmentVersion": 2,
+  "applicationId": "PK-2026-0001",
+  "caseRevisionId": "CASE-2026-ABCD-R0002",
+  "scope": {
+    "purpose": "SIMULATION",
+    "product": "KREDIT_MODAL_KERJA",
+    "simulation": true
+  },
+  "policy": {
+    "pack": "produktif",
+    "version": "1.0.4",
+    "fingerprint": "sha256-policy-hash-new"
+  },
+  "quality": {
+    "completeness": 96,
+    "readiness": {
+      "readyForScoring": true,
+      "readyForCommittee": false
+    },
+    "capabilities": {
+      "identity": "READY",
+      "financial": "READY",
+      "collateral": "MISSING"
+    }
+  },
+  "assumptions": [
+    {
+      "code": "SEASONAL_REVENUE",
+      "description": "Omzet menggunakan rata-rata 12 bulan."
+    }
+  ],
+  "constraints": [
+    "MAX_TENOR_48",
+    "MIN_DSCR_1_5"
+  ],
+  "caseSnapshot": {
+    "revisionId": "CASE-2026-ABCD-R0002",
+    "data": {
+      "application": { "applicationId": "PK-2026-0001" },
+      "agunan": []
+    }
+  },
+  "integrity": {
+    "fingerprint": "sha256-context-hash-2",
+    "algorithm": "SHA-256"
+  }
+}

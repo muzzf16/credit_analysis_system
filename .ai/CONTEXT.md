@@ -147,11 +147,11 @@ Grade: A=90-100 | B=80-89 | C=70-79 | D=60-69 | E=<60
 ## 🔧 TASK SESI INI
 > Isi bagian ini sebelum mulai setiap sesi
 
-- **Task saat ini:** [TULIS TASK BARU DI SINI]
+- **Task saat ini:** Selesai memperbaiki OCR/VLM Halusinasi KTP & Upload Size Limits. Menunggu instruksi untuk mulai modul EWS (Early Warning System - Phase 5) atau Laporan.
 - **File kunci yang sudah diubah sesi sebelumnya:**
-  - `frontend/src/pages/analisa/AnalisaKonsumtifPage.jsx` — refactor renderInput ke format currency
-  - `frontend/src/pages/analisa/AnalisaProduktifPage.jsx` — refactor renderInput & input form ke format currency
-  - `.ai/SESSION_LOG.md` & `.ai/MISTAKES.md`
+  - `backend/src/services/document-ai/document-ai.service.js` — Menghapus prompt KTP contoh negatif.
+  - `frontend/src/pages/debitur/DebiturFormPage.jsx` — Sinkronisasi field UI KTP sesuai asli.
+  - `nginx/nginx.conf` & `backend/src/middleware/upload.js` — Naikkan limit upload ke 50MB.
 
 ---
 
@@ -177,6 +177,5 @@ Ikuti aturan berikut dengan ketat:
 
 ## 🎯 TASK HARI INI
 ```
-BUG FIX KRITIS (Dari Sesi 17): 
-Perbaiki proses penyimpanan data di `AnalisaKonsumtifPage.jsx` agar memuat data `suku_bunga`, `jangka_waktu_bulan`, `plafon_diajukan`, dan `sistem_angsuran` dari API Pengajuan, kemudian state form tersebut disertakan ke dalam `analisaService.saveKonsumtif` agar backend (`financialFormulas.js`) dapat mengkalkulasi "Max Kredit" dengan benar. Jangan lupa perhatikan nilai return default bila `0`.
+Melanjutkan pengembangan Phase 5 (Early Warning System) atau fitur Laporan berdasarkan instruksi terbaru pengguna.
 ```

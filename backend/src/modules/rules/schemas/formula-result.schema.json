@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Formula Result Schema",
+  "type": "object",
+  "properties": {
+    "code": { "type": "string" },
+    "value": { 
+      "type": ["number", "string", "boolean", "null"] 
+    },
+    "unit": { "type": "string" }
+  },
+  "required": ["code", "value", "unit"],
+  "additionalProperties": false
+}

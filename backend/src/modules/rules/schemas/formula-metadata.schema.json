@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Formula Metadata Schema",
+  "type": "object",
+  "properties": {
+    "code": { "type": "string" },
+    "version": { "type": "string" },
+    "unit": { 
+      "type": "string",
+      "enum": ["PERCENT", "CURRENCY", "RATIO", "INTEGER", "DECIMAL", "BOOLEAN", "STRING"]
+    },
+    "precision": { "type": "integer", "minimum": 0 }
+  },
+  "required": ["code", "version", "unit"],
+  "additionalProperties": false
+}

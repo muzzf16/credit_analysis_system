@@ -116,8 +116,52 @@
 ## (Belum diputuskan)
 ## ════════════════════════════
 
-- [ ] Phase 4 — AI Credit Analyst: model AI mana yang akan dipakai?
 - [ ] Laporan (modul 12): format export apa? (PDF / Excel / keduanya?)
 - [ ] EWS (modul 11): trigger alert via WA Gateway atau email juga?
 - [ ] Backup database: strategy backup otomatis PostgreSQL?
 - [ ] Deployment: domain & SSL certificate untuk production?
+
+---
+
+## ════════════════════════════
+## KEPUTUSAN TERKUNCI (PHASE 5: POLICY & DECISION)
+## (Jangan diubah tanpa persetujuan user)
+## ════════════════════════════
+
+**A. Policy Platform**
+1. **Policy Platform !== Config**: Policy adalah domain bisnis dengan state machine lifecycle dan diregister di Policy Registry independen.
+2. **Capability-Driven Policy**: Metadata policy pack memiliki kapabilitas `products`, `segments`, `channels`, dll untuk context resolution.
+3. **Registry vs Resolver**: Registry mengelola CRUD & lifecycle. Resolver mencari policy berdasarkan *context object*.
+4. **Enhanced Fingerprint**: Fingerprint = `SHA256(schema + policy + rules version)`.
+
+**B. Rule Library & Formula Engine**
+5. **Rule Library Bounded Context**: Rule Library bukan sekadar folder, melainkan modul penuh (`modules/rules/library`) dengan registry, resolver, contract, validator.
+6. **Rule As Object**: Rule bukan function biasa (`calculateDSR()`), melainkan object dengan `metadata()` dan `execute(context)` yang menghasilkan `RuleResult`.
+7. **Rule Metadata**: Setiap rule wajib memiliki metadata (`code`, `category`, `version`, `severity`, `outputs`) yang bisa dibaca tanpa eksekusi.
+8. **Rich RuleResult**: Output rule berstruktur `{code, passed, metrics, reasonCodes}`, bukan boolean `true/false`.
+9. **Standard Execution Context**: Semua rule menerima param yang sama: `execute({ assessment, policy, facts })`. Jangan ada rule dengan param berbeda.
+10. **Rule Independence**: Rule dilarang memanggil rule lain. Pipeline yang mengatur urutan eksekusi.
+11. **Formula Engine**: Perhitungan matematis (rumus) dipisah ke *Formula Engine*. Rule memanggil *Formula Engine*, bukan menghitung sendiri.
+
+**C. Business Capability, Projection, Intent & Policy Governance**
+12. **Pipeline Plan**: Urutan eksekusi *Stage* didefinisikan secara deklaratif di **Pipeline Plan**.
+13. **Pipeline Engine**: Pipeline Engine agnostic terhadap daftar Stage. Ia HANYA melooping `PipelinePlan.stages`.
+14. **PipelineResult**: Pipeline mengeksekusi Stage secara berurutan dan mengeluarkan `PipelineResult`.
+15. **Facts Platform (Canonical Language)**: `PipelineResult` diekstrak menjadi **Business Facts** oleh **Facts Extractor**. Seluruh platform HANYA berbicara menggunakan bahasa kanonik *FactCollection*.
+16. **Fact Definition**: Setiap Fact dibatasi secara ketat oleh **Fact Definition** (Single Source of Truth).
+17. **Capability Platform**: *FactCollection* diabstraksi menjadi **Business Capability** (misal: `Financial Capability: READY`) oleh *Capability Evaluator*.
+18. **DecisionFacts Projection**: *CapabilityCollection* di-mapping menjadi status kriteria persetujuan (`financialEligible=true`) oleh *DecisionFacts Projector*. Sebagai Read Model, tidak ada komputasi logika bisnis di sini.
+19. **DecisionIntent Platform**: Sistem mengonversi `DecisionFacts` menjadi agregat *Intent* (rekomendasi, risiko, kondisi). Sistem tidak pernah membuat keputusan akhir secara otoritatif.
+20. **Decision Policy Platform (Governance)**: Menyediakan aturan *Authority Matrix*, *Escalation*, *Override*, dan *Committee Rules*. *Decision Policy* dipadukan dengan *Intent* oleh *Decision Builder* untuk mencetak *Decision* akhir.
+21. **AI Boundaries**: AI hanya boleh membaca `AssessmentContext`, `CapabilityCollection`, `DecisionFacts`, `DecisionIntent`, `DecisionPolicy` dan `Decision` akhir (Facts Before AI).
+
+**D. Stage Engine, Profiles & Execution Hierarchy**
+22. **Execution Hierarchy Resmi**: Architecture mengikuti batas akhir sistem: `Policy → Pipeline Plan → Stage Profile → Stage → Rule → Formula`. (Disusul oleh `Pipeline Engine → PipelineResult → Facts Platform → Capability Platform → DecisionFacts Projection → DecisionIntent Platform → Decision Policy Platform → Decision Builder → Decision → Committee Workflow → Decision Audit → AI Credit Analyst`).
+19. **Stage As Orchestrator**: Stage memiliki lifecycle lengkap dan mengembalikan `StageResult`.
+20. **Layer Isolation**: Stage HANYA mengenal Rule. Pipeline HANYA mengenal Stage. FactsBuilder HANYA mengenal Extractor.
+21. **Stage Registry & Resolver**: Stage diregistrasi dan dicari via `StageResolver.resolve(code)`.
+22. **Profiles Bounded Context**: `Stage Profile` adalah Entity *immutable* (Bounded Context).
+23. **Execution Context**: Kontrak eksekusi berstandar: `execute({ assessment, stageProfile, execution })`.
+24. **Configuration Fingerprinting**: Semua artefak konfigurasi (Policy, Pipeline Plan, Stage Profile, **Fact Definition**) wajib dihitung *Fingerprint* (SHA-256) saat diregistrasi untuk reproduksibilitas audit.
+25. **Traceable PipelineResult**: Mengunci sekumpulan fingerprint (`policy`, `pipeline`, `profiles[]`).
+26. **No Direct Decision**: Stage dan Pipeline hanya menghasilkan fakta/result eksekusi. Keputusan kredit hanya dibuat di `Decision Builder`.

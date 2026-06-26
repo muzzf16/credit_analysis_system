@@ -1,0 +1,14 @@
+[
+  {
+    "maxLimit": 100000000,
+    "authority": "BRANCH_MANAGER"
+  },
+  {
+    "maxLimit": 500000000,
+    "authority": "CREDIT_COMMITTEE"
+  },
+  {
+    "maxLimit": null,
+    "authority": "BOARD_OF_DIRECTORS"
+  }
+]

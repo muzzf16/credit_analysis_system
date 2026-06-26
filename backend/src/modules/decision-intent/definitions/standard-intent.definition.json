@@ -1,0 +1,14 @@
+{
+  "code": "STANDARD_INTENT",
+  "allowedRecommendations": [
+    "APPROVE",
+    "APPROVE_WITH_CONDITION",
+    "MANUAL_REVIEW",
+    "REJECT"
+  ],
+  "allowedRiskLevels": [
+    "LOW",
+    "MEDIUM",
+    "HIGH"
+  ]
+}

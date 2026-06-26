@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fact Schema",
+  "type": "object",
+  "properties": {
+    "code": { "type": "string" },
+    "value": { "type": ["string", "number", "boolean", "null"] },
+    "source": { "type": "string" },
+    "confidence": { "type": "number" },
+    "evidence": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["code", "source"],
+  "additionalProperties": false
+}

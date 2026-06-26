@@ -489,3 +489,84 @@ Menyesuaikan prompt VLM untuk dokumen Sertifikat Hak Milik (SHM) agar sesuai den
 ## [2026-06-24] UI/UX Improvement - Input Format Rupiah
 - **Modifikasi:** Mengubah field input yang tadinya `<input type="number">` biasa menjadi `<input type="text">` dengan fungsi format otomatis ribuan (titik) serta memiliki prefix `Rp`.
 - **File Terdampak:** `AnalisaKonsumtifPage.jsx` (semua input Gaji, Pengeluaran, Angsuran Diajukan) dan `AnalisaProduktifPage.jsx` (Omset, Biaya, Angsuran).
+
+---
+
+## 🔧 Sesi 21 — Perbaikan Akurasi VLM KTP, SHM, Surat Nikah, KK, BPKB & Form Agunan (25 Jun 2026)
+**Goal:** Meningkatkan akurasi proses OCR/VLM yang kurang maksimal, dengan menerapkan pre-processing gambar, memperketat prompt untuk dokumen selain KTP (Surat Nikah, KK, NPWP, BPKB, SHM), menambah post-processing (regex sanitization), serta menggabungkan scan Surat Nikah & form Agunan menggunakan endpoint VLM baru.
+**Yang selesai:**
+- [x] Menerapkan pre-processing gambar (Grayscale, Normalize, Deskew 40%, Sharpen) menggunakan `imagemagick` via `execFile` di backend sebelum diproses VLM.
+- [x] Memperbarui schema dan prompt VLM untuk KTP, KK, NPWP, BPKB, Surat Nikah, dan SHM (ditambah ekstraksi `provinsi` dan pola deteksi nomor pada SHM).
+- [x] Menambahkan _post-processing sanitizer_ regex di `validateAndClean` untuk memastikan karakter di field NIK, No. KK, NPWP, dan Luas Tanah berupa angka murni (tanpa salah ketik huruf O/A dll).
+- [x] Memigrasikan scan dokumen "Surat Nikah" ke endpoint `/document/surat_nikah` (meninggalkan _fallback_ Tesseract lama).
+- [x] Memigrasikan fungsi pemindaian di form Agunan (`AgunanFormPage.jsx` & `AgunanEditPage.jsx`) menggunakan `documentService` VLM (SHM dan BPKB) dengan mapping state yang tepat dan pembentukan alamat otomatis dari `desa` + `kecamatan` + `kabupaten`.
+- [x] Me-rebuild dan restart environment Docker untuk `backend` dan `frontend`.
+**Keputusan baru:** Seluruh proses OCR/VLM di sistem, tanpa terkecuali, kini terpusat pada service Document AI baru (Llama Vision) dengan pra-pemrosesan gambar otomatis untuk meminimalkan halusinasi model. Pemindaian lawas berbasis OCR Service Tesseract dihapus penggunaannya di _frontend_.
+**File yang diubah:** `backend/src/services/document-ai/document-ai.service.js`, `backend/src/services/document-ai/document-ai.schemas.js`, `backend/src/modules/document/document.controller.js`, `backend/src/modules/document/document.routes.js`, `frontend/src/services/index.js`, `frontend/src/pages/debitur/DebiturFormPage.jsx`, `frontend/src/pages/agunan/AgunanFormPage.jsx`, `frontend/src/pages/agunan/AgunanEditPage.jsx`
+**File JANGAN disentuh:** `backend/src/modules/ocr/ocr.service.js` (Simpan sebagai museum _fallback_ cadangan)
+**Bug yang ditemukan:** Frontend Form Agunan sempat tertinggal belum memakai arsitektur VLM yang baru dan masih menggunakan legacy endpoint. Pemetaan nilai (state mapping) juga kurang tepat untuk data _snake_case_ yang dikirim VLM backend.
+**Hindari sesi berikutnya:** Menambah endpoint backend yang memengaruhi state frontend tanpa melakukan pembersihan global / *refactoring* menyeluruh ke halaman-halaman yang fungsinya tumpang tindih.
+**Task berikutnya:** Fokus mengeksplorasi modul EWS (Early Warning System - Phase 5) karena fungsionalitas MAK dan Document AI sudah memadai.
+**Kode yang perlu ditempel:** -
+
+---
+
+## 🔧 Sesi 22 — Upgrade Prompt OCR SHM + Field Mapping Agunan (25 Jun 2026)
+**Goal:** Meningkatkan kelengkapan ekstraksi data dari dokumen SHM menggunakan data nyata SHM No. 01620 (AAW579903, Sidomulyo, Limpung, Batang) sebagai referensi, dan memperkaya field mapping ke form agunan.
+**Yang selesai:**
+- [x] Upgrade prompt VLM SHM dari 8 field basic menjadi 23 field komprehensif: NIB, kode dokumen, nama pemegang hak, tanggal lahir pemegang, keadaan tanah, luas terbilang, nomor surat ukur, asal hak, hak tanggungan aktif, nama kreditur HT, nomor HT, referensi DI 307/208, kantor pertanahan.
+- [x] Prompt baru adaptif — mampu baca semua halaman SHM (Cover DI-206, Pendaftaran, Peralihan HT, Surat Ukur DI-207) dari 1 upload gambar.
+- [x] Perluas `SHM_SCHEMA` di `document-ai.schemas.js` dengan semua field baru, backward-compatible (field lama `atas_nama`, `kabupaten`, `desa` tetap ada sebagai alias).
+- [x] `validateAndClean` case `'shm'` diperbarui: smart alias resolution, safe null handling, konversi `luas_m2` integer, boolean untuk `hak_tanggungan_aktif`.
+- [x] Field mapping OCR → form agunan diperluas di `AgunanFormPage.jsx` dan `AgunanEditPage.jsx` menggunakan logika `formMapper.js`: `nama_pemegang_hak`, `luas_m2`, `desa_kelurahan`, `kabupaten_kota`, `keadaan_tanah` → `deskripsi`, `buildAlamat` (desa + Kec. + Kab. + provinsi).
+- [x] Backend di-cp dan di-restart (`bpr_bapera_api`), frontend di-rebuild dan di-recreate (`bpr_bapera_frontend`).
+**Keputusan baru:** Field `atas_nama` dan `kabupaten` dst dipertahankan sebagai alias (bukan dihapus) di schema untuk backward compatibility. Prompt SHM adalah single-image adaptive (bukan multi-halaman terpisah karena VLM hanya 1 gambar per call). Deskripsi agunan otomatis diisi dari `keadaan_tanah` + `luas_m2`.
+**File yang diubah:**
+- `backend/src/services/document-ai/document-ai.schemas.js` — SHM_SCHEMA diperluas + validateAndClean
+- `backend/src/services/document-ai/document-ai.service.js` — prompt SHM komprehensif
+- `frontend/src/pages/agunan/AgunanFormPage.jsx` — field mapping SHM diperluas
+- `frontend/src/pages/agunan/AgunanEditPage.jsx` — field mapping SHM diperluas
+**File JANGAN disentuh:** `backend/src/modules/ocr/ocr.service.js`, `backend/src/modules/document/document.routes.js`, `frontend/src/services/index.js`
+**Bug yang ditemukan:** -
+**Hindari sesi berikutnya:** Jangan ganti field schema yang sudah ada menjadi field baru tanpa alias backward compat — bisa break response yang sudah ada di frontend lain.
+**Task berikutnya:** Test live scan SHM di form agunan, lalu lanjut ke modul EWS (Phase 5).
+**Kode yang perlu ditempel:** -
+
+---
+
+## 🔧 Sesi 23 — Upload Multi-Halaman SHM + Merge ke Form Agunan (25 Jun 2026)
+**Goal:** Pecah upload SHM menjadi 5 slot terpisah per jenis halaman agar VLM bisa menggunakan prompt yang spesifik untuk setiap halaman, meningkatkan akurasi ekstraksi data agunan secara signifikan.
+**Yang selesai:**
+- [x] +5 prompt VLM per-halaman: `shm_cover`, `shm_pendaftaran`, `shm_peralihan`, `shm_surat_ukur`, `shm_peta`
+- [x] +5 `validateAndClean` case di schemas untuk sanitasi output VLM per halaman
+- [x] +`processSHMPage` controller + route `POST /document/shm/page` (diletakkan SEBELUM `/shm`)
+- [x] +`extractShmPage` di `services/index.js`
+- [x] Rewrite `AgunanFormPage.jsx` + `AgunanEditPage.jsx`: 5-slot UI dengan status idle/loading/done/error, badge Wajib/Opsional, tombol "Terapkan ke Form" (merge cerdas dengan prioritas field)
+- [x] Batas tanah dari `nama_tetangga[]` hasil `shm_peta`; BPKB single upload tetap berfungsi
+- [x] Backend restart ✅, frontend rebuild ✅
+**Keputusan baru:** Merge di frontend (bukan backend) agar user bisa edit manual sebelum simpan. Route `/shm/page` HARUS di atas `/shm` di routes.js.
+**File yang diubah:** `document-ai.service.js`, `document-ai.schemas.js`, `document.controller.js`, `document.routes.js`, `services/index.js`, `AgunanFormPage.jsx`, `AgunanEditPage.jsx`
+**File JANGAN disentuh:** `backend/src/modules/ocr/ocr.service.js`, database schema, credit scoring
+**Bug yang ditemukan:** -
+**Hindari sesi berikutnya:** Jangan tambah route `/shm/xxx` setelah `/shm` — Express first-match akan menelan subroute.
+**Task berikutnya:** Test live upload per halaman SHM, lalu modul EWS (Phase 5).
+**Kode yang perlu ditempel:** -
+
+## 🔧 Sesi 24 — Fix VLM Halusinasi & Limit Upload File (25 Jun 2026)
+**Goal:** Menghilangkan halusinasi (data fiktif) dari hasil bacaan KTP, mencocokkan struktur UI Form Debitur dengan KTP, dan mengatasi kendala gagal upload file (gambar/PDF) berukuran besar.
+**Yang selesai:**
+- [x] Memperbaiki *prompt* instruksi VLM KTP di `document-ai.service.js` dengan menghapus contoh teks negatif yang justru memicu halusinasi kata.
+- [x] Merombak struktur UI Form Debitur (`DebiturFormPage.jsx`) khusus KTP dengan memisahkan RT & RW, serta menambahkan Agama, Pekerjaan, Kewarganegaraan, dan Berlaku Hingga agar sinkron dengan hasil OCR.
+- [x] Mengatasi error "tidak bisa upload image/pdf" dengan menaikkan limit unggahan file dari 10 MB menjadi 50 MB pada *reverse proxy* (`nginx.conf`) dan layer aplikasi Node.js (`backend/src/middleware/upload.js`).
+- [x] Me-rebuild container frontend, backend, dan Nginx.
+**Keputusan baru:** Semua isian Form Debitur untuk Data KTP kini disamakan persis dengan field fisik KTP agar mengurangi perbedaan interpretasi data. Batas ukuran unggahan dokumen kini disetel longgar di 50 MB.
+**File yang diubah:**
+- `backend/src/services/document-ai/document-ai.service.js`
+- `frontend/src/pages/debitur/DebiturFormPage.jsx`
+- `nginx/nginx.conf`
+- `backend/src/middleware/upload.js`
+**File JANGAN disentuh:** -
+**Bug yang ditemukan:** (1) Instruksi contoh negatif pada prompt VLM memicu munculnya data fiktif (halusinasi). (2) Nginx dan Multer secara *default* langsung memotong unggahan foto/PDF resolusi tinggi karena limit 10 MB yang kekecilan.
+**Hindari sesi berikutnya:** Menaruh contoh negatif berisi string eksplisit dalam instruksi ke Llama Vision.
+**Task berikutnya:** Fokus mengerjakan modul EWS (Early Warning System) atau AI Credit Analyst.
+**Kode yang perlu ditempel:** -

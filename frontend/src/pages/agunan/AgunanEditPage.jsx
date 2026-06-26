@@ -1,19 +1,75 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, Building2, MapPin, Camera } from 'lucide-react';
-import { agunanService, ocrService } from '../../services';
+import { ArrowLeft, Save, Loader2, Building2, MapPin, CheckCircle, XCircle, Upload, RefreshCw } from 'lucide-react';
+import { agunanService, documentService } from '../../services';
 import { JENIS_AGUNAN } from '../../utils/constants';
 import { formatRupiah } from '../../utils/formatters';
+
+// ─── Konfigurasi 5 slot halaman SHM ─────────────────────────────────────────
+const SHM_PAGE_SLOTS = [
+  { key: 'cover',       label: 'Cover',           desc: 'No. Sertifikat, Lokasi, NIB',    badge: 'Wajib'    },
+  { key: 'pendaftaran', label: 'Pendaftaran',      desc: 'Nama Pemegang, Luas, Asal Hak', badge: 'Wajib'    },
+  { key: 'peralihan',   label: 'Peralihan / HT',   desc: 'Hak Tanggungan Aktif',           badge: 'Opsional' },
+  { key: 'surat_ukur',  label: 'Surat Ukur',       desc: 'Luas Terbilang, Koordinat',      badge: 'Opsional' },
+  { key: 'peta',        label: 'Peta Bidang',      desc: 'Batas Tanah Tetangga',           badge: 'Opsional' },
+];
+const INIT_SHM_PAGES = () => ({
+  cover:       { status: 'idle', data: null, fileName: '' },
+  pendaftaran: { status: 'idle', data: null, fileName: '' },
+  peralihan:   { status: 'idle', data: null, fileName: '' },
+  surat_ukur:  { status: 'idle', data: null, fileName: '' },
+  peta:        { status: 'idle', data: null, fileName: '' },
+});
+
+// ─── Merge hasil semua halaman SHM ke field form agunan ──────────────────────
+function mergeShmToForm(pages) {
+  const cover     = pages.cover?.data      || {};
+  const pend      = pages.pendaftaran?.data || {};
+  const peralihan = pages.peralihan?.data   || {};
+  const suratUkur = pages.surat_ukur?.data  || {};
+  const peta      = pages.peta?.data        || {};
+
+  const nomor  = cover.nomor_sertifikat   || pend.nomor_sertifikat    || '';
+  const nama   = pend.nama_pemegang_hak   || pend.atas_nama           || '';
+  const luasM2 = (pend.luas_m2 > 0 ? pend.luas_m2 : null)
+               || (suratUkur.luas_m2 > 0 ? suratUkur.luas_m2 : null) || 0;
+  const keadaan = suratUkur.keadaan_tanah || pend.keadaan_tanah       || '';
+  const kec     = cover.kecamatan         || suratUkur.kecamatan       || pend.kecamatan      || '';
+  const kab     = cover.kabupaten_kota    || suratUkur.kabupaten_kota  || '';
+  const desa    = cover.desa_kelurahan    || suratUkur.desa_kelurahan  || pend.desa_kelurahan || '';
+  const prov    = cover.provinsi          || suratUkur.provinsi        || '';
+
+  const tetangga = Array.isArray(peta.nama_tetangga) ? peta.nama_tetangga : [];
+  const [bU = '', bS = '', bT = '', bB = ''] = tetangga;
+
+  const alamatParts  = [desa, kec ? `Kec. ${kec}` : null, kab ? `Kab. ${kab}` : null, prov].filter(Boolean);
+  const alamatOcr    = alamatParts.join(', ');
+  const deskripsiOcr = [keadaan, luasM2 ? `${luasM2} m\u00B2` : ''].filter(Boolean).join(', ');
+
+  return { nomorSertifikat: nomor, atasNama: nama, luasTanah: luasM2,
+           kabupaten: kab, kecamatan: kec, kelurahan: desa,
+           alamatAgunan: alamatOcr, deskripsi: deskripsiOcr,
+           batasUtara: bU, batasSelatan: bS, batasTimur: bT, batasBarat: bB };
+}
 
 export default function AgunanEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading,      setLoading]      = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
-  const [ocrLoading, setOcrLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-  const [pengajuanId, setPengajuanId] = useState('');
+  const [error,        setError]        = useState('');
+  const [successMsg,   setSuccessMsg]   = useState('');
+  const [pengajuanId,  setPengajuanId]  = useState('');
+
+  // ─── SHM multi-page state ────────────────────────────────────────────────
+  const [shmPages, setShmPages] = useState(INIT_SHM_PAGES());
+  // BPKB single upload loading
+  const [bpkbLoading, setBpkbLoading] = useState(false);
+
+  const updateShmPage = (pageKey, patch) =>
+    setShmPages(prev => ({ ...prev, [pageKey]: { ...prev[pageKey], ...patch } }));
+
+  const hasShmData = () => Object.values(shmPages).some(p => p.status === 'done' && p.data);
 
   const [form, setForm] = useState({
     jenisAgunan: 'SHM', deskripsi: '', nomorSertifikat: '', atasNama: '',
@@ -30,7 +86,7 @@ export default function AgunanEditPage() {
       try {
         setFetchLoading(true);
         const res = await agunanService.getById(id);
-        const a = res.data.data;
+        const a   = res.data.data;
         setPengajuanId(a.pengajuan_id);
         setForm({
           jenisAgunan: a.jenis_agunan || 'SHM',
@@ -77,9 +133,7 @@ export default function AgunanEditPage() {
   const update = (field, value) => {
     setForm(prev => {
       const next = { ...prev, [field]: value };
-      if (field === 'nilaiTaksasi') {
-        next.nilaiLikuidasi = Math.round(parseFloat(value || 0) * 0.6);
-      }
+      if (field === 'nilaiTaksasi') next.nilaiLikuidasi = Math.round(parseFloat(value || 0) * 0.6);
       return next;
     });
   };
@@ -93,39 +147,71 @@ export default function AgunanEditPage() {
     }
   };
 
-  const handleOcr = async (e) => {
-    const file = e.target.files[0];
+  // ─── Upload 1 halaman SHM ─────────────────────────────────────────────────
+  const handleShmPageUpload = async (pageKey, file) => {
     if (!file) return;
-    const type = ['SHM', 'SHGB', 'AJB'].includes(form.jenisAgunan) ? 'shm' : 'bpkb';
-    setOcrLoading(true);
-    setError('');
+    updateShmPage(pageKey, { status: 'loading', fileName: file.name });
+
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('type', type);
+    formData.append('page_type', pageKey);
     try {
-      const res = await ocrService.process(formData);
-      const extracted = res.data.data.data;
-      if (type === 'shm') {
-        setForm(prev => ({
-          ...prev,
-          nomorSertifikat: extracted.nomorSertifikat || prev.nomorSertifikat,
-          atasNama: extracted.atasNama || prev.atasNama,
-          luasTanah: extracted.luasTanah || prev.luasTanah,
-          alamatAgunan: extracted.alamatAgunan || prev.alamatAgunan,
-          kecamatan: extracted.kecamatan || prev.kecamatan,
-        }));
-      }
+      const res  = await documentService.extractShmPage(formData);
+      const data = res.data.data.data || {};
+      updateShmPage(pageKey, { status: 'done', data, fileName: file.name });
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal memproses OCR.');
+      updateShmPage(pageKey, { status: 'error', data: null, fileName: file.name });
+      setError(`Gagal proses halaman ${pageKey}: ${err.response?.data?.message || err.message}`);
+    }
+  };
+
+  // ─── Terapkan hasil merge ke form ─────────────────────────────────────────
+  const applyShmMerge = () => {
+    const merged = mergeShmToForm(shmPages);
+    setForm(prev => ({
+      ...prev,
+      ...(merged.nomorSertifikat && { nomorSertifikat: merged.nomorSertifikat }),
+      ...(merged.atasNama        && { atasNama:         merged.atasNama }),
+      ...(merged.luasTanah > 0   && { luasTanah:        merged.luasTanah }),
+      ...(merged.kabupaten       && { kabupaten:         merged.kabupaten }),
+      ...(merged.kecamatan       && { kecamatan:         merged.kecamatan }),
+      ...(merged.kelurahan       && { kelurahan:         merged.kelurahan }),
+      ...(merged.alamatAgunan    && { alamatAgunan:      merged.alamatAgunan }),
+      ...(merged.deskripsi       && { deskripsi:         merged.deskripsi }),
+      ...(merged.batasUtara      && { batasUtara:        merged.batasUtara }),
+      ...(merged.batasSelatan    && { batasSelatan:      merged.batasSelatan }),
+      ...(merged.batasTimur      && { batasTimur:        merged.batasTimur }),
+      ...(merged.batasBarat      && { batasBarat:        merged.batasBarat }),
+    }));
+    setSuccessMsg('✅ Data dari SHM berhasil diterapkan ke form!');
+    setTimeout(() => setSuccessMsg(''), 3000);
+  };
+
+  // ─── BPKB single upload ──────────────────────────────────────────────────
+  const handleBpkbScan = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setBpkbLoading(true); setError('');
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res       = await documentService.extractBpkb(formData);
+      const extracted = res.data.data.data || {};
+      setForm(prev => ({
+        ...prev,
+        nomorSertifikat: extracted.nomor_bpkb || prev.nomorSertifikat,
+        atasNama:        extracted.atas_nama   || prev.atasNama,
+        deskripsi:       `Merk: ${extracted.merk || ''}, Tipe: ${extracted.tipe || ''}, Tahun: ${extracted.tahun || ''}`,
+      }));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Gagal memproses OCR BPKB.');
     } finally {
-      setOcrLoading(false);
+      setBpkbLoading(false);
     }
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
-    setError('');
-    setSuccessMsg('');
+    setLoading(true); setError(''); setSuccessMsg('');
     try {
       await agunanService.update(id, form);
       setSuccessMsg('Data agunan berhasil diperbarui!');
@@ -135,6 +221,15 @@ export default function AgunanEditPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ─── Helper render status badge per slot ─────────────────────────────────
+  const renderSlotStatus = (pageState) => {
+    if (!pageState) return null;
+    if (pageState.status === 'loading') return <span className="text-xs text-yellow-400 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" />Memproses...</span>;
+    if (pageState.status === 'done')    return <span className="text-xs text-emerald-400 flex items-center gap-1 truncate max-w-[100px]" title={pageState.fileName}><CheckCircle className="w-3 h-3 shrink-0" />{pageState.fileName}</span>;
+    if (pageState.status === 'error')   return <span className="text-xs text-red-400 flex items-center gap-1"><XCircle className="w-3 h-3" />Gagal</span>;
+    return <span className="text-xs text-slate-500">Belum upload</span>;
   };
 
   if (fetchLoading) return (
@@ -155,26 +250,100 @@ export default function AgunanEditPage() {
         </div>
       </div>
 
-      {error && <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400">{error}</div>}
+      {error      && <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400">{error}</div>}
       {successMsg && <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-4 py-3 text-sm text-emerald-400">{successMsg}</div>}
 
       <div className="card animate-fade-in">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-          {/* OCR Scan */}
-          <div className="md:col-span-2 flex items-center justify-between bg-navy-light/30 border border-navy-border p-4 rounded-xl">
-            <div>
-              <h3 className="text-sm font-semibold text-gold">Scan {['SHM', 'SHGB', 'AJB'].includes(form.jenisAgunan) ? 'Sertifikat (SHM/SHGB)' : 'BPKB'} Otomatis (OCR)</h3>
-              <p className="text-xs text-slate-400">Unggah ulang dokumen untuk mengisi ulang data otomatis</p>
-            </div>
-            <label className="btn-primary flex items-center gap-2 cursor-pointer">
-              {ocrLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-              {ocrLoading ? 'Memproses OCR...' : 'Unggah Dokumen'}
-              <input type="file" accept="image/*,.pdf,application/pdf" onChange={handleOcr} className="hidden" disabled={ocrLoading} />
-            </label>
-          </div>
+          {/* ── SHM: Panel 5-slot upload per halaman ── */}
+          {['SHM', 'SHGB', 'AJB'].includes(form.jenisAgunan) && (
+            <div className="md:col-span-2 bg-navy-light/30 border border-navy-border rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-gold">📄 Scan SHM Per Halaman — Akurasi Tinggi</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Upload setiap halaman SHM secara terpisah untuk hasil terbaik. Halaman opsional bisa dilewati.</p>
+                </div>
+                {hasShmData() && (
+                  <button
+                    onClick={applyShmMerge}
+                    className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5 shrink-0 ml-3"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    Terapkan ke Form
+                  </button>
+                )}
+              </div>
 
-          {/* Informasi Dasar */}
+              {/* 5 slot grid */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                {SHM_PAGE_SLOTS.map(slot => {
+                  const pageState = shmPages[slot.key];
+                  const isDone    = pageState?.status === 'done';
+                  const isLoading = pageState?.status === 'loading';
+                  return (
+                    <div
+                      key={slot.key}
+                      className={`relative flex flex-col gap-1.5 rounded-lg border p-2.5 transition-colors
+                        ${isDone    ? 'border-emerald-500/40 bg-emerald-500/5'  : ''}
+                        ${isLoading ? 'border-yellow-500/40 bg-yellow-500/5'    : ''}
+                        ${!isDone && !isLoading ? 'border-navy-border bg-navy/30' : ''}`}
+                    >
+                      <span className={`absolute top-1.5 right-1.5 text-[9px] font-semibold px-1 rounded
+                        ${slot.badge === 'Wajib' ? 'bg-gold/20 text-gold' : 'bg-slate-700 text-slate-400'}`}>
+                        {slot.badge}
+                      </span>
+
+                      <p className="text-xs font-semibold text-slate-200 pr-10">{slot.label}</p>
+                      <p className="text-[10px] text-slate-500 leading-tight">{slot.desc}</p>
+                      <div className="mt-1">{renderSlotStatus(pageState)}</div>
+
+                      <label className={`mt-1.5 flex items-center justify-center gap-1 text-[11px] font-medium cursor-pointer rounded px-2 py-1.5 transition
+                        ${isLoading ? 'opacity-50 cursor-not-allowed bg-navy-border text-slate-500' : ''}
+                        ${isDone    ? 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30' : ''}
+                        ${!isDone && !isLoading ? 'bg-navy-border text-slate-300 hover:bg-slate-600' : ''}`}>
+                        {isLoading
+                          ? <><Loader2 className="w-3 h-3 animate-spin" /> Proses...</>
+                          : isDone
+                          ? <><RefreshCw className="w-3 h-3" /> Scan Ulang</>
+                          : <><Upload className="w-3 h-3" /> Upload</>}
+                        <input
+                          type="file"
+                          accept="image/*,.pdf,application/pdf"
+                          className="hidden"
+                          disabled={isLoading}
+                          onChange={e => { if (e.target.files[0]) handleShmPageUpload(slot.key, e.target.files[0]); e.target.value = ''; }}
+                        />
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {hasShmData() && (
+                <p className="text-xs text-slate-500 text-center pt-1">
+                  ✅ {Object.values(shmPages).filter(p => p.status === 'done').length}/5 halaman berhasil — klik <strong className="text-gold">Terapkan ke Form</strong> untuk mengisi otomatis
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* ── BPKB: Single upload ── */}
+          {!['SHM', 'SHGB', 'AJB'].includes(form.jenisAgunan) && (
+            <div className="md:col-span-2 flex items-center justify-between bg-navy-light/30 border border-navy-border p-4 rounded-xl">
+              <div>
+                <h3 className="text-sm font-semibold text-gold">Scan BPKB Otomatis (OCR)</h3>
+                <p className="text-xs text-slate-400">Unggah ulang dokumen BPKB untuk mengisi ulang data otomatis</p>
+              </div>
+              <label className="btn-primary flex items-center gap-2 cursor-pointer">
+                {bpkbLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {bpkbLoading ? 'Memproses OCR...' : 'Unggah BPKB'}
+                <input type="file" accept="image/*,.pdf,application/pdf" onChange={handleBpkbScan} className="hidden" disabled={bpkbLoading} />
+              </label>
+            </div>
+          )}
+
+          {/* ── Informasi Dasar ── */}
           <div>
             <label className="label">Jenis Agunan</label>
             <select value={form.jenisAgunan} onChange={e => update('jenisAgunan', e.target.value)} className="input-field">
@@ -270,7 +439,6 @@ export default function AgunanEditPage() {
             <div className="flex-1"><label className="label">Titik Koordinat (GPS)</label><input type="text" readOnly value={form.latitude ? `${form.latitude}, ${form.longitude}` : ''} className="input-field" placeholder="Belum ada" /></div>
             <button onClick={getLocation} className="btn-secondary shrink-0 mb-0"><MapPin className="w-4 h-4" /> Dapatkan GPS</button>
           </div>
-
         </div>
       </div>
 

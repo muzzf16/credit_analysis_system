@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fact Definition Schema",
+  "type": "object",
+  "properties": {
+    "code": { "type": "string" },
+    "type": { "type": "string", "enum": ["ENUM", "BOOLEAN", "INTEGER", "NUMBER", "STRING"] },
+    "allowedValues": { 
+      "type": "array", 
+      "items": { "type": ["string", "number", "boolean"] } 
+    },
+    "min": { "type": "number" },
+    "max": { "type": "number" },
+    "unit": { "type": "string" },
+    "description": { "type": "string" },
+    "consumer": { 
+      "type": "array", 
+      "items": { "type": "string" } 
+    }
+  },
+  "required": ["code", "type", "description"],
+  "additionalProperties": false
+}

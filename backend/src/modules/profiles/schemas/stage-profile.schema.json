@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Stage Profile Schema",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "version": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE", "DRAFT"] }
+      },
+      "required": ["code", "version", "status"]
+    },
+    "stage": { "type": "string" },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "parameters": { "type": "object" }
+        },
+        "required": ["code"]
+      }
+    }
+  },
+  "required": ["metadata", "stage", "rules"],
+  "additionalProperties": false
+}

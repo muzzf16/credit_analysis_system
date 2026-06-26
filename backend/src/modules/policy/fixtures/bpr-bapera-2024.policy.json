@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "pack": "BPR_BAPERA_STANDARD",
+    "version": "2024.1",
+    "description": "Kebijakan kredit standar BPR Bapera Batang — Konsumtif & Produktif",
+    "effectiveDate": "2024-01-01",
+    "priority": 100,
+    "products": [
+      "KREDIT_MODAL_KERJA",
+      "KREDIT_INVESTASI",
+      "KREDIT_KONSUMTIF",
+      "KREDIT_PEGAWAI"
+    ],
+    "supports": [
+      "NEW_LOAN",
+      "TOP_UP",
+      "RESTRUCTURING"
+    ],
+    "segments": [
+      "MICRO",
+      "SME",
+      "CONSUMER"
+    ],
+    "channels": [
+      "AO",
+      "BRANCH",
+      "DIGITAL"
+    ],
+    "regions": [
+      "BATANG",
+      "PEKALONGAN",
+      "KENDAL"
+    ]
+  },
+  "rules": [
+    {
+      "code": "MIN_AGE",
+      "stage": "ELIGIBILITY",
+      "enabled": true,
+      "parameters": { "minimum": 21 }
+    },
+    {
+      "code": "MAX_AGE",
+      "stage": "ELIGIBILITY",
+      "enabled": true,
+      "parameters": { "maximum": 65 }
+    },
+    {
+      "code": "SLIK_CLEARANCE",
+      "stage": "COMPLIANCE",
+      "enabled": true
+    },
+    {
+      "code": "DSR_MAX",
+      "stage": "FINANCIAL",
+      "enabled": true,
+      "parameters": { "threshold": 0.40 }
+    },
+    {
+      "code": "RPC_MIN",
+      "stage": "FINANCIAL",
+      "enabled": true,
+      "parameters": { "threshold": 1.10 }
+    },
+    {
+      "code": "DSCR_MIN",
+      "stage": "FINANCIAL",
+      "enabled": true,
+      "parameters": { "threshold": 1.20 }
+    },
+    {
+      "code": "LTV_MAX",
+      "stage": "COLLATERAL",
+      "enabled": true,
+      "parameters": { "threshold": 0.80 }
+    },
+    {
+      "code": "SCORING_5C",
+      "stage": "SCORING",
+      "enabled": true,
+      "parameters": {
+        "weights": {
+          "character": 0.25,
+          "capacity": 0.30,
+          "capital": 0.15,
+          "collateral": 0.20,
+          "condition": 0.10
+        },
+        "minimumPassingGrade": "C"
+      }
+    }
+  ]
+}

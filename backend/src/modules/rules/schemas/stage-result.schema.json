@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Stage Result Schema",
+  "type": "object",
+  "properties": {
+    "stage": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["PASSED", "FAILED", "WARNING", "SKIPPED"]
+    },
+    "score": { "type": ["number", "null"] },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "rulesExecuted": { "type": "integer" },
+        "rulesPassed": { "type": "integer" },
+        "rulesFailed": { "type": "integer" },
+        "durationMs": { "type": "integer" }
+      },
+      "required": ["rulesExecuted", "rulesPassed", "rulesFailed", "durationMs"]
+    },
+    "metrics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "value": { "type": ["number", "string", "boolean", "null"] }
+        },
+        "required": ["code", "value"]
+      }
+    },
+    "reasonCodes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "executionTrace": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rule": { "type": "string" },
+          "startedAt": { "type": "string" },
+          "finishedAt": { "type": "string" },
+          "durationMs": { "type": "integer" },
+          "passed": { "type": "boolean" }
+        },
+        "required": ["rule", "startedAt", "finishedAt", "durationMs", "passed"]
+      }
+    }
+  },
+  "required": ["stage", "status", "score", "summary", "metrics", "reasonCodes", "executionTrace"],
+  "additionalProperties": false
+}

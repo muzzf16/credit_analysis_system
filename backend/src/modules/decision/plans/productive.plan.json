@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "code": "PRODUCTIVE_STANDARD",
+    "version": "1.0.0",
+    "status": "ACTIVE"
+  },
+  "stages": [
+    {
+      "code": "FINANCIAL",
+      "profile": "STANDARD_FINANCIAL"
+    }
+  ]
+}

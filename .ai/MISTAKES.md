@@ -237,3 +237,30 @@
 - ✅ **Yang benar:** Gunakan `<input type="text">`, lalu format `value` dengan `.toLocaleString('id-ID')` dan parsing ulang input numerik di `onChange` menggunakan `.replace(/\D/g, '')`.
 - 📁 **File terdampak:** Komponen input form (terutama di Analisa).
 - 🔒 **Aturan baru:** Semua input yang mewakili nilai uang (Rupiah) WAJIB menggunakan text input dengan formatting otomatis ribuan (titik) demi kenyamanan UI/UX pengguna.
+
+---
+
+## [2026-06-25] Form Agunan Masih Menggunakan Endpoint OCR Lama
+- ❌ **Yang dicoba:** Menambahkan service `extractShm` pada backend dan beranggapan semua halaman akan langsung menggunakan arsitektur VLM yang baru.
+- 🐛 **Yang salah:** Pada komponen `AgunanFormPage.jsx` dan `AgunanEditPage.jsx`, pemindaian masih memanggil `ocrService.process()` (endpoint lama `/ocr` berbasis Tesseract) karena luput dari scope pembaruan halaman Debitur.
+- ✅ **Yang benar:** Ganti import `ocrService` menjadi `documentService` di semua komponen form agunan dan gunakan pemanggilan endpoint spesifik (misal `documentService.extractShm(formData)`), lalu sinkronkan *mapping* dari parameter response *snake_case* ke *camelCase*.
+- 📁 **File terdampak:** `frontend/src/pages/agunan/AgunanFormPage.jsx` dan `AgunanEditPage.jsx`
+- 🔒 **Aturan baru:** Saat mengganti/memigrasikan arsitektur *core* sistem (misalnya OCR ke VLM), lakukan pencarian teks global (contohnya `ocrService`) di seluruh kode `src/pages` frontend untuk memastikan tidak ada komponen yang tertinggal menggunakan API lama.
+
+---
+
+## [2026-06-25] VLM Halusinasi akibat Instruksi Negatif di Prompt
+- ❌ **Yang dicoba:** Menaruh instruksi negatif dengan contoh teks pada prompt OCR (contoh: `jangan tambah kata "JAKARTA" jika tidak tertulis`).
+- 🐛 **Yang salah:** Model Llama Vision sangat sensitif, seringkali malah salah mengartikan constraint negatif sebagai referensi konteks, yang mengakibatkan model menambahkan kata fiktif ("JAKARTA") ke dalam hasil ekstraksinya.
+- ✅ **Yang benar:** Hapus contoh teks spesifik/negatif dari prompt. Buat instruksi lurus saja (misalnya: `"Ekstrak persis seperti di gambar. HANYA JSON. Jangan menebak jika tidak terbaca."`).
+- 📁 **File terdampak:** `backend/src/services/document-ai/document-ai.service.js`
+- 🔒 **Aturan baru:** DILARANG menaruh contoh teks spesifik/negatif yang berpotensi ditelan sebagai halusinasi oleh VLM. Gunakan instruksi positif yang absolut dan clear.
+
+---
+
+## [2026-06-25] Batas Ukuran File (File Size Limit) Nginx dan Multer Terlalu Kecil
+- ❌ **Yang dicoba:** Menggunakan limit bawaan 10MB untuk `client_max_body_size` di Nginx dan `fileSize` di konfigurasi Multer.
+- 🐛 **Yang salah:** Pengguna gagal mengunggah dokumen KTP/SHM berformat PDF tebal atau foto smartphone beresolusi tinggi (karena ukurannya melebihi 10MB), mengakibatkan keluhan "tidak bisa upload image/pdf" tanpa respon/log error yang jelas di konsol backend.
+- ✅ **Yang benar:** Menaikkan batas ukuran upload ke nilai yang lebih besar dan leluasa (50MB) baik di layer Reverse Proxy (Nginx) maupun backend handler (Multer).
+- 📁 **File terdampak:** `nginx/nginx.conf`, `backend/src/middleware/upload.js`
+- 🔒 **Aturan baru:** Saat meluncurkan fitur unggah dokumen/foto di production, pastikan batasan ukuran file di Nginx dan Multer telah dikonfigurasi cukup besar untuk mengakomodasi file nyata.

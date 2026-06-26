@@ -1,0 +1,11 @@
+{
+  "code": "FINANCIAL",
+  "name": "Financial Capability",
+  "allowedStatuses": [
+    "READY",
+    "LIMITED",
+    "INADEQUATE",
+    "UNKNOWN"
+  ],
+  "description": "Kapabilitas keuangan debitur berdasarkan agregasi fakta finansial seperti kapasitas pembayaran, rasio angsuran, dsb."
+}
