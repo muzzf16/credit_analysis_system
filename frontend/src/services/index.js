@@ -136,3 +136,14 @@ export const aiService = {
   generateNarrative: (pengajuanId) => api.post(`/ai/narrative/${pengajuanId}`),
 };
 
+export const documentIntelligenceService = {
+  upload: (formData) => api.post('/intelligence/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getJobs: (params) => api.get('/intelligence/jobs', { params }),
+  getJobById: (id) => api.get(`/intelligence/jobs/${id}`),
+  updateJobData: (id, data) => api.put(`/intelligence/jobs/${id}`, { extracted_data: data }),
+  mapJob: (id) => api.post(`/intelligence/jobs/${id}/map`),
+  deleteJob: (id) => api.delete(`/intelligence/jobs/${id}`),
+  processJob: (id) => api.post(`/intelligence/jobs/${id}/process`),
+};
+
+

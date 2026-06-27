@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, FileText, ClipboardList, MapPin, Shield, BarChart3,
   Settings, ChevronDown, CreditCard, Calculator, CheckCircle, Database,
-  Building2, UserCog, X, Activity, ShieldAlert
+  Building2, UserCog, X, Activity, ShieldAlert, Sparkles
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 
@@ -18,6 +18,7 @@ const menuItems = [
     { path: '/slik', label: 'SLIK', icon: Shield, roles: ['ADMIN','ANALIS'] },
     { path: '/monitoring', label: 'Monitoring Kredit', icon: Activity, roles: ['ADMIN','AO','ANALIS','KABID','DIREKSI','SPI'] },
     { path: '/ews', label: 'Early Warning (EWS)', icon: ShieldAlert, roles: ['ADMIN','AO','ANALIS','KABID','DIREKSI','SPI'] },
+    { path: '/document-intelligence', label: 'Document Intel', icon: Sparkles, roles: ['ADMIN','AO','ANALIS','KABID','DIREKSI','SPI'] },
   ]},
   { section: 'ANALISA', items: [
     { path: '/analisa/konsumtif', label: 'Analisa Konsumtif', icon: Calculator, roles: ['ADMIN','ANALIS','KABID','DIREKSI','SPI'] },

@@ -1031,6 +1031,36 @@ Menyesuaikan prompt VLM untuk dokumen Sertifikat Hak Milik (SHM) agar sesuai den
 - `frontend/src/pages/ews/AoVisitFormPage.jsx` (file baru)
 - `frontend/src/App.jsx`
 - `frontend/src/components/layout/Sidebar.jsx`
-**Task berikutnya:** Implementasi modul Laporan (Phase 1/5) atau lanjutkan integrasi AI narrative yang lebih canggih.
+**Task berikutnya:** Implementasi modul Laporan (Phase 1/5) or continue refining AI narrative integrations.
+
+---
+
+## 🔧 Sesi 35 — 2026-06-27 | Model: Antigravity (Gemini 3.5 Flash) | Modul: Document Intelligence Center
+**Goal:** Membuat modul Document Intelligence Center untuk penanganan alur dokumen kredit yang production-ready (Upload -> Queue -> Classification -> Parser -> Validation -> Comparison -> Review -> Map).
+**Yang selesai:**
+- [x] Membuat database migrasi `009_document_intelligence.sql` untuk tabel `document_intelligence_jobs` penampung data queue.
+- [x] Membuat service layer `document-intelligence.service.js` dengan integrasi MinIO, LLM classification, schema validation, data comparison (db matches), dan auto-mapping ke table debitur/agunan/slik/pasangan.
+- [x] Membuat controller `document-intelligence.controller.js` dan mendaftarkan route endpoint RBAC di `document-intelligence.routes.js`.
+- [x] Menambahkan API service frontend `documentIntelligenceService` pada `frontend/src/services/index.js`.
+- [x] Membuat visual dashboard queue `DocumentDashboardPage.jsx` dan interface review data side-by-side `DocumentReviewPage.jsx` di frontend.
+- [x] Mendaftarkan halaman Document Intel di router `frontend/src/App.jsx` dan menu Sidebar `frontend/src/components/layout/Sidebar.jsx`.
+- [x] Membuat test suite backend `document-intelligence.test.js` dan memverifikasi semua 5/5 unit test sukses 100%.
+- [x] Rebuild dan deploy docker containers frontend & backend.
+**Keputusan baru:**
+- Modul ini diposisikan sebagai "Document Intelligence Center" untuk menangani seluruh dokumen kredit dengan status antrean stateful (Pending, Classifying, Processing, Validating, Review Required, Completed, Failed).
+- Memanfaatkan native fetch di Node 20+ alih-alih `node-fetch` module untuk integrasi VLM/LLM.
+- Menambahkan fitur side-by-side perbandingan database (consistency check) untuk meminimalisir kesalahan data / fraud.
+**File yang diubah/dibuat:**
+- `backend/migrations/009_document_intelligence.sql` (baru)
+- `backend/src/modules/document-intelligence/services/document-intelligence.service.js` (baru)
+- `backend/src/modules/document-intelligence/controllers/document-intelligence.controller.js`
+- `backend/src/modules/document-intelligence/routes/document-intelligence.routes.js`
+- `frontend/src/services/index.js`
+- `frontend/src/pages/document-intelligence/DocumentDashboardPage.jsx` (baru)
+- `frontend/src/pages/document-intelligence/DocumentReviewPage.jsx` (baru)
+- `frontend/src/App.jsx`
+- `frontend/src/components/layout/Sidebar.jsx`
+- `backend/tests/modules/document-intelligence/document-intelligence.test.js` (baru)
+
 
 

@@ -51,6 +51,10 @@ import AoVisitFormPage from './pages/ews/AoVisitFormPage';
 // Audit
 import AuditDashboardPage from './pages/audit/AuditDashboardPage';
 
+// Document Intelligence
+import DocumentDashboardPage from './pages/document-intelligence/DocumentDashboardPage';
+import DocumentReviewPage from './pages/document-intelligence/DocumentReviewPage';
+
 export default function App() {
   return (
     <>
@@ -103,6 +107,10 @@ export default function App() {
           <Route path="/ews" element={<EwsDashboardPage />} />
           <Route path="/ews/visit" element={<AoVisitFormPage />} />
           <Route path="/ews/:id" element={<EwsDetailPage />} />
+
+          {/* Document Intelligence */}
+          <Route path="/document-intelligence" element={<DocumentDashboardPage />} />
+          <Route path="/document-intelligence/:id" element={<DocumentReviewPage />} />
 
           {/* Audit */}
           <Route path="/audit" element={<AuditDashboardPage />} />
