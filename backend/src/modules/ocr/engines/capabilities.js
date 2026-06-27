@@ -16,8 +16,16 @@ const EngineCapabilities = {
     multiline: true,
     table: false,
     confidence: false
+  },
+  glm: {
+    name: 'glm',
+    version: '4.0.0',
+    image: true,
+    pdf: true,
+    multiline: true,
+    table: true,
+    confidence: false
   }
-  // Future engines like GLM, Paddle can be added here
 };
 
 module.exports = EngineCapabilities;

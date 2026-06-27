@@ -101,8 +101,8 @@ async function runTests() {
       throw new Error('Connection refused to http://localhost:1976');
     };
 
-    const originalProcessOCR = require('../src/modules/ocr/ocr.service').processOCR;
-    require('../src/modules/ocr/ocr.service').processOCR = async (buffer, type, mimetype) => {
+    const originalProcessOCR = require('../src/modules/ocr/services/ocr.service').processOCR;
+    require('../src/modules/ocr/services/ocr.service').processOCR = async (buffer, type, mimetype) => {
       return {
         success: true,
         type,
@@ -134,10 +134,113 @@ async function runTests() {
     assert.strictEqual(result.data.status_perkawinan, "KAWIN");
 
     config.ocrEngine = origEngine;
-    require('../src/modules/ocr/ocr.service').processOCR = originalProcessOCR;
+    require('../src/modules/ocr/services/ocr.service').processOCR = originalProcessOCR;
     console.log('  ✓ Fallback to Tesseract passed.');
   } catch (err) {
     console.error('  ✗ Fallback to Tesseract failed:', err);
+    process.exit(1);
+  }
+
+  // Test 4: GLM VLM Successful Extraction (Mocking fetch)
+  console.log('Test 4: GLM VLM extraction success path...');
+  try {
+    const mockGlmResponse = {
+      choices: [
+        {
+          message: {
+            role: "assistant",
+            content: JSON.stringify({
+              nik: "3325010101900003",
+              nama: "SITI AMINAH",
+              tempat_lahir: "BATANG",
+              tanggal_lahir: "02-02-1992",
+              jenis_kelamin: "PEREMPUAN",
+              alamat: "JL. RAYA BATANG NO. 20",
+              rt: "02",
+              rw: "03",
+              kelurahan: "KAUMAN",
+              kecamatan: "BATANG",
+              agama: "ISLAM",
+              status_perkawinan: "KAWIN",
+              pekerjaan: "IBU RUMAH TANGGA",
+              kewarganegaraan: "WNI"
+            })
+          }
+        }
+      ]
+    };
+
+    global.fetch = async (url, options) => {
+      assert.strictEqual(url, `${config.glmApiUrl}/chat/completions`);
+      const body = JSON.parse(options.body);
+      assert.strictEqual(body.model, "glm-4v");
+      assert.strictEqual(body.response_format.type, "json_object");
+      
+      return {
+        ok: true,
+        json: async () => mockGlmResponse
+      };
+    };
+
+    const origEngine = config.ocrEngine;
+    config.ocrEngine = 'glm';
+
+    const result = await documentAiService.extractDocumentData(dummyImageBuffer, 'ktp', 'image/png', 'ktp.png');
+    assert.strictEqual(result.success, true);
+    assert.strictEqual(result.engineUsed, 'glm');
+    assert.strictEqual(result.data.nik, "3325010101900003");
+    assert.strictEqual(result.data.nama, "SITI AMINAH");
+    assert.strictEqual(result.data.jenis_kelamin, "PEREMPUAN");
+
+    config.ocrEngine = origEngine;
+    console.log('  ✓ GLM VLM extraction success path passed.');
+  } catch (err) {
+    console.error('  ✗ GLM VLM extraction success path failed:', err);
+    process.exit(1);
+  }
+
+  // Test 5: GlmOcrEngine (legacy pipeline integration)
+  console.log('Test 5: GlmOcrEngine legacy integration...');
+  try {
+    const mockGlmTextResponse = {
+      choices: [
+        {
+          message: {
+            role: "assistant",
+            content: "NIK : 3325010101900004\nNAMA : AHMAD DAHILAN\n"
+          }
+        }
+      ]
+    };
+
+    global.fetch = async (url, options) => {
+      assert.strictEqual(url, `${config.glmApiUrl}/chat/completions`);
+      const body = JSON.parse(options.body);
+      assert.strictEqual(body.model, "glm-4v");
+      assert.strictEqual(body.messages[0].content[0].text.includes("OCR"), true);
+      
+      return {
+        ok: true,
+        json: async () => mockGlmTextResponse
+      };
+    };
+
+    const GlmOcrEngine = require('../src/modules/ocr/engines/GlmOcrEngine');
+    const engine = new GlmOcrEngine();
+    
+    const context = {
+      buffer: dummyImageBuffer,
+      mime: 'image/png',
+      documentType: 'ktp'
+    };
+
+    const rawText = await engine.recognize(context);
+    assert.ok(rawText.includes("NIK : 3325010101900004"));
+    assert.ok(rawText.includes("NAMA : AHMAD DAHILAN"));
+
+    console.log('  ✓ GlmOcrEngine integration passed.');
+  } catch (err) {
+    console.error('  ✗ GlmOcrEngine integration failed:', err);
     process.exit(1);
   }
 

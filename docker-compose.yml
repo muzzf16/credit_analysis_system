@@ -80,6 +80,10 @@ services:
       # 172.22.0.1 = docker bridge gateway → host machine
       LFM_API_URL: http://172.22.0.1:1976
       OCR_ENGINE: lfm
+      LLM_API_URL: http://172.22.0.1:1978/v1
+      LLM_PROVIDER: openai
+      LLM_MODEL_NAME: qwen3.5
+      LLM_API_KEY: no-key
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

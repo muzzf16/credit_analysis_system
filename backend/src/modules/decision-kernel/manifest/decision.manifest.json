@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "decisionModel": "STANDARD",
+  "kernelSchema": "decision-kernel.schema.json",
+  "revisionSchema": "decision-revision.schema.json",
+  "intentDefinition": "STANDARD_INTENT",
+  "policyDefinition": "BPR_BAPERA_STANDARD",
+  "description": "Canonical decision model v1.0 — Credit Decision Platform BPR BAPERA"
+}

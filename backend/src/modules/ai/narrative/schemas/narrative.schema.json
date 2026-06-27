@@ -1,0 +1,25 @@
+﻿{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Narrative",
+  "description": "AI-generated credit analysis narrative",
+  "type": "object",
+  "required": ["executiveSummary", "recommendation"],
+  "additionalProperties": false,
+  "properties": {
+    "executiveSummary": { "type": "string" },
+    "borrowerProfile": { "type": "string" },
+    "financialAnalysis": { "type": "string" },
+    "collateralAnalysis": { "type": "string" },
+    "creditHistoryAnalysis": { "type": "string" },
+    "riskAssessment": { "type": "string" },
+    "strengths": { "type": "string" },
+    "weaknesses": { "type": "string" },
+    "mitigation": { "type": "string" },
+    "recommendation": { "type": "string" },
+    "appendix": { "type": "array", "items": { "type": "string" } },
+    "manifest": { "type": "object" },
+    "quality": { "type": "object" },
+    "evaluation": { "type": "object" }
+  }
+}
+

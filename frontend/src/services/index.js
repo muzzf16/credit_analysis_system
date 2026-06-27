@@ -96,6 +96,15 @@ export const monitoringService = {
   getSummary: () => api.get('/monitoring/summary'),
 };
 
+export const ewsService = {
+  getAll: (params) => api.get('/ews', { params }),
+  getById: (id) => api.get(`/ews/${id}`),
+  resolve: (id, data) => api.post(`/ews/${id}/resolve`, data),
+  logAoVisit: (data) => api.post('/ews/visit', data),
+  getSummary: () => api.get('/ews/summary'),
+  scan: () => api.post('/ews/scan'),
+};
+
 export const auditService = {
   getAll: (params) => api.get('/audit', { params }),
   getSummary: () => api.get('/audit/summary'),
@@ -120,5 +129,10 @@ export const documentService = {
   extractBpkb:   (formData) => api.post('/document/bpkb',     formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 }),
 
   extractSurvey: (formData) => api.post('/document/survey', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 }),
+};
+
+export const aiService = {
+  getNarrative: (pengajuanId) => api.get(`/ai/narrative/${pengajuanId}`),
+  generateNarrative: (pengajuanId) => api.post(`/ai/narrative/${pengajuanId}`),
 };
 

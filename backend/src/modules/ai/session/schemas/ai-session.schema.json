@@ -1,0 +1,38 @@
+﻿{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AISession",
+  "description": "Aggregate root for AI interaction session",
+  "type": "object",
+  "required": ["sessionId", "analysisPackageFingerprint", "status", "startedAt"],
+  "additionalProperties": false,
+  "properties": {
+    "sessionId": { "type": "string", "minLength": 1 },
+    "analysisPackageFingerprint": { "type": "string" },
+    "promptDefinition": { "type": "string" },
+    "promptVersion": { "type": "string" },
+    "provider": { "type": "string" },
+    "model": { "type": "string" },
+    "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+    "topP": { "type": "number", "minimum": 0, "maximum": 1 },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "finishedAt": { "type": ["string", "null"], "format": "date-time" },
+    "latencyMs": { "type": ["integer", "null"] },
+    "tokenUsage": {
+      "type": "object",
+      "properties": {
+        "promptTokens": { "type": "integer" },
+        "completionTokens": { "type": "integer" },
+        "totalTokens": { "type": "integer" }
+      }
+    },
+    "status": { "type": "string", "enum": ["STARTED", "COMPLETED", "FAILED"] },
+    "fingerprint": { "type": "string" },
+    "promptFingerprint": { "type": ["string", "null"] },
+    "requestFingerprint": { "type": ["string", "null"] },
+    "responseFingerprint": { "type": ["string", "null"] },
+    "narrativeFingerprint": { "type": ["string", "null"] },
+    "requestId": { "type": ["string", "null"] },
+    "responseId": { "type": ["string", "null"] },
+    "narrativeId": { "type": ["string", "null"] }
+  }
+}

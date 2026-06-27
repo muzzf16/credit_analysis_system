@@ -43,6 +43,11 @@ import MakPreviewPage from './pages/mak/MakPreviewPage';
 // Monitoring
 import MonitoringPage from './pages/monitoring/MonitoringPage';
 import MonitoringDetailPage from './pages/monitoring/MonitoringDetailPage';
+
+// EWS
+import EwsDashboardPage from './pages/ews/EwsDashboardPage';
+import EwsDetailPage from './pages/ews/EwsDetailPage';
+import AoVisitFormPage from './pages/ews/AoVisitFormPage';
 // Audit
 import AuditDashboardPage from './pages/audit/AuditDashboardPage';
 
@@ -93,6 +98,11 @@ export default function App() {
           {/* Monitoring */}
           <Route path="/monitoring" element={<MonitoringPage />} />
           <Route path="/monitoring/:id" element={<MonitoringDetailPage />} />
+
+          {/* EWS */}
+          <Route path="/ews" element={<EwsDashboardPage />} />
+          <Route path="/ews/visit" element={<AoVisitFormPage />} />
+          <Route path="/ews/:id" element={<EwsDetailPage />} />
 
           {/* Audit */}
           <Route path="/audit" element={<AuditDashboardPage />} />

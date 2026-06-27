@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DecisionRevision",
+  "description": "Immutable revision record in the DecisionKernel lineage",
+  "type": "object",
+  "required": [
+    "revisionId",
+    "decisionId",
+    "revision",
+    "assessmentId",
+    "trigger",
+    "createdAt",
+    "kernelFingerprint"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "revisionId": { "type": "string", "minLength": 1 },
+    "decisionId": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 1 },
+    "previousRevisionId": { "type": ["string", "null"] },
+    "assessmentId": { "type": "string", "minLength": 1 },
+    "trigger": {
+      "type": "string",
+      "enum": ["DecisionRequested", "DecisionRevisionCreated", "CommitteeReview", "DataCorrection"]
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "kernelFingerprint": { "type": "string", "minLength": 1 },
+    "correlationId": { "type": ["string", "null"] }
+  }
+}

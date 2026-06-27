@@ -9,4 +9,10 @@ module.exports = {
   encryptionKey: process.env.ENCRYPTION_KEY || '00000000000000000000000000000000',
   ocrEngine: process.env.OCR_ENGINE || 'lfm',
   lfmApiUrl: process.env.LFM_API_URL || 'http://localhost:1976',
+  llmProvider: process.env.LLM_PROVIDER || 'openai',
+  llmApiUrl: process.env.LLM_API_URL || 'http://localhost:1978/v1',
+  llmApiKey: process.env.LLM_API_KEY || 'no-key',
+  llmModelName: process.env.LLM_MODEL_NAME || 'qwen3.5',
+  glmApiUrl: process.env.GLM_API_URL || 'https://api.llamamind.com/v1',
+  glmApiKey: process.env.GLM_API_KEY || process.env.LLM_API_KEY || 'no-key',
 };

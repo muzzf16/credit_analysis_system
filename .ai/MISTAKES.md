@@ -264,3 +264,77 @@
 - ✅ **Yang benar:** Menaikkan batas ukuran upload ke nilai yang lebih besar dan leluasa (50MB) baik di layer Reverse Proxy (Nginx) maupun backend handler (Multer).
 - 📁 **File terdampak:** `nginx/nginx.conf`, `backend/src/middleware/upload.js`
 - 🔒 **Aturan baru:** Saat meluncurkan fitur unggah dokumen/foto di production, pastikan batasan ukuran file di Nginx dan Multer telah dikonfigurasi cukup besar untuk mengakomodasi file nyata.
+
+---
+
+## [2026-06-26] Import Path yang Salah Setelah Refactor Folder
+- ❌ **Yang dicoba:** Mengimpor modul dari path lama setelah beberapa file dipindahkan ke folder baru.
+- 🐛 **Yang salah:** Import `upload` sebagai default export (`const { upload } = require(...)`) padahal yang diekspor adalah named export. Selain itu, path `ocr.service` dan `parsers` sudah dipindah sebelumnya sehingga import menjadi error `MODULE_NOT_FOUND`.
+- ✅ **Yang benar:** Periksa export pattern (default vs named) dan pastikan semua `require()` menggunakan path yang benar setelah refactor.
+- 📁 **File terdampak:** `backend/src/modules/document-intelligence/routes/document-intelligence.routes.js`, `backend/src/services/document-ai/document-ai.service.js`
+- 🔒 **Aturan baru:** Setelah melakukan refactor/move file, lakukan pencarian global (`grep`) untuk semua `require()` atau `import` yang menunjuk ke path lama sebelum melakukan deploy Docker.
+
+---
+
+## [2026-06-27] Salah Relative Path Level untuk Utility deepFreeze
+- ❌ **Yang dicoba:** Mengimpor `deepFreeze` utility dari `PromptContext.js` dan `Narrative.js` dengan level relative path `../../../utils/deepFreeze`.
+- 🐛 **Yang salah:** Entity tersebut terletak di `src/modules/ai/context/entities/PromptContext.js` dan `src/modules/ai/narrative/entities/Narrative.js`, sehingga path `../../../utils/deepFreeze` hanya naik ke level `src/modules/` alih-alih `src/` (di mana folder `utils` berada), memicu error `MODULE_NOT_FOUND`.
+- ✅ **Yang benar:** Gunakan path level `../../../../utils/deepFreeze` untuk naik 4 tingkat agar sampai ke root source `src` folder.
+- 📁 **File terdampak:** `backend/src/modules/ai/context/entities/PromptContext.js`, `backend/src/modules/ai/narrative/entities/Narrative.js`
+- 🔒 **Aturan baru:** Selalu hitung dengan teliti jumlah level folder saat melakukan impor relatif, terutama di dalam struktur subdirektori bertingkat seperti `src/modules/<name>/<layer>/entities/`.
+
+---
+
+## [2026-06-27] SyntaxError JSON Parse Akibat UTF-8 BOM pada Schema JSON di Windows
+- ❌ **Yang dicoba:** Membaca file schema JSON menggunakan `fs.readFileSync(schemaPath, 'utf8')` dan langsung mem-parsing-nya dengan `JSON.parse()`.
+- 🐛 **Yang salah:** Pada environment Windows, file JSON schema yang dibuat/diedit menggunakan editor tertentu terkadang menyertakan karakter Byte Order Mark (BOM) UTF-8 (`\ufeff`) di awal file. Karakter ini tidak terlihat di text editor biasa, namun menyebabkan `JSON.parse` crash dengan error `Unexpected token '﻿'`.
+- ✅ **Yang benar:** Bersihkan karakter BOM terlebih dahulu menggunakan `.replace(/^\uFEFF/, '')` sebelum mem-parsing string data tersebut dengan `JSON.parse()`.
+- 📁 **File terdampak:** `backend/src/modules/ai/narrative/entities/Narrative.js`
+- 🔒 **Aturan baru:** Saat memuat atau mem-parsing file JSON dari disk secara manual (tidak lewat `require`), selalu gunakan pembersihan BOM (`.replace(/^\uFEFF/, '')`) demi keandalan lintas-platform (cross-platform).
+
+---
+
+## [2026-06-27] Placeholder Filter Unreplaced pada Interpolasi Prompt
+- ❌ **Yang dicoba:** Menggunakan regex string replace statis dengan array kunci kaku (seperti `{{facts.income}}`) untuk menggantikan placeholder di template prompt.
+- 🐛 **Yang salah:** Template aslinya memiliki filter formatting (seperti `{{facts.income | formatRupiah}}`). Regex replace statis tidak mencocokkan string dengan filter tersebut, sehingga placeholder di prompt user terkirim tanpa ter-replace (tetap berupa text kurung kurawal mentah).
+- ✅ **Yang benar:** Gunakan regex dinamis `/{{\s*([^}]+?)\s*}}/g` untuk memecah key dan filter (via `|`), mengambil nilainya dari context secara rekursif/dinamis, lalu menjalankan filter formatting yang sesuai.
+- 📁 **File terdampak:** `backend/src/modules/ai/prompt/builder/PromptBuilder.js`
+- 🔒 **Aturan baru:** Gunakan dynamic token extraction alih-alive static key lists jika template prompt mendukung filter atau path dinamis.
+
+---
+
+## [2026-06-27] Tipe Data Mismatch Pada FactCollection/CapabilityCollection ke Schema
+- ❌ **Yang dicoba:** Mengirimkan instance `FactCollection` dan `CapabilityCollection` langsung ke `AnalysisPackageBuilder.build()`, berasumsi bahwa `.toJSON()` akan menghasilkan data objek.
+- 🐛 **Yang salah:** Pada framework internal, `.toJSON()` pada `FactCollection` dan `CapabilityCollection` mengembalikan data array `[]` (daftar item), sementara skema validator `AnalysisPackage` membatasi tipe data ini sebagai `"type": "object"`. Selain itu, prompt builder mengharapkan akses key-value seperti `facts.income` yang akan menghasilkan nilai `undefined` jika datanya berbentuk array.
+- ✅ **Yang benar:** Petakan array fakta dan kapabilitas ke dalam bentuk objek key-value (plain JavaScript object) yang rapi sebelum diserahkan ke builder.
+- 📁 **File terdampak:** `backend/src/modules/ai/ai.service.js`
+- 🔒 **Aturan baru:** Pastikan format data domain (seperti Map/Set/Array) ditransformasikan menjadi bentuk objek JSON datar (flat object) yang valid sebelum divalidasi dengan JSON schema bertipe "object".
+
+---
+
+## [2026-06-27] Kolom Database Baru Terlewat di File Migrasi Resmi
+- ❌ **Yang dicoba:** Menjalankan unit test dengan database kosong baru dan berasumsi migrasi bawaan sudah mencakup seluruh kolom yang ada di production.
+- 🐛 **Yang salah:** Kolom-kolom baru seperti `ibu_kandung`, `hubungan_bank`, dan `kredit_aktif` yang ditambahkan pada Sesi 5 tidak pernah dimasukkan ke file migrasi SQL backend. Akibatnya, pengujian yang memanggil `getMakData()` crash dengan error `column d.ibu_kandung does not exist`.
+- ✅ **Yang benar:** Tambahkan instruksi `ALTER TABLE` menggunakan pola `ADD COLUMN IF NOT EXISTS` di file migrasi SQL berikutnya agar database lama maupun baru tetap sinkron.
+- 📁 **File terdampak:** `backend/migrations/007_add_ai_narrative.sql`
+- 🔒 **Aturan baru:** Setiap penambahan kolom baru di database, pastikan untuk segera membuat file migrasinya di folder migrations. JANGAN melakukan alter manual langsung di psql/production tanpa file migrasi.
+
+---
+
+## [2026-06-27] Inkonsistensi Kolom Notifikasi (judul/pesan vs title/message)
+- ❌ **Yang dicoba:** Mengirimkan in-app notifikasi lewat `notifikasiService.createNotification` dengan property `title` dan `message` yang dipetakan oleh query di `notifikasi.service.js`.
+- 🐛 **Yang salah:** Mengalami error `column "title" of relation "notifikasi" does not exist` karena tabel `notifikasi` di-create pertama kali di `001_initial_schema.sql` menggunakan kolom `judul` dan `pesan`, sedangkan deklarasi `title` dan `message` di `002_phase3_tables.sql` menggunakan `CREATE TABLE IF NOT EXISTS` yang secara otomatis ter-skip oleh PostgreSQL karena tabelnya sudah ada.
+- ✅ **Yang benar:** Menambahkan statemen `ALTER TABLE notifikasi RENAME COLUMN` untuk mengubah nama kolom (`judul`/`pesan`/`tipe`/`referensi_id`/`referensi_tipe`) menjadi kolom baru (`title`/`message`/`type`/`reference_id`/`reference_type`) agar serasi di database.
+- 📁 **File terdampak:** `backend/migrations/008_extend_ews_table.sql`
+- 🔒 **Aturan baru:** Selalu periksa apakah tabel lama dengan prefix `IF NOT EXISTS` diubah definisinya di migrasi baru. Jika ya, gunakan alter table untuk menyelaraskannya daripada berasumsi deklarasi ganda akan memperbarui skema.
+
+---
+
+## [2026-06-27] Kolom u.phone Tidak Ditemukan di Tabel users
+- ❌ **Yang dicoba:** Menyeleksi nomor handphone pengguna via `u.phone` dari tabel `users` untuk mengirimkan WhatsApp Gateway EWS.
+- 🐛 **Yang salah:** Query crash dengan error `column u.phone does not exist` karena tabel `users` di skema awal (`001_initial_schema.sql`) tidak mendefinisikan kolom `phone` dan tidak ada file migrasi yang menambahkannya, sementara kode `notifikasi.service.js` sudah telanjur memakainya.
+- ✅ **Yang benar:** Menambahkan `ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)` pada file migrasi `008_extend_ews_table.sql`.
+- 📁 **File terdampak:** `backend/migrations/008_extend_ews_table.sql`
+- 🔒 **Aturan baru:** Pastikan kolom utilitas/kontak seperti nomor telepon atau email pengguna (`users.phone`) tercatat dengan benar di file migrasi database utama untuk mendukung flow notifikasi WA/SMS.
+
+

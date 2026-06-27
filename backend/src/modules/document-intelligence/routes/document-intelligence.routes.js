@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../../../middleware/upload');
+const { upload } = require('../../../middleware/upload');
 const DocumentIntelligenceController = require('../controllers/document-intelligence.controller');
 
 router.post('/person', upload.single('file'), DocumentIntelligenceController.extractPerson);

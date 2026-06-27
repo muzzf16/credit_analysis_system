@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DecisionKernel",
+  "description": "Aggregate root — single source of truth for credit decisions",
+  "type": "object",
+  "required": [
+    "decisionId",
+    "revisionId",
+    "revision",
+    "assessmentId",
+    "intent",
+    "policy",
+    "recommendation",
+    "authority",
+    "conditions",
+    "override",
+    "manifest",
+    "audit"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "decisionId": { "type": "string", "minLength": 1 },
+    "revisionId": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 1 },
+    "assessmentId": { "type": "string", "minLength": 1 },
+    "intent": { "type": "object" },
+    "policy": { "type": "object" },
+    "recommendation": {
+      "type": "object",
+      "required": ["status", "code", "riskLevel"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["APPROVED", "APPROVED_WITH_CONDITION", "MANUAL_REVIEW", "REJECTED"]
+        },
+        "code": { "type": "string" },
+        "riskLevel": { "type": "string" }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "required": ["required", "resolvedBy"],
+      "properties": {
+        "required": { "type": "string" },
+        "intentAuthority": { "type": "string" },
+        "resolvedBy": { "type": "string" }
+      }
+    },
+    "conditions": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "override": {
+      "type": "object",
+      "required": ["allowed"],
+      "properties": {
+        "allowed": { "type": "boolean" },
+        "enabled": { "type": "boolean" },
+        "approvedBy": { "type": ["string", "null"] },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "required": ["version", "decisionModel", "fingerprint"],
+      "properties": {
+        "version": { "type": "string" },
+        "decisionModel": { "type": "string" },
+        "fingerprint": { "type": "string" }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "required": ["fingerprints", "createdAt", "algorithm"],
+      "properties": {
+        "fingerprints": {
+          "type": "object",
+          "required": ["assessment", "policy", "intent", "decision"],
+          "properties": {
+            "assessment": { "type": "string" },
+            "policy": { "type": "string" },
+            "intent": { "type": "string" },
+            "decision": { "type": "string" },
+            "manifest": { "type": "string" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "algorithm": { "type": "string", "const": "SHA-256" }
+      }
+    }
+  }
+}

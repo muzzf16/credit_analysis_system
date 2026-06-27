@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, User, FileText, MapPin, Shield, Calculator, BarChart3,
   CheckCircle, XCircle, Clock, ChevronRight, Building2, CreditCard,
-  AlertTriangle, ThumbsUp, ThumbsDown, Pencil
+  AlertTriangle, ThumbsUp, ThumbsDown, Pencil, Sparkles
 } from 'lucide-react';
 import { pengajuanService, approvalService } from '../../services';
 import { formatRupiah, formatDate, formatPercent } from '../../utils/formatters';
@@ -448,6 +448,33 @@ export default function PengajuanDetailPage() {
 
         {activeSection === 'approval' && (
           <div className="space-y-4">
+            {/* AI Credit Analyst Recommendation */}
+            {data.aiNarrative && (
+              <div className="card border-purple-500/20 bg-purple-950/10">
+                <h3 className="text-sm font-semibold text-purple-400 mb-3 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-400" /> Hasil Rekomendasi AI Credit Analyst
+                </h3>
+                <div className="space-y-2 text-sm text-slate-300">
+                  <p><strong>Executive Summary:</strong> {data.aiNarrative.narrative_data?.executiveSummary || '-'}</p>
+                  <p><strong>Rekomendasi AI:</strong> <span className="font-semibold text-purple-300">{data.aiNarrative.narrative_data?.recommendation || '-'}</span></p>
+                  {data.aiNarrative.narrative_data?.riskAssessment && (
+                    <p><strong>Aspek Risiko:</strong> {data.aiNarrative.narrative_data?.riskAssessment}</p>
+                  )}
+                  {data.aiNarrative.narrative_data?.mitigation && (
+                    <p><strong>Mitigasi Risiko:</strong> {data.aiNarrative.narrative_data?.mitigation}</p>
+                  )}
+                  <div className="pt-2">
+                    <button 
+                      onClick={() => navigate(`/mak/${id}`)}
+                      className="text-xs text-purple-400 hover:text-purple-300 underline font-semibold flex items-center gap-1"
+                    >
+                      Lihat Selengkapnya di Memorandum Analisa Kredit (MAK)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Existing Approvals */}
             {data.approvals?.length > 0 && (
               <div className="card">

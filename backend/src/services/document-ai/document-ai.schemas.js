@@ -128,8 +128,8 @@ function validateAndClean(rawData, type) {
       });
 
       // Parsing manual tempat_tgl_lahir
-      result.tempat_lahir = "";
-      result.tanggal_lahir = "";
+      result.tempat_lahir = (data.tempat_lahir !== undefined && data.tempat_lahir !== null) ? String(data.tempat_lahir).trim() : "";
+      result.tanggal_lahir = (data.tanggal_lahir !== undefined && data.tanggal_lahir !== null) ? String(data.tanggal_lahir).trim() : "";
       if (result.tempat_tgl_lahir) {
         const parts = result.tempat_tgl_lahir.split(',');
         if (parts.length > 1) {
@@ -142,8 +142,8 @@ function validateAndClean(rawData, type) {
       }
 
       // Parsing rt_rw
-      result.rt = "";
-      result.rw = "";
+      result.rt = (data.rt !== undefined && data.rt !== null) ? String(data.rt).trim() : "";
+      result.rw = (data.rw !== undefined && data.rw !== null) ? String(data.rw).trim() : "";
       if (result.rt_rw) {
         const parts = result.rt_rw.split('/');
         result.rt = parts[0] ? parts[0].trim() : "";

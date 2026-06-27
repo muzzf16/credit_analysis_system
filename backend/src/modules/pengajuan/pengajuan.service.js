@@ -60,6 +60,7 @@ async function getById(id) {
   const scoring = await db.query('SELECT * FROM credit_scoring WHERE pengajuan_id = $1', [id]);
   const approvals = await db.query(
     `SELECT a.*, u.full_name as approver_nama FROM approval a LEFT JOIN users u ON a.approver_id = u.id WHERE a.pengajuan_id = $1 ORDER BY a.level`, [id]);
+  const aiNarrative = await db.query('SELECT * FROM ai_narrative WHERE pengajuan_id = $1', [id]);
 
   return {
     ...pengajuan,
@@ -70,6 +71,7 @@ async function getById(id) {
     analisaProduktif: produktif.rows[0] || null,
     scoring: scoring.rows[0] || null,
     approvals: approvals.rows,
+    aiNarrative: aiNarrative.rows[0] || null,
   };
 }
 

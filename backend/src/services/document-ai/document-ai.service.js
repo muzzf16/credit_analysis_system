@@ -7,8 +7,8 @@ const execFileAsync = promisify(execFile);
 
 const config = require('../../config');
 const { validateAndClean } = require('./document-ai.schemas');
-const ocrService = require('../../modules/ocr/ocr.service');
-const parsers = require('../../modules/ocr/parsers');
+const ocrService = require('../../modules/ocr/services/ocr.service');
+const parsers = require('../../modules/ocr/utils/parsers');
 
 /**
  * Preprocess image for OCR using ImageMagick
@@ -510,6 +510,106 @@ async function callLfmVisionOnce(buffer, mimetype, type, timeoutMs = 90000) {
 }
 
 /**
+ * Send image & prompt to GLM vision model
+ * @param {Buffer} buffer - Image buffer
+ * @param {string} mimetype - Image mimetype
+ * @param {string} type - Document type
+ * @returns {Promise<object>} Extracted object
+ */
+async function callGlmVisionOnce(buffer, mimetype, type, timeoutMs = 90000) {
+  const base64Image = `data:${mimetype};base64,${buffer.toString('base64')}`;
+  const prompt = getPromptForType(type);
+
+  const payload = {
+    model: "glm-4v",
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          { type: "image_url", image_url: { url: base64Image } }
+        ]
+      }
+    ],
+    temperature: 0.0,
+    max_tokens: 1024,
+    response_format: { type: "json_object" }
+  };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const url = `${config.glmApiUrl}/chat/completions`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.glmApiKey || config.llmApiKey || ''}`,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`GLM Vision HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+    }
+
+    const resJson = await response.json();
+    let content = resJson?.choices?.[0]?.message?.content;
+
+    if (!content) {
+      throw new Error('GLM response tidak mengandung content.');
+    }
+
+    content = content.trim();
+
+    if (content.startsWith('```')) {
+      content = content.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+    }
+
+    const jsonStart = content.indexOf('{');
+    if (jsonStart > 0) {
+      content = content.substring(jsonStart);
+    }
+
+    const parsed = JSON.parse(content.trim());
+    return parsed;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
+/**
+ * Panggil GLM Vision dengan 1x retry otomatis sebelum lempar error
+ * @param {Buffer} buffer 
+ * @param {string} mimetype 
+ * @param {string} type 
+ * @returns {Promise<object>}
+ */
+async function callGlmVision(buffer, mimetype, type) {
+  const url = `${config.glmApiUrl}/chat/completions`;
+  console.log(`[Document AI] Memanggil GLM Vision: ${url} | tipe: ${type}`);
+
+  try {
+    return await callGlmVisionOnce(buffer, mimetype, type, 90000);
+  } catch (firstErr) {
+    console.warn(`[Document AI] GLM Vision percobaan 1 gagal (${firstErr.message}). Mencoba ulang...`);
+    try {
+      return await callGlmVisionOnce(buffer, mimetype, type, 90000);
+    } catch (secondErr) {
+      console.error(`[Document AI] GLM Vision percobaan 2 juga gagal: ${secondErr.message}`);
+      throw secondErr;
+    }
+  }
+}
+
+/**
  * Panggil LFM Vision dengan 1x retry otomatis sebelum lempar error
  * @param {Buffer} buffer 
  * @param {string} mimetype 
@@ -577,6 +677,25 @@ async function extractDocumentData(fileBuffer, type, mimetype = '', originalname
         `[Document AI ⚠️] LFM gagal — fallback ke Tesseract OCR.\n` +
         `  URL: ${config.lfmApiUrl}\n` +
         `  Error: ${lfmError.message}`
+      );
+      // Lanjut ke Tesseract fallback
+    }
+  } else if (selectedEngine === 'glm') {
+    try {
+      const rawResult = await callGlmVision(processingBuffer, processingMime, type);
+      console.log(`[Document AI] ✅ GLM Vision berhasil. Validasi JSON schema...`);
+      const cleaned = validateAndClean(rawResult, type);
+      console.log(`[Document AI] ✅ Ekstraksi selesai via GLM Vision. Hasil:`, JSON.stringify(cleaned, null, 2));
+      return {
+        engineUsed: 'glm',
+        success: true,
+        data: cleaned
+      };
+    } catch (glmError) {
+      console.warn(
+        `[Document AI ⚠️] GLM Vision gagal — fallback ke Tesseract OCR.\n` +
+        `  URL: ${config.glmApiUrl}\n` +
+        `  Error: ${glmError.message}`
       );
       // Lanjut ke Tesseract fallback
     }

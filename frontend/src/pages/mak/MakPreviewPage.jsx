@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, FileCheck, Loader2, Building2 } from 'lucide-react';
-import { makService } from '../../services';
+import { ArrowLeft, Printer, FileCheck, Loader2, Building2, Sparkles } from 'lucide-react';
+import { makService, aiService } from '../../services';
 import { formatRupiah, formatDate, formatPercent } from '../../utils/formatters';
 
 // Helper for Indonesian Terbilang (number to words conversion)
@@ -57,12 +57,24 @@ export default function MakPreviewPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [aiNarrative, setAiNarrative] = useState(null);
+  const [loadingAi, setLoadingAi] = useState(true);
+  const [generatingAi, setGeneratingAi] = useState(false);
 
   useEffect(() => {
     makService.getData(pengajuanId)
       .then(res => setData(res.data.data))
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    aiService.getNarrative(pengajuanId)
+      .then(res => {
+        if (res.data && res.data.success && res.data.data) {
+          setAiNarrative(res.data.data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingAi(false));
   }, [pengajuanId]);
 
   const handlePrint = () => window.print();
@@ -79,6 +91,23 @@ export default function MakPreviewPage() {
       alert(err.response?.data?.message || 'Gagal generate MAK');
     }
     setGenerating(false);
+  };
+
+  const handleGenerateAi = async () => {
+    setGeneratingAi(true);
+    try {
+      const res = await aiService.generateNarrative(pengajuanId);
+      if (res.data && res.data.success && res.data.data) {
+        setAiNarrative(res.data.data);
+        alert('AI Narrative berhasil di-generate!');
+      } else {
+        alert('Gagal generate AI Narrative.');
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal generate AI Narrative.');
+    } finally {
+      setGeneratingAi(false);
+    }
   };
 
   if (loading) return (
@@ -210,6 +239,14 @@ export default function MakPreviewPage() {
           <button onClick={handlePrint} className="btn-secondary text-sm">
             <Printer className="w-4 h-4" /> Cetak Laporan
           </button>
+          <button
+            onClick={handleGenerateAi}
+            disabled={generatingAi}
+            className="btn-primary bg-purple-600 hover:bg-purple-700 text-white text-sm flex items-center gap-2 border-purple-500/20"
+          >
+            {generatingAi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            Generate AI Analisis
+          </button>
           {!mak.mak && (
             <button onClick={handleGenerate} disabled={generating} className="btn-primary text-sm">
               {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCheck className="w-4 h-4" />}
@@ -309,10 +346,102 @@ export default function MakPreviewPage() {
                 </table>
               </div>
 
-              {/* Empty box for handwritten opinion */}
-              <div className="border border-gray-800 p-4 min-h-[220px] rounded-sm bg-white">
-                
-              </div>
+              {/* Empty box for handwritten opinion, or display placeholder with generate button */}
+              {aiNarrative ? (
+                <div className="border-2 border-purple-800 bg-purple-50/10 p-4 rounded-sm space-y-4 print:border-gray-800 print:bg-white">
+                  <div className="flex items-center gap-2 border-b border-purple-200 pb-2 print:border-gray-300">
+                    <Sparkles className="w-5 h-5 text-purple-700 print:hidden shrink-0" />
+                    <span className="font-bold text-xs text-purple-950 print:text-black uppercase tracking-wider">Hasil Analisis & Opini AI Credit Analyst</span>
+                    <span className="ml-auto text-[9px] text-gray-500">Last updated: {formatDate(aiNarrative.updated_at || new Date())}</span>
+                  </div>
+
+                  <div className="space-y-3 text-[10px] text-gray-800 print:text-black">
+                    <div>
+                      <h4 className="font-bold text-purple-900 print:text-black uppercase">Executive Summary</h4>
+                      <p className="mt-1 leading-relaxed text-justify">{aiNarrative.narrative_data?.executiveSummary || '-'}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-bold text-purple-900 print:text-black uppercase">Profil Debitur</h4>
+                        <p className="mt-1 leading-relaxed text-justify">{aiNarrative.narrative_data?.borrowerProfile || '-'}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-purple-900 print:text-black uppercase">Analisis Keuangan</h4>
+                        <p className="mt-1 leading-relaxed text-justify">{aiNarrative.narrative_data?.financialAnalysis || '-'}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-bold text-purple-900 print:text-black uppercase">Analisis Jaminan</h4>
+                        <p className="mt-1 leading-relaxed text-justify">{aiNarrative.narrative_data?.collateralAnalysis || '-'}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-purple-900 print:text-black uppercase">Riwayat Kredit</h4>
+                        <p className="mt-1 leading-relaxed text-justify">{aiNarrative.narrative_data?.creditHistoryAnalysis || '-'}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-purple-900 print:text-black uppercase">Penilaian Risiko (Risk Assessment)</h4>
+                      <p className="mt-1 leading-relaxed text-justify">{aiNarrative.narrative_data?.riskAssessment || '-'}</p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <h4 className="font-bold text-emerald-800 print:text-black uppercase">Kekuatan (Strengths)</h4>
+                        <p className="mt-1 leading-relaxed text-justify">{aiNarrative.narrative_data?.strengths || '-'}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-amber-800 print:text-black uppercase">Kelemahan (Weaknesses)</h4>
+                        <p className="mt-1 leading-relaxed text-justify">{aiNarrative.narrative_data?.weaknesses || '-'}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-blue-800 print:text-black uppercase">Mitigasi Risiko</h4>
+                        <p className="mt-1 leading-relaxed text-justify">{aiNarrative.narrative_data?.mitigation || '-'}</p>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-purple-200 print:border-gray-300 pt-2">
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <h4 className="font-bold text-purple-950 print:text-black uppercase">Rekomendasi Akhir AI</h4>
+                          <p className="mt-1 leading-relaxed font-semibold text-purple-900 print:text-black">{aiNarrative.narrative_data?.recommendation || '-'}</p>
+                        </div>
+                        {aiNarrative.narrative_data?.appendix && aiNarrative.narrative_data.appendix.length > 0 && (
+                          <div className="max-w-[50%]">
+                            <h4 className="font-bold text-purple-950 print:text-black uppercase">Syarat / Ketentuan Lain (Covenant)</h4>
+                            <ul className="list-disc list-inside mt-1 space-y-0.5 text-gray-700 print:text-black italic">
+                              {aiNarrative.narrative_data.appendix.map((appItem, appIdx) => (
+                                <li key={appIdx}>{appItem}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="border border-gray-800 p-4 min-h-[220px] rounded-sm bg-white flex flex-col justify-between">
+                  <div className="text-gray-400 italic text-center my-auto print:hidden">
+                    <Sparkles className="w-8 h-8 mx-auto mb-2 text-purple-400 animate-pulse" />
+                    <p>AI Credit Analyst Narrative belum di-generate.</p>
+                    <button 
+                      onClick={handleGenerateAi} 
+                      disabled={generatingAi}
+                      className="mt-3 px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-semibold flex items-center gap-1.5 mx-auto animate-bounce"
+                    >
+                      {generatingAi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                      Generate Analisa AI
+                    </button>
+                  </div>
+                  <div className="hidden print:block text-gray-400 italic text-center my-auto">
+                    Catatan Opini Kepatuhan (Tulis Tangan)
+                  </div>
+                </div>
+              )}
 
               <div className="text-right mt-6">
                 <p>Batang, {formatDate(new Date())}</p>

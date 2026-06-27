@@ -1,6 +1,8 @@
 const TesseractEngine = require('./TesseractEngine');
 const PdfTextEngine = require('./PdfTextEngine');
+const GlmOcrEngine = require('./GlmOcrEngine');
 const EngineCapabilities = require('./capabilities');
+const config = require('../../../config');
 
 class EngineFactory {
   static create(context) {
@@ -14,6 +16,11 @@ class EngineFactory {
 
     // Engine Auto Selection based on capabilities and document type
     
+    // If OCR engine is set to GLM explicitly, use it
+    if (config.ocrEngine === 'glm') {
+      return new GlmOcrEngine();
+    }
+
     // For SLIK digital PDFs, we use PdfTextEngine
     if (context.documentType === 'slik' && isPdf && EngineCapabilities.pdfText.pdf) {
       return new PdfTextEngine();

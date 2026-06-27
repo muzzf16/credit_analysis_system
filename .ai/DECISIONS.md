@@ -90,8 +90,10 @@
 | Phase 1 | Core modules (01–08, 10, 12 basic) | ✅ Selesai |
 | Phase 2 | [TBD] | ⬜ Belum mulai |
 | Phase 3 | MAK Generator (modul 09) | 🔄 In Progress |
-| Phase 4 | AI Credit Analyst (modul 13) | ⬜ Belum mulai |
+| Phase 4 | AI Credit Analyst (modul 13) | 🔄 In Progress — 6.1 selesai, 6.2 berjalan |
+| Phase 5 | Policy & Decision Platform (Sprint 5.1–5.10) | ✅ Selesai |
 | Phase 5 | EWS (modul 11) | ⬜ Belum mulai |
+| Phase 6 | AI Narrative & MAK | 🔄 In Progress — 6.1 selesai, 6.2 selesai, 6.3–6.6 berjalan |
 
 ---
 
@@ -152,16 +154,60 @@
 17. **Capability Platform**: *FactCollection* diabstraksi menjadi **Business Capability** (misal: `Financial Capability: READY`) oleh *Capability Evaluator*.
 18. **DecisionFacts Projection**: *CapabilityCollection* di-mapping menjadi status kriteria persetujuan (`financialEligible=true`) oleh *DecisionFacts Projector*. Sebagai Read Model, tidak ada komputasi logika bisnis di sini.
 19. **DecisionIntent Platform**: Sistem mengonversi `DecisionFacts` menjadi agregat *Intent* (rekomendasi, risiko, kondisi). Sistem tidak pernah membuat keputusan akhir secara otoritatif.
-20. **Decision Policy Platform (Governance)**: Menyediakan aturan *Authority Matrix*, *Escalation*, *Override*, dan *Committee Rules*. *Decision Policy* dipadukan dengan *Intent* oleh *Decision Builder* untuk mencetak *Decision* akhir.
-21. **AI Boundaries**: AI hanya boleh membaca `AssessmentContext`, `CapabilityCollection`, `DecisionFacts`, `DecisionIntent`, `DecisionPolicy` dan `Decision` akhir (Facts Before AI).
+20. **Decision Policy Platform (Governance)**: Menyediakan aturan *Authority Matrix*, *Escalation*, *Override*, dan *Committee Rules*. *Decision Policy* dipadukan dengan *Intent* oleh **Decision Kernel** untuk mencetak artefak keputusan kanonik.
+21. **AI Boundaries**: AI hanya boleh membaca **AnalysisPackage** (bukan object terpisah, bukan database, bukan Rule/Formula). AI menyusun narasi dari fakta yang sudah dibekukan.
 
 **D. Stage Engine, Profiles & Execution Hierarchy**
-22. **Execution Hierarchy Resmi**: Architecture mengikuti batas akhir sistem: `Policy → Pipeline Plan → Stage Profile → Stage → Rule → Formula`. (Disusul oleh `Pipeline Engine → PipelineResult → Facts Platform → Capability Platform → DecisionFacts Projection → DecisionIntent Platform → Decision Policy Platform → Decision Builder → Decision → Committee Workflow → Decision Audit → AI Credit Analyst`).
-19. **Stage As Orchestrator**: Stage memiliki lifecycle lengkap dan mengembalikan `StageResult`.
-20. **Layer Isolation**: Stage HANYA mengenal Rule. Pipeline HANYA mengenal Stage. FactsBuilder HANYA mengenal Extractor.
-21. **Stage Registry & Resolver**: Stage diregistrasi dan dicari via `StageResolver.resolve(code)`.
-22. **Profiles Bounded Context**: `Stage Profile` adalah Entity *immutable* (Bounded Context).
-23. **Execution Context**: Kontrak eksekusi berstandar: `execute({ assessment, stageProfile, execution })`.
-24. **Configuration Fingerprinting**: Semua artefak konfigurasi (Policy, Pipeline Plan, Stage Profile, **Fact Definition**) wajib dihitung *Fingerprint* (SHA-256) saat diregistrasi untuk reproduksibilitas audit.
-25. **Traceable PipelineResult**: Mengunci sekumpulan fingerprint (`policy`, `pipeline`, `profiles[]`).
-26. **No Direct Decision**: Stage dan Pipeline hanya menghasilkan fakta/result eksekusi. Keputusan kredit hanya dibuat di `Decision Builder`.
+22. **Execution Hierarchy Resmi**: `Policy → Pipeline Plan → Stage Profile → Stage → Rule → Formula → Pipeline Engine → PipelineResult → Facts → Capabilities → DecisionFacts → DecisionIntent → DecisionPolicy → **Decision Kernel** → **Analysis Package** → AI Credit Analyst → Committee Workflow → Disbursement Workflow`.
+23. **Stage As Orchestrator**: Stage memiliki lifecycle lengkap dan mengembalikan `StageResult`.
+24. **Layer Isolation**: Stage HANYA mengenal Rule. Pipeline HANYA mengenal Stage. FactsBuilder HANYA mengenal Extractor.
+25. **Stage Registry & Resolver**: Stage diregistrasi dan dicari via `StageResolver.resolve(code)`.
+26. **Profiles Bounded Context**: `Stage Profile` adalah Entity *immutable* (Bounded Context).
+27. **Execution Context**: Kontrak eksekusi berstandar: `execute({ assessment, stageProfile, execution })`.
+28. **Configuration Fingerprinting**: Semua artefak konfigurasi wajib dihitung *Fingerprint* (SHA-256) saat diregistrasi.
+29. **Traceable PipelineResult**: Mengunci sekumpulan fingerprint (`policy`, `pipeline`, `profiles[]`).
+30. **No Direct Decision**: Stage dan Pipeline hanya menghasilkan fakta/result eksekusi. Keputusan kredit otoritatif hanya dibuat di **Decision Kernel**.
+
+**E. Decision Kernel — Sprint 5.10 (Penutup Arsitektur Phase 5)** 🔒 LOCKED
+31. **Decision Kernel = Single Source of Truth**: Seluruh platform hanya mengenal satu artefak keputusan kanonik: `DecisionKernel`. Bukan DTO, bukan object berbeda per consumer.
+32. **Rantai Resmi**: `AssessmentContext → DecisionIntent → DecisionPolicy → DecisionKernel`.
+33. **DecisionKernel Immutable**: Sama seperti `CreditCase` dan `AssessmentContext`. Dilarang mutasi in-place (`decision.status = "APPROVED"`). Revisi = `Decision V2` (increment `revision`), V1 tetap utuh untuk audit.
+34. **Decision Fingerprint**: Identitas resmi keputusan = `SHA256(AssessmentFingerprint + DecisionIntentFingerprint + DecisionPolicyFingerprint + DecisionPayload)`.
+35. **Audit Block Wajib**: Setiap `DecisionKernel` membawa `audit.{assessmentFingerprint, policyFingerprint, intentFingerprint, decisionFingerprint}`.
+36. **AnalysisPackage**: Paket immutable tunggal untuk AI berisi `{ assessment, decision, facts, capabilities, intent, policy }`. AI tidak mengakses database, tidak menghitung DSR, tidak membaca Rule/Formula.
+37. **Workflow sebagai Consumer**: Urutan runtime: `DecisionKernel → AnalysisPackage → AI Credit Analyst → Committee Workflow → Disbursement Workflow`. Workflow **bukan** pembentuk keputusan.
+38. **Stop Bounded Context Baru**: Setelah Sprint 5.10, **tidak menambah bounded context arsitektur**. Prioritas bergeser ke kapabilitas bisnis BPR BAPERA.
+
+**F. Phase 6 — AI Credit Analyst (Dipecah)** 🔒 LOCKED
+| Sprint | Fokus |
+|--------|-------|
+| 6.1 | Analysis Package (builder + schema + fingerprint) |
+| 6.2 | Prompt Builder |
+| 6.3 | Narrative Engine |
+| 6.4 | MAK Generator (berbasis AnalysisPackage, bukan data mentah) |
+| 6.5 | LLM Adapter (OpenAI, GLM, Qwen, Ollama) — pergantian model tidak memengaruhi MAK/data |
+
+**G. Prioritas Implementasi Bisnis (Pasca Sprint 5.10)** 🔒 LOCKED
+1. **Rule Library PT BPR BAPERA**: DSR, DSCR, RPC, LTV, modal kerja, siklus usaha, arus kas, kemampuan bayar.
+2. **Policy Pack SOP internal**: Kredit Produktif, Konsumtif, Pensiun + parameter kewenangan/limit.
+3. **Decision Kernel & Analysis Package** (Sprint 5.10 + 6.1).
+4. **AI Credit Analyst**: MAK otomatis, ringkasan risiko, alasan rekomendasi — tanpa reasoning data mentah.
+
+**Prinsip Fondasi (tidak boleh dilanggar):**
+> Semua keputusan kredit dihasilkan oleh aturan deterministik dan artefak domain yang dapat diaudit. AI hanya menyusun penjelasan dan dokumentasi berdasarkan fakta yang sudah tervalidasi.
+
+---
+
+## 🔒 AI BOUNDARY RULE (BARU)
+
+> **AI modules (`PromptContext`, `PromptBuilder`, `LLMAdapter`, `Narrative`) MUST NOT access `Rule`, `Formula`, `Stage`, `Pipeline`, `Assessment`, or database directly.**
+>
+> **Only input: `AnalysisPackage`.**
+>
+> **Alasan:** Memastikan seluruh narasi AI dapat direproduksi dari artefak yang sama, tanpa bergantung pada keadaan sistem saat narasi dibuat. Mendukung audit, benchmark, dan pergantian model LLM tanpa perubahan logika bisnis.
+
+**Implementasi:**
+- `PromptContextBuilder` hanya membaca `AnalysisPackage.toJSON()`
+- `PromptBuilder` hanya membaca `PromptContext.toJSON()` + Prompt Definition
+- `LLMAdapter` hanya menerima `RenderedPrompt` string
+- `NarrativeBuilder` hanya membaca JSON response LLM

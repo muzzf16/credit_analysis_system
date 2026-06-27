@@ -255,8 +255,34 @@
 | 10 | Dashboard Kredit | ✅ Selesai | Sesi 1 | Phase 1 |
 | 11 | EWS | ⬜ Belum mulai | - | Phase 5 |
 | 12 | Laporan | 🔄 Basic only | - | Phase 1 |
-| 13 | AI Credit Analyst | ⬜ Belum mulai | - | Phase 4 |
+| 13 | AI Credit Analyst | 🔄 In Progress | Sesi 28 | Phase 4 |
 | 14 | Document AI (VLM) | ✅ Selesai | Sesi 11 | Phase 3 |
+| 15 | Decision Kernel | ✅ Selesai | Sesi 27 | Phase 5 |
+| 16 | Analysis Package | ✅ Selesai | Sesi 28 | Phase 6.1 |
+| 17 | PromptContext | ✅ Selesai | Sesi 29 | Phase 6.2 |
+| 18 | Prompt Definitions | ✅ Selesai | Sesi 30 | Phase 6.3 |
+| 19 | LLM Adapters | ✅ Selesai | Sesi 31 | Phase 6.4 |
+| 20 | Narrative Engine | ✅ Selesai | Sesi 32 | Phase 6.5 |
+| 21 | MAK Builder | ✅ Selesai | Sesi 33 | Phase 6.6 |
+
+---
+
+## 🔒 AI ARCHITECTURE v1.0 — LOCKED (26 Jun 2026)
+
+**Goal:** Memfinalisasikan arsitektur AI Credit Analyst sebagai bounded context yang terpisah dengan prinsip stable contract, prompt version independence, dan provider independence.
+
+**Prinsip Tambahan yang Dikunci:**
+1. **Stable Contract Rule:** AnalysisPackage v1.0 bersifat append-only, tidak boleh mengubah field yang sudah dipublikasikan.
+2. **Prompt Version Independence:** Prompt Definition memiliki lifecycle sendiri, tidak bergantung pada versi AnalysisPackage.
+3. **Provider Independence Rule:** Hanya LLMAdapter yang boleh mengenal SDK vendor, seluruh modul AI lainnya bersifat provider-agnostic.
+
+**File yang diperbarui:**
+- `.kilo/plans/1782486628090-ai-credit-analyst-architecture.md` (architectural plan)
+- `.ai/DECISIONS.md` (AI Boundary Rule, Stable Contract Rule)
+- `.ai/CONTEXT.md` (task update)
+- `.ai/SESSION_LOG.md` (progress tracker)
+
+**Task berikutnya:** Lanjutkan ke Sprint 6.3 — Prompt Definitions & Builder.
 
 Status: ⬜ Belum | 🔄 In Progress | ✅ Selesai | ❌ Blocked
 
@@ -570,3 +596,441 @@ Menyesuaikan prompt VLM untuk dokumen Sertifikat Hak Milik (SHM) agar sesuai den
 **Hindari sesi berikutnya:** Menaruh contoh negatif berisi string eksplisit dalam instruksi ke Llama Vision.
 **Task berikutnya:** Fokus mengerjakan modul EWS (Early Warning System) atau AI Credit Analyst.
 **Kode yang perlu ditempel:** -
+
+---
+
+## 🔧 Sesi 25 — Fix Docker Deploy & Import Backend (26 Jun 2026)
+**Goal:** Mengatasi error browser -102 (`ERR_CONNECTION_REFUSED`) saat akses `http://localhost:8085/` dan memulihkan backend yang crash-loop setelah `git pull`.
+**Yang selesai:**
+- [x] Menyalakan Docker Desktop dan menjalankan `docker compose up -d` (build pertama gagal karena konflik nama container lama).
+- [x] Membersihkan container stale (`bpr_bapera_db`, `bpr_bapera_wa`, `bpr_bapera_minio`) lalu start ulang semua service.
+- [x] Fix `upload.single is not a function` — import salah di `document-intelligence.routes.js` (harus `{ upload }`).
+- [x] Fix `MODULE_NOT_FOUND` — path OCR lama di `document-ai.service.js` setelah refactor folder (`ocr/services/`, `ocr/utils/parsers`).
+- [x] Migrasi 5 file + seed admin berhasil di container backend.
+- [x] Verifikasi: frontend HTTP 200, API health OK di `http://localhost:8085/api/health`.
+**Keputusan baru:** Tidak ada keputusan arsitektur baru — hanya perbaikan import pasca-refactor OCR module.
+**File yang diubah:**
+- `backend/src/modules/document-intelligence/routes/document-intelligence.routes.js`
+- `backend/src/services/document-ai/document-ai.service.js`
+**File JANGAN disentuh:** Struktur folder OCR baru (`modules/ocr/services/`, `pipeline/`, dll) — sudah benar, yang rusak hanya import lama.
+**Bug yang ditemukan:**
+- Error -102 = tidak ada service di port 8085 (Docker belum jalan / container belum start).
+- Build Docker terhenti → container `Created` tapi tidak `Started` → konflik nama saat retry.
+- Backend crash: import `upload` default vs named export; path `ocr.service` & `parsers` sudah dipindah.
+**Hindari sesi berikutnya:** Setelah refactor/move file, grep semua `require()` ke path lama sebelum deploy Docker.
+**Task berikutnya:** EWS (Phase 5), Laporan, atau AI Credit Analyst — sesuai instruksi pengguna.
+**Kode yang perlu ditempel:** -
+
+---
+
+## 🔧 Sesi 26 — Keputusan Arsitektur Sprint 5.10: Decision Kernel (26 Jun 2026)
+**Goal:** Menutup fase arsitektur Phase 5 dengan artefak kanonik tunggal sebelum implementasi Decision & AI.
+**Yang disepakati (🔒 LOCKED di DECISIONS.md):**
+- [x] **Sprint 5.10 = Decision Kernel** — Single Source of Truth keputusan kredit (bukan DTO, bukan object berbeda per consumer).
+- [x] Rantai: `AssessmentContext → DecisionIntent → DecisionPolicy → DecisionKernel`.
+- [x] **Immutability + revision**: perubahan keputusan = `Decision V2`, bukan mutasi V1.
+- [x] **Decision Fingerprint**: `SHA256(AssessmentFP + IntentFP + PolicyFP + DecisionPayload)`.
+- [x] **AnalysisPackage**: paket immutable tunggal untuk AI; AI tidak akses DB/Rule/Formula.
+- [x] Urutan runtime: `DecisionKernel → AnalysisPackage → AI → Committee → Disbursement` (workflow = consumer).
+- [x] **Phase 6 dipecah**: 6.1 Analysis Package, 6.2 Prompt Builder, 6.3 Narrative Engine, 6.4 MAK Generator, 6.5 LLM Adapter.
+- [x] **Stop bounded context baru** — prioritas: Rule Library BPR, Policy Pack SOP, Decision Kernel, AI Analyst.
+**Keputusan baru:** `DecisionBuilder` diganti konsepnya menjadi **Decision Kernel** sebagai artefak domain final. Committee Workflow diposisikan setelah AI, bukan sebelum.
+**File yang diubah:** `.ai/DECISIONS.md`, `.ai/CONTEXT.md`, `.ai/SESSION_LOG.md`
+**Gap codebase (belum diimplementasi):**
+- `DecisionBuilder` / `DecisionKernel` entity belum ada di `backend/src/modules/`
+- Orchestrator end-to-end belum ter-wire dari `AssessmentReadyForDecision`
+- `AnalysisPackage` builder belum ada
+**Task berikutnya:** Implementasi Sprint 5.10 — `DecisionKernel` entity, schema, builder, fingerprint, revision service.
+**Kode yang perlu ditempel:** `decision-intent/`, `decision-policy/`, `assessment/`, `.ai/DECISIONS.md` section E
+
+---
+
+## 🔧 Sesi 27 — Sprint 5.10: Decision Kernel (Aggregate Root) (26 Jun 2026)
+**Goal:** Menutup fase arsitektur Phase 5 dengan artefak kanonik tunggal sebelum implementasi Decision & AI.
+**Yang selesai:**
+- [x] Modul `backend/src/modules/decision-kernel/` — entity, schema, builder, revision, integrity, fingerprint, manifest, events.
+- [x] `DecisionKernel` immutable + `DecisionRevisionService` (V1→V2, tanpa mutasi).
+- [x] `DecisionFingerprint` = SHA256(AssessmentFP + IntentFP + PolicyFP + DecisionPayload).
+- [x] `DecisionManifest` v1.0.0 (seperti OCR manifest).
+- [x] `DecisionOrchestrator` — rantai penuh Pipeline → Facts → Capabilities → DecisionFacts → Intent → Policy → Kernel.
+- [x] `DecisionWorkflow` — subscribe `AssessmentReadyForDecision`, emit `DecisionRequested` → `DecisionKernelCreated`.
+- [x] Unit + integration test (7 test, semua pass).
+**Keputusan baru:** Committee Workflow subscribe `DecisionKernelCreated` (bukan membentuk keputusan). `DecisionIntegrityService` terpisah dari fingerprint computation.
+**File yang diubah/dibuat:**
+- `backend/src/modules/decision-kernel/**` (modul baru)
+- `backend/src/modules/workflows/decision-workflow.js`
+- `backend/tests/modules/decision-kernel/decision-kernel.test.js`
+- `backend/tests/modules/workflows/decision-workflow.integration.test.js`
+- `.ai/DECISIONS.md`, `.ai/CONTEXT.md`, `.ai/SESSION_LOG.md`
+**Task berikutnya:** Sprint 6.1 Analysis Package, lalu Rule Library BPR & Policy Pack SOP.
+**Kode yang perlu ditempel:** `decision-kernel/index.js`, `.ai/DECISIONS.md` section E
+
+---
+
+## 🔧 Sesi 28 — Sprint 6.1: Analysis Package (26 Jun 2026)
+**Goal:** Membangun AnalysisPackage sebagai paket immutable untuk AI Credit Analyst.
+**Yang selesai:**
+- [x] Modul `backend/src/modules/analysis-package/` — entity, schema, builder.
+- [x] `AnalysisPackage` immutable dengan fingerprint konsisten.
+- [x] Package berisi: `DecisionKernel + FactCollection + CapabilityCollection + Intent + Policy`.
+- [x] AI hanya baca package ini, tidak akses database langsung.
+- [x] Unit test 3 test, semua pass.
+**Keputusan baru:** AnalysisPackage = frozen snapshot untuk AI consumption. AI tidak boleh membaca database, rule, atau formula langsung.
+**File yang diubah/dibuat:**
+- `backend/src/modules/analysis-package/**` (modul baru)
+- `backend/tests/modules/analysis-package/analysis-package.test.js`
+**Task berikutnya:** Sprint 6.2 Prompt Builder → Narrative Engine → MAK Generator → LLM Adapter.
+
+---
+
+## 🔧 Sesi 29 — Sprint 6.2: PromptContext (26 Jun 2026)
+**Goal:** Create PromptContext as AI View Model — immutable representation of AnalysisPackage optimized for prompts.
+**Yang selesai:**
+- [x] Modul `backend/src/modules/ai/context/` — PromptContext entity, schema, builder.
+- Sistem prompt backend dan fungsi normalisasi tanggal frontend telah diperbarui.
+- Diharapkan keakuratan ekstraksi VLM untuk nama, tempat/tanggal lahir, alamat, kelurahan, dan kecamatan meningkat dan tidak berhalusinasi.
+
+---
+
+## 🔧 Sesi 20 — Penyesuaian Prompt VLM SHM (24 Jun 2026)
+
+### Task
+Menyesuaikan prompt VLM untuk dokumen Sertifikat Hak Milik (SHM) agar sesuai dengan struktur gambar sertifikat sebenarnya (seperti Buku Tanah dan Surat Ukur) dan menghindari halusinasi.
+
+### Perubahan yang Dilakukan
+- **Backend (`document-ai.service.js`)**:
+  - Memperbarui prompt untuk `case 'shm'` agar lebih ketat: `BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR SERTIFIKAT TANAH (SHM)`.
+  - Menambahkan aturan larangan mengarang/menebak (halusinasi).
+  - Memberikan panduan spesifik per field agar AI bisa menemukan nilainya secara lebih presisi (misalnya mencari `luas_tanah` hanya angkanya saja, mencari `atas_nama` di bawah "NAMA PEMEGANG HAK", dll).
+  - Melakukan _rebuild_ image backend Docker agar prompt terbaru segera teraplikasi pada server.
+
+### Hasil Eksekusi
+- Sistem backend telah menggunakan struktur instruksi VLM SHM yang baru dan lebih kebal terhadap data yang tidak ada di dalam gambar.
+
+## [2026-06-24] UI/UX Improvement - Input Format Rupiah
+- **Modifikasi:** Mengubah field input yang tadinya `<input type="number">` biasa menjadi `<input type="text">` dengan fungsi format otomatis ribuan (titik) serta memiliki prefix `Rp`.
+- **File Terdampak:** `AnalisaKonsumtifPage.jsx` (semua input Gaji, Pengeluaran, Angsuran Diajukan) dan `AnalisaProduktifPage.jsx` (Omset, Biaya, Angsuran).
+
+---
+
+## 🔧 Sesi 21 — Perbaikan Akurasi VLM KTP, SHM, Surat Nikah, KK, BPKB & Form Agunan (25 Jun 2026)
+**Goal:** Meningkatkan akurasi proses OCR/VLM yang kurang maksimal, dengan menerapkan pre-processing gambar, memperketat prompt untuk dokumen selain KTP (Surat Nikah, KK, NPWP, BPKB, SHM), menambah post-processing (regex sanitization), serta menggabungkan scan Surat Nikah & form Agunan menggunakan endpoint VLM baru.
+**Yang selesai:**
+- [x] Menerapkan pre-processing gambar (Grayscale, Normalize, Deskew 40%, Sharpen) menggunakan `imagemagick` via `execFile` di backend sebelum diproses VLM.
+- [x] Memperbarui schema dan prompt VLM untuk KTP, KK, NPWP, BPKB, Surat Nikah, dan SHM (ditambah ekstraksi `provinsi` dan pola deteksi nomor pada SHM).
+- [x] Menambahkan _post-processing sanitizer_ regex di `validateAndClean` untuk memastikan karakter di field NIK, No. KK, NPWP, dan Luas Tanah berupa angka murni (tanpa salah ketik huruf O/A dll).
+- [x] Memigrasikan scan dokumen "Surat Nikah" ke endpoint `/document/surat_nikah` (meninggalkan _fallback_ Tesseract lama).
+- [x] Memigrasikan fungsi pemindaian di form Agunan (`AgunanFormPage.jsx` & `AgunanEditPage.jsx`) menggunakan `documentService` VLM (SHM dan BPKB) dengan mapping state yang tepat dan pembentukan alamat otomatis dari `desa` + `kecamatan` + `kabupaten`.
+- [x] Me-rebuild dan restart environment Docker untuk `backend` dan `frontend`.
+**Keputusan baru:** Seluruh proses OCR/VLM di sistem, tanpa terkecuali, kini terpusat pada service Document AI baru (Llama Vision) dengan pra-pemrosesan gambar otomatis untuk meminimalkan halusinasi model. Pemindaian lawas berbasis OCR Service Tesseract dihapus penggunaannya di _frontend_.
+**File yang diubah:** `backend/src/services/document-ai/document-ai.service.js`, `backend/src/services/document-ai/document-ai.schemas.js`, `backend/src/modules/document/document.controller.js`, `backend/src/modules/document/document.routes.js`, `frontend/src/services/index.js`, `frontend/src/pages/debitur/DebiturFormPage.jsx`, `frontend/src/pages/agunan/AgunanFormPage.jsx`, `frontend/src/pages/agunan/AgunanEditPage.jsx`
+**File JANGAN disentuh:** `backend/src/modules/ocr/ocr.service.js` (Simpan sebagai museum _fallback_ cadangan)
+**Bug yang ditemukan:** Frontend Form Agunan sempat tertinggal belum memakai arsitektur VLM yang baru dan masih menggunakan legacy endpoint. Pemetaan nilai (state mapping) juga kurang tepat untuk data _snake_case_ yang dikirim VLM backend.
+**Hindari sesi berikutnya:** Menambah endpoint backend yang memengaruhi state frontend tanpa melakukan pembersihan global / *refactoring* menyeluruh ke halaman-halaman yang fungsinya tumpang tindih.
+**Task berikutnya:** Fokus mengeksplorasi modul EWS (Early Warning System - Phase 5) karena fungsionalitas MAK dan Document AI sudah memadai.
+**Kode yang perlu ditempel:** -
+
+---
+
+## 🔧 Sesi 22 — Upgrade Prompt OCR SHM + Field Mapping Agunan (25 Jun 2026)
+**Goal:** Meningkatkan kelengkapan ekstraksi data dari dokumen SHM menggunakan data nyata SHM No. 01620 (AAW579903, Sidomulyo, Limpung, Batang) sebagai referensi, dan memperkaya field mapping ke form agunan.
+**Yang selesai:**
+- [x] Upgrade prompt VLM SHM dari 8 field basic menjadi 23 field komprehensif: NIB, kode dokumen, nama pemegang hak, tanggal lahir pemegang, keadaan tanah, luas terbilang, nomor surat ukur, asal hak, hak tanggungan aktif, nama kreditur HT, nomor HT, referensi DI 307/208, kantor pertanahan.
+- [x] Prompt baru adaptif — mampu baca semua halaman SHM (Cover DI-206, Pendaftaran, Peralihan HT, Surat Ukur DI-207) dari 1 upload gambar.
+- [x] Perluas `SHM_SCHEMA` di `document-ai.schemas.js` dengan semua field baru, backward-compatible (field lama `atas_nama`, `kabupaten`, `desa` tetap ada sebagai alias).
+- [x] `validateAndClean` case `'shm'` diperbarui: smart alias resolution, safe null handling, konversi `luas_m2` integer, boolean untuk `hak_tanggungan_aktif`.
+- [x] Field mapping OCR → form agunan diperluas di `AgunanFormPage.jsx` dan `AgunanEditPage.jsx` menggunakan logika `formMapper.js`: `nama_pemegang_hak`, `luas_m2`, `desa_kelurahan`, `kabupaten_kota`, `keadaan_tanah` → `deskripsi`, `buildAlamat` (desa + Kec. + Kab. + provinsi).
+- [x] Backend di-cp dan di-restart (`bpr_bapera_api`), frontend di-rebuild dan di-recreate (`bpr_bapera_frontend`).
+**Keputusan baru:** Field `atas_nama` dan `kabupaten` dst dipertahankan sebagai alias (bukan dihapus) di schema untuk backward compatibility. Prompt SHM adalah single-image adaptive (bukan multi-halaman terpisah karena VLM hanya 1 gambar per call). Deskripsi agunan otomatis diisi dari `keadaan_tanah` + `luas_m2`.
+**File yang diubah:**
+- `backend/src/services/document-ai/document-ai.schemas.js` — SHM_SCHEMA diperluas + validateAndClean
+- `backend/src/services/document-ai/document-ai.service.js` — prompt SHM komprehensif
+- `frontend/src/pages/agunan/AgunanFormPage.jsx` — field mapping SHM diperluas
+- `frontend/src/pages/agunan/AgunanEditPage.jsx` — field mapping SHM diperluas
+**File JANGAN disentuh:** `backend/src/modules/ocr/ocr.service.js`, `backend/src/modules/document/document.routes.js`, `frontend/src/services/index.js`
+**Bug yang ditemukan:** -
+**Hindari sesi berikutnya:** Jangan ganti field schema yang sudah ada menjadi field baru tanpa alias backward compat — bisa break response yang sudah ada di frontend lain.
+**Task berikutnya:** Test live scan SHM di form agunan, lalu lanjut ke modul EWS (Phase 5).
+**Kode yang perlu ditempel:** -
+
+---
+
+## 🔧 Sesi 23 — Upload Multi-Halaman SHM + Merge ke Form Agunan (25 Jun 2026)
+**Goal:** Pecah upload SHM menjadi 5 slot terpisah per jenis halaman agar VLM bisa menggunakan prompt yang spesifik untuk setiap halaman, meningkatkan akurasi ekstraksi data agunan secara signifikan.
+**Yang selesai:**
+- [x] +5 prompt VLM per-halaman: `shm_cover`, `shm_pendaftaran`, `shm_peralihan`, `shm_surat_ukur`, `shm_peta`
+- [x] +5 `validateAndClean` case di schemas untuk sanitasi output VLM per halaman
+- [x] +`processSHMPage` controller + route `POST /document/shm/page` (diletakkan SEBELUM `/shm`)
+- [x] +`extractShmPage` di `services/index.js`
+- [x] Rewrite `AgunanFormPage.jsx` + `AgunanEditPage.jsx`: 5-slot UI dengan status idle/loading/done/error, badge Wajib/Opsional, tombol "Terapkan ke Form" (merge cerdas dengan prioritas field)
+- [x] Batas tanah dari `nama_tetangga[]` hasil `shm_peta`; BPKB single upload tetap berfungsi
+- [x] Backend restart ✅, frontend rebuild ✅
+**Keputusan baru:** Merge di frontend (bukan backend) agar user bisa edit manual sebelum simpan. Route `/shm/page` HARUS di atas `/shm` di routes.js.
+**File yang diubah:** `document-ai.service.js`, `document-ai.schemas.js`, `document.controller.js`, `document.routes.js`, `services/index.js`, `AgunanFormPage.jsx`, `AgunanEditPage.jsx`
+**File JANGAN disentuh:** `backend/src/modules/ocr/ocr.service.js`, database schema, credit scoring
+**Bug yang ditemukan:** -
+**Hindari sesi berikutnya:** Jangan tambah route `/shm/xxx` setelah `/shm` — Express first-match akan menelan subroute.
+**Task berikutnya:** Test live upload per halaman SHM, lalu modul EWS (Phase 5).
+**Kode yang perlu ditempel:** -
+
+## 🔧 Sesi 24 — Fix VLM Halusinasi & Limit Upload File (25 Jun 2026)
+**Goal:** Menghilangkan halusinasi (data fiktif) dari hasil bacaan KTP, mencocokkan struktur UI Form Debitur dengan KTP, dan mengatasi kendala gagal upload file (gambar/PDF) berukuran besar.
+**Yang selesai:**
+- [x] Memperbaiki *prompt* instruksi VLM KTP di `document-ai.service.js` dengan menghapus contoh teks negatif yang justru memicu halusinasi kata.
+- [x] Merombak struktur UI Form Debitur (`DebiturFormPage.jsx`) khusus KTP dengan memisahkan RT & RW, serta menambahkan Agama, Pekerjaan, Kewarganegaraan, dan Berlaku Hingga agar sinkron dengan hasil OCR.
+- [x] Mengatasi error "tidak bisa upload image/pdf" dengan menaikkan limit unggahan file dari 10 MB menjadi 50 MB pada *reverse proxy* (`nginx.conf`) dan layer aplikasi Node.js (`backend/src/middleware/upload.js`).
+- [x] Me-rebuild container frontend, backend, dan Nginx.
+**Keputusan baru:** Semua isian Form Debitur untuk Data KTP kini disamakan persis dengan field fisik KTP agar mengurangi perbedaan interpretasi data. Batas ukuran unggahan dokumen kini disetel longgar di 50 MB.
+**File yang diubah:**
+- `backend/src/services/document-ai/document-ai.service.js`
+- `frontend/src/pages/debitur/DebiturFormPage.jsx`
+- `nginx/nginx.conf`
+- `backend/src/middleware/upload.js`
+**File JANGAN disentuh:** -
+**Bug yang ditemukan:** (1) Instruksi contoh negatif pada prompt VLM memicu munculnya data fiktif (halusinasi). (2) Nginx dan Multer secara *default* langsung memotong unggahan foto/PDF resolusi tinggi karena limit 10 MB yang kekecilan.
+**Hindari sesi berikutnya:** Menaruh contoh negatif berisi string eksplisit dalam instruksi ke Llama Vision.
+**Task berikutnya:** Fokus mengerjakan modul EWS (Early Warning System) atau AI Credit Analyst.
+**Kode yang perlu ditempel:** -
+
+---
+
+## 🔧 Sesi 25 — Fix Docker Deploy & Import Backend (26 Jun 2026)
+**Goal:** Mengatasi error browser -102 (`ERR_CONNECTION_REFUSED`) saat akses `http://localhost:8085/` dan memulihkan backend yang crash-loop setelah `git pull`.
+**Yang selesai:**
+- [x] Menyalakan Docker Desktop dan menjalankan `docker compose up -d` (build pertama gagal karena konflik nama container lama).
+- [x] Membersihkan container stale (`bpr_bapera_db`, `bpr_bapera_wa`, `bpr_bapera_minio`) lalu start ulang semua service.
+- [x] Fix `upload.single is not a function` — import salah di `document-intelligence.routes.js` (harus `{ upload }`).
+- [x] Fix `MODULE_NOT_FOUND` — path OCR lama di `document-ai.service.js` setelah refactor folder (`ocr/services/`, `ocr/utils/parsers`).
+- [x] Migrasi 5 file + seed admin berhasil di container backend.
+- [x] Verifikasi: frontend HTTP 200, API health OK di `http://localhost:8085/api/health`.
+**Keputusan baru:** Tidak ada keputusan arsitektur baru — hanya perbaikan import pasca-refactor OCR module.
+**File yang diubah:**
+- `backend/src/modules/document-intelligence/routes/document-intelligence.routes.js`
+- `backend/src/services/document-ai/document-ai.service.js`
+**File JANGAN disentuh:** Struktur folder OCR baru (`modules/ocr/services/`, `pipeline/`, dll) — sudah benar, yang rusak hanya import lama.
+**Bug yang ditemukan:**
+- Error -102 = tidak ada service di port 8085 (Docker belum jalan / container belum start).
+- Build Docker terhenti → container `Created` tapi tidak `Started` → konflik nama saat retry.
+- Backend crash: import `upload` default vs named export; path `ocr.service` & `parsers` sudah dipindah.
+**Hindari sesi berikutnya:** Setelah refactor/move file, grep semua `require()` ke path lama sebelum deploy Docker.
+**Task berikutnya:** EWS (Phase 5), Laporan, atau AI Credit Analyst — sesuai instruksi pengguna.
+**Kode yang perlu ditempel:** -
+
+---
+
+## 🔧 Sesi 26 — Keputusan Arsitektur Sprint 5.10: Decision Kernel (26 Jun 2026)
+**Goal:** Menutup fase arsitektur Phase 5 dengan artefak kanonik tunggal sebelum implementasi Decision & AI.
+**Yang disepakati (🔒 LOCKED di DECISIONS.md):**
+- [x] **Sprint 5.10 = Decision Kernel** — Single Source of Truth keputusan kredit (bukan DTO, bukan object berbeda per consumer).
+- [x] Rantai: `AssessmentContext → DecisionIntent → DecisionPolicy → DecisionKernel`.
+- [x] **Immutability + revision**: perubahan keputusan = `Decision V2`, bukan mutasi V1.
+- [x] **Decision Fingerprint**: `SHA256(AssessmentFP + IntentFP + PolicyFP + DecisionPayload)`.
+- [x] **AnalysisPackage**: paket immutable tunggal untuk AI; AI tidak akses DB/Rule/Formula.
+- [x] Urutan runtime: `DecisionKernel → AnalysisPackage → AI → Committee → Disbursement` (workflow = consumer).
+- [x] **Phase 6 dipecah**: 6.1 Analysis Package, 6.2 Prompt Builder, 6.3 Narrative Engine, 6.4 MAK Generator, 6.5 LLM Adapter.
+- [x] **Stop bounded context baru** — prioritas: Rule Library BPR, Policy Pack SOP, Decision Kernel, AI Analyst.
+**Keputusan baru:** `DecisionBuilder` diganti konsepnya menjadi **Decision Kernel** sebagai artefak domain final. Committee Workflow diposisikan setelah AI, bukan sebelum.
+**File yang diubah:** `.ai/DECISIONS.md`, `.ai/CONTEXT.md`, `.ai/SESSION_LOG.md`
+**Gap codebase (belum diimplementasi):**
+- `DecisionBuilder` / `DecisionKernel` entity belum ada di `backend/src/modules/`
+- Orchestrator end-to-end belum ter-wire dari `AssessmentReadyForDecision`
+- `AnalysisPackage` builder belum ada
+**Task berikutnya:** Implementasi Sprint 5.10 — `DecisionKernel` entity, schema, builder, fingerprint, revision service.
+**Kode yang perlu ditempel:** `decision-intent/`, `decision-policy/`, `assessment/`, `.ai/DECISIONS.md` section E
+
+---
+
+## 🔧 Sesi 27 — Sprint 5.10: Decision Kernel (Aggregate Root) (26 Jun 2026)
+**Goal:** Menutup fase arsitektur Phase 5 dengan artefak kanonik tunggal sebelum implementasi Decision & AI.
+**Yang selesai:**
+- [x] Modul `backend/src/modules/decision-kernel/` — entity, schema, builder, revision, integrity, fingerprint, manifest, events.
+- [x] `DecisionKernel` immutable + `DecisionRevisionService` (V1→V2, tanpa mutasi).
+- [x] `DecisionFingerprint` = SHA256(AssessmentFP + IntentFP + PolicyFP + DecisionPayload).
+- [x] `DecisionManifest` v1.0.0 (seperti OCR manifest).
+- [x] `DecisionOrchestrator` — rantai penuh Pipeline → Facts → Capabilities → DecisionFacts → Intent → Policy → Kernel.
+- [x] `DecisionWorkflow` — subscribe `AssessmentReadyForDecision`, emit `DecisionRequested` → `DecisionKernelCreated`.
+- [x] Unit + integration test (7 test, semua pass).
+**Keputusan baru:** Committee Workflow subscribe `DecisionKernelCreated` (bukan membentuk keputusan). `DecisionIntegrityService` terpisah dari fingerprint computation.
+**File yang diubah/dibuat:**
+- `backend/src/modules/decision-kernel/**` (modul baru)
+- `backend/src/modules/workflows/decision-workflow.js`
+- `backend/tests/modules/decision-kernel/decision-kernel.test.js`
+- `backend/tests/modules/workflows/decision-workflow.integration.test.js`
+- `.ai/DECISIONS.md`, `.ai/CONTEXT.md`, `.ai/SESSION_LOG.md`
+**Task berikutnya:** Sprint 6.1 Analysis Package, lalu Rule Library BPR & Policy Pack SOP.
+**Kode yang perlu ditempel:** `decision-kernel/index.js`, `.ai/DECISIONS.md` section E
+
+---
+
+## 🔧 Sesi 28 — Sprint 6.1: Analysis Package (26 Jun 2026)
+**Goal:** Membangun AnalysisPackage sebagai paket immutable untuk AI Credit Analyst.
+**Yang selesai:**
+- [x] Modul `backend/src/modules/analysis-package/` — entity, schema, builder.
+- [x] `AnalysisPackage` immutable dengan fingerprint konsisten.
+- [x] Package berisi: `DecisionKernel + FactCollection + CapabilityCollection + Intent + Policy`.
+- [x] AI hanya baca package ini, tidak akses database langsung.
+- [x] Unit test 3 test, semua pass.
+**Keputusan baru:** AnalysisPackage = frozen snapshot untuk AI consumption. AI tidak boleh membaca database, rule, atau formula langsung.
+**File yang diubah/dibuat:**
+- `backend/src/modules/analysis-package/**` (modul baru)
+- `backend/tests/modules/analysis-package/analysis-package.test.js`
+**Task berikutnya:** Sprint 6.2 Prompt Builder → Narrative Engine → MAK Generator → LLM Adapter.
+
+---
+
+## 🔧 Sesi 29 — Sprint 6.2: PromptContext (26 Jun 2026)
+**Goal:** Create PromptContext as AI View Model — immutable representation of AnalysisPackage optimized for prompts.
+**Yang selesai:**
+- [x] Modul `backend/src/modules/ai/context/` — PromptContext entity, schema, builder.
+- [x] `PromptContext` immutable dengan field: summary, risk, facts, capabilities, recommendation, conditions, authority, appendix.
+- [x] `PromptContextBuilder`: transform AnalysisPackage → PromptContext, strip implementation details.
+- [x] Unit test 3 test, semua pass.
+**Keputusan baru:** PromptContext adalah View Model untuk AI, bukan Domain Model. AI Boundary Rule: hanya baca AnalysisPackage, tidak akses database/rule/formula.
+**File yang diubah/dibuat:**
+- `backend/src/modules/ai/context/**` (modul baru)
+- `backend/tests/modules/ai/context/prompt-context.test.js`
+**Task berikutnya:** Sprint 6.3 Prompt Definitions & Builder.
+
+---
+
+## 🔧 Sesi 30 — Sprint 6.3 - 6.6: AI Analyst Modules & Integration (27 Jun 2026)
+**Goal:** Menyelesaikan modul Prompt Definitions, LLM Adapters, Narrative Engine, dan MAK Builder beserta pengujian integrasi.
+**Yang selesai:**
+- [x] Memperbaiki import path `deepFreeze` pada entity `PromptContext` dan `Narrative`.
+- [x] Memperbaiki parser BOM UTF-8 pada pembacaan skema Narrative agar andal di environment Windows.
+- [x] Meningkatkan parser template `PromptBuilder` dengan regex dinamis dan penanganan filter `| formatRupiah`.
+- [x] Membuat renderer baru `DocxRenderer` untuk melengkapi format Memorandum Analisa Kredit (MAK).
+- [x] Membuat unit test untuk `DocxRenderer` dan meregister layernya di ekspor modul `mak`.
+- [x] Membuat end-to-end integration test `ai-integration.test.js` untuk memvalidasi aliran: `AnalysisPackage → PromptContext → Prompt → LLM Adapter (Mock) → Narrative → MAK Document → Renderers (PDF, HTML, DOCX)`.
+- [x] Memastikan semua 20 test di 6 test suites di modul `ai` berjalan sukses tanpa error.
+**Keputusan baru:** Template engine mendukung filter format nominal Rupiah secara dinamis, mempermudah pelaporan aspek keuangan di prompt.
+**File yang diubah/dibuat:**
+- `backend/src/modules/ai/context/entities/PromptContext.js`
+- `backend/src/modules/ai/prompt/builder/PromptBuilder.js`
+- `backend/src/modules/ai/narrative/entities/Narrative.js`
+- `backend/src/modules/ai/mak/renderers/DocxRenderer.js`
+- `backend/src/modules/ai/mak/index.js`
+- `backend/tests/modules/ai/mak/mak-builder.test.js`
+- `backend/tests/modules/ai/ai-integration.test.js`
+**Task berikutnya:** Hubungkan engine analisis kredit ke alur workflow approval / integrasikan dengan scheduler / lanjut ke modul EWS (Phase 5).
+
+---
+
+## 🔧 Sesi 31 — 2026-06-27 | Model: Gemini 3.5 Flash | Modul: AI Credit Analyst REST API & Database Integration
+**Goal:** Integrasikan pipeline AI Credit Analyst backend ke REST API endpoints dan database persistence.
+**Yang selesai:**
+- [x] Membuat tabel database `ai_narrative` via file migrasi SQL baru (`007_add_ai_narrative.sql`).
+- [x] Menambahkan alter column missing fields dari Sesi 5 (`ibu_kandung`, `hubungan_bank`, `kredit_aktif`) pada tabel `debitur` di file migrasi `007_add_ai_narrative.sql`.
+- [x] Membuat service layer `ai.service.js` yang mengintegrasikan data `makData` dengan `DecisionOrchestrator` dan `AnalysisPackageBuilder` untuk menghasilkan `PromptContext`.
+- [x] Mendukung pemetaan plain objects `facts` dan `capabilities` dari collection instances agar sesuai dengan schema dan PromptBuilder.
+- [x] Membuat REST controller `ai.controller.js` dan router `ai.routes.js` untuk mengontrol narrative generation & retrieval.
+- [x] Menambahkan `/ai` route mounting di `app.js` backend.
+- [x] Mengekspor endpoints baru di `frontend/src/services/index.js` untuk konsumsi React UI.
+- [x] Menambahkan unit/integration test baru `ai-service.test.js` untuk database-backed service flow dan memastikan semua 21 unit test berjalan 100% sukses.
+**Keputusan baru:** Data `factCollection` dan `capabilityCollection` dipetakan ke JavaScript plain object key-value sebelum diserahkan ke builder agar memenuhi schema tipe "object" dan tidak crash karena array. Override adapter didukung lewat `setLLMAdapter` untuk testing.
+**File yang diubah:**
+- `backend/migrations/007_add_ai_narrative.sql`
+- `backend/src/config/index.js`
+- `backend/src/app.js`
+- `backend/src/modules/ai/ai.service.js`
+- `backend/src/modules/ai/ai.controller.js`
+- `backend/src/modules/ai/ai.routes.js`
+- `backend/src/modules/ai/index.js`
+- `backend/src/modules/ai/context/schemas/prompt-context.schema.json`
+- `backend/src/modules/ai/context/entities/PromptContext.js`
+- `backend/src/modules/ai/context/builder/PromptContextBuilder.js`
+- `frontend/src/services/index.js`
+- `docker-compose.yml`
+- `backend/tests/modules/ai/ai-service.test.js` (file baru)
+**Bug yang ditemukan:**
+- `column d.ibu_kandung does not exist` karena kolom database dari Sesi 5 terlewat dari sql migrations. Diatasi dengan meletakkan alter table di migrasi 007.
+- `Invalid AnalysisPackage: /factCollection must be object` karena array tipe data dikembalikan oleh `.toJSON()`. Diatasi dengan memetakan array ke plain JavaScript object key-value di service.
+**Task berikutnya:** Hubungkan generator narrative AI Credit Analyst ke frontend React UI (MAK preview page) sehingga user bisa men-trigger dan melihat narasi secara visual, lalu lanjut ke modul EWS (Phase 5).
+
+---
+
+## 🔧 Sesi 32 — 2026-06-27 | Model: Gemini 3.5 Flash (High) | Modul: AI Credit Analyst Frontend & Workflow Integration
+**Goal:** Integrasikan generator narrative AI Credit Analyst ke UI preview MAK (`MakPreviewPage.jsx`) dan workflow persetujuan komite (`PengajuanDetailPage.jsx`).
+**Yang selesai:**
+- [x] Menambahkan state, hook `useEffect`, dan handler `handleGenerateAi` di `MakPreviewPage.jsx` untuk memuat dan memicu pembuatan narasi AI.
+- [x] Mengubah layout Page 1 "OPINI KEPATUHAN" di `MakPreviewPage.jsx` agar kotak opini kosong digantikan dengan visualisasi layout ringkasan analisis AI yang responsif dan cetak-ramah (print-friendly) jika narasi AI tersedia.
+- [x] Menambahkan tombol "Generate AI Analisis" di header kontrol (print-hidden) `MakPreviewPage.jsx` agar analis bisa dengan mudah memicu generator AI.
+- [x] Memperbarui service backend `getById` pada `pengajuan.service.js` untuk mengambil dan menyertakan data tabel `ai_narrative` di respons detail pengajuan.
+- [x] Menambahkan kartu panel rekomendasi AI Credit Analyst (`aiNarrative`) di tab "Approval" pada halaman detail pengajuan (`PengajuanDetailPage.jsx`) untuk memberikan decision support langsung bagi pengambil keputusan (Kabid/Direktur).
+- [x] Rebuild container backend & frontend docker (`docker compose up -d --build backend frontend`) dan memverifikasi seluruh unit & integration test suite (21/21 tests pass) berjalan 100% sukses.
+**Keputusan baru:**
+- AI Narrative dimuat langsung via query DB `getById` pengajuan agar tersedia di halaman persetujuan tanpa perlu request endpoint terpisah.
+- Tampilan cetak AI Narrative diatur otomatis menggunakan `print:border-gray-800 print:bg-white` agar rapi dan hemat tinta saat dicetak hitam-putih.
+**File yang diubah:**
+- `backend/src/modules/pengajuan/pengajuan.service.js`
+- `frontend/src/pages/mak/MakPreviewPage.jsx`
+- `frontend/src/pages/pengajuan/PengajuanDetailPage.jsx`
+**Bug yang ditemukan:** -
+**Task berikutnya:** Rencanakan atau mulai pengerjaan modul Early Warning System (EWS) - Phase 5.
+
+---
+
+## 🔧 Sesi 33 — 2026-06-27 | Model: Gemini 3.5 Flash (High) | Modul: LLM & OCR Service Extension
+**Goal:** Menambahkan LlamaCppAdapter untuk AI Services dan GlmOcrEngine untuk OCR.
+**Yang selesai:**
+- [x] Membuat `LlamaCppAdapter.js` di `backend/src/modules/ai/adapters/` yang mendukung OpenAI-compatible chat completions dan raw completion endpoints.
+- [x] Mendaftarkan `LlamaCppAdapter` di `index.js` dan mendukung provider `LLAMACPP`/`LLAMA_CPP` di `getLLMAdapter()` pada `ai.service.js`.
+- [x] Membuat `GlmOcrEngine.js` di `backend/src/modules/ocr/engines/` untuk mengekstrak teks menggunakan GLM-4V vision API.
+- [x] Mendaftarkan engine GLM OCR di `capabilities.js` dan mengintegrasikannya ke `EngineFactory.js` agar terpilih saat `config.ocrEngine` bernilai `'glm'`.
+- [x] Mengintegrasikan `callGlmVision` ke dalam `extractDocumentData` pada `document-ai.service.js` untuk support extraction terstruktur via GLM Vision.
+- [x] Menambahkan variabel `glmApiUrl` dan `glmApiKey` ke konfigurasi global `config/index.js`.
+- [x] Memperbaiki bugs di `scripts/test-document-ai.js` dengan mengoreksi import path `ocr.service` dan menambahkan fallback agar data rt/rw dan tempat_lahir/tanggal_lahir tetap terisi dengan benar.
+- [x] Memastikan seluruh 22 unit tests AI dan 5 unit tests Document AI berjalan 100% sukses.
+**Keputusan baru:**
+- LlamaCppAdapter secara default menggunakan endpoint OpenAI-compatible `/v1/chat/completions` agar model-model lokal (seperti Qwen3.5) dapat memformat chat template secara otomatis, tetapi mendukung fallback ke raw `/completion` endpoint jika opsi raw disetel.
+- Engine GLM OCR dirancang untuk memproses data gambar/PDF menggunakan API vision GLM-4V dengan mode input multiline.
+**File yang diubah:**
+- `backend/src/modules/ai/adapters/LlamaCppAdapter.js`
+- `backend/src/modules/ai/adapters/index.js`
+- `backend/src/modules/ai/ai.service.js`
+- `backend/src/modules/ocr/engines/GlmOcrEngine.js`
+- `backend/src/modules/ocr/engines/capabilities.js`
+- `backend/src/modules/ocr/engines/EngineFactory.js`
+- `backend/src/services/document-ai/document-ai.service.js`
+- `backend/src/services/document-ai/document-ai.schemas.js`
+- `backend/src/config/index.js`
+- `backend/tests/modules/ai/adapters/llm-adapters.test.js`
+- `backend/scripts/test-document-ai.js`
+**Task berikutnya:** Rencanakan atau mulai pengerjaan modul Early Warning System (EWS) - Phase 5.
+
+---
+
+## 🔧 Sesi 34 — 2026-06-27 | Model: Gemini 3.5 Flash (High) | Modul: Early Warning System (EWS) - Phase 5
+**Goal:** Merencanakan dan mengimplementasikan modul Early Warning System (EWS) secara penuh (Backend, Database, dan Frontend).
+**Yang selesai:**
+- [x] Membuat rencana desain & arsitektur EWS yang disetujui pengguna (`ews_design_specification.md`).
+- [x] Membuat dan menjalankan skrip migrasi database `008_extend_ews_table.sql` untuk menambahkan kolom-kolom baru pada tabel `ews` serta memperbaiki inkonsistensi kolom pada tabel `notifikasi` (dari `judul`/`pesan` menjadi `title`/`message` sesuai dengan query `notifikasi.service.js`).
+- [x] Mengimplementasikan logika pemindaian portfolio EWS (`scanEws`), penyelesaian alert (`resolveAlert`), summary dashboard (`getSummary`), dan visit monitoring AO (`logAoVisit`) di `ews.service.js`.
+- [x] Membuat `ews.controller.js` dan mendaftarkan router RBAC serta audit trail di `ews.routes.js`.
+- [x] Menghubungkan modul EWS ke API router utama di `backend/src/app.js`.
+- [x] Membuat unit & integration tests `ews.test.js` dan memverifikasi 4/4 tes lulus 100%.
+- [x] Menambahkan `ewsService` ke konfigurasi endpoint frontend di `frontend/src/services/index.js`.
+- [x] Membuat dashboard visual EWS `EwsDashboardPage.jsx`, detail investigasi alert `EwsDetailPage.jsx`, dan form kunjungan monitoring lapangan `AoVisitFormPage.jsx`.
+- [x] Mendaftarkan rute EWS di `frontend/src/App.jsx` dan tautan menu di `frontend/src/components/layout/Sidebar.jsx`.
+- [x] Rebuild container Docker backend & frontend dan memverifikasi semuanya berjalan lancar.
+**Keputusan baru:**
+- Notifikasi WhatsApp otomatis dikirimkan ke Account Officer (AO) penanggung jawab ketika alert EWS aktif terdeteksi. Untuk alert berisiko **HIGH**, notifikasi dikirimkan juga secara otomatis ke SPI dan Kabid.
+- Sistem secara otomatis mengirimkan pesan pengingat jatuh tempo H-3 kepada debitur melalui WhatsApp Gateway.
+- Tabel `notifikasi` di-migrate secara dinamis dari skema lama (`judul`/`pesan`) ke skema baru (`title`/`message`) untuk mencegah error pada notifikasi.
+**File yang diubah:**
+- `backend/migrations/008_extend_ews_table.sql` (file baru)
+- `backend/src/modules/ews/ews.service.js` (file baru)
+- `backend/src/modules/ews/ews.controller.js` (file baru)
+- `backend/src/modules/ews/ews.routes.js` (file baru)
+- `backend/src/modules/ews/index.js` (file baru)
+- `backend/src/app.js`
+- `backend/tests/modules/ews/ews.test.js` (file baru)
+- `frontend/src/services/index.js`
+- `frontend/src/pages/ews/EwsDashboardPage.jsx` (file baru)
+- `frontend/src/pages/ews/EwsDetailPage.jsx` (file baru)
+- `frontend/src/pages/ews/AoVisitFormPage.jsx` (file baru)
+- `frontend/src/App.jsx`
+- `frontend/src/components/layout/Sidebar.jsx`
+**Task berikutnya:** Implementasi modul Laporan (Phase 1/5) atau lanjutkan integrasi AI narrative yang lebih canggih.
+
+
