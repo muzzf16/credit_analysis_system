@@ -1,5 +1,7 @@
 const documentAiService = require('../../services/document-ai/document-ai.service');
 const { success, error } = require('../../utils/response');
+const GlmOcrClient = require('./ocr-client');
+const ocrMapper = require('./ocr-mapper');
 
 /**
  * Helper to process document extraction generic handler
@@ -31,8 +33,41 @@ async function processDocument(req, res, type) {
  * Handle POST /api/document/ktp
  */
 async function processKTP(req, res) {
-  return processDocument(req, res, 'ktp');
+  try {
+    if (!req.file) {
+      return error(res, 'File gambar/dokumen wajib diunggah.', 400);
+    }
+
+    // Call external GLM OCR Service
+    const ocrResult = await GlmOcrClient.uploadKtp(
+      req.file.buffer,
+      req.file.mimetype,
+      req.file.originalname
+    );
+
+    if (!ocrResult || !ocrResult.success) {
+      const errMsg = ocrResult?.errors?.[0]?.message || 'Gagal mengekstrak data dari KTP via GLM OCR Service.';
+      return error(res, errMsg, 422);
+    }
+
+    console.log('[DEBUG] GLM OCR Response:', JSON.stringify(ocrResult, null, 2));
+
+    // Map KtpOcrResponse to Debtor DTO
+    const mapped = ocrMapper.mapOcrToDebtorDto(ocrResult);
+
+    return success(res, mapped, 'Ekstraksi KTP via GLM OCR Service berhasil.');
+  } catch (err) {
+    console.error('Error in processKTP via GLM OCR Service:', err);
+    
+    // Check if it is a network error (e.g. connection refused)
+    if (err.message && (err.message.includes('fetch failed') || err.message.includes('ECONNREFUSED') || err.message.includes('connect ECONNREFUSED'))) {
+      return error(res, 'Layanan GLM OCR tidak dapat dihubungi. Pastikan service berjalan di port 8000.', 503);
+    }
+
+    return error(res, err.message || 'Gagal memproses KTP via GLM OCR Service.', err.status || 500);
+  }
 }
+
 
 /**
  * Handle POST /api/document/kk

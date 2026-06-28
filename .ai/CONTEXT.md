@@ -147,8 +147,8 @@ Grade: A=90-100 | B=80-89 | C=70-79 | D=60-69 | E=<60
 ## 🔧 TASK SESI INI
 > Isi bagian ini sebelum mulai setiap sesi
 
-- **Task saat ini:** Early Warning System (EWS) Backend & Frontend Completed (Sesi 34) ✅.
-- **Sprint berikutnya:** Penyempurnaan MAK Generator (Phase 3) atau Pembuatan Modul Laporan Komprehensif (Phase 1/Phase 12).
+- **Task saat ini:** Integrasi GLM OCR Service untuk formulir KTP Debitur selesai (Sesi 36) ✅.
+- **Sprint berikutnya:** Penyempurnaan MAK Generator (Phase 3) atau Pembuatan Modul Laporan Komprehensif (Phase 12).
 - **STOP:** Tidak menambah bounded context arsitektur baru setelah 5.10.
 - **Rantai resmi:** `AssessmentContext → DecisionIntent → DecisionPolicy → DecisionKernel → AnalysisPackage → PromptContext → LLM → Narrative → MAK`
 
@@ -176,7 +176,11 @@ Ikuti aturan berikut dengan ketat:
 
 ## 🎯 TASK HARI INI
 ```
-Early Warning System (EWS) Backend & Frontend Integration Completed ✅
+GLM OCR Service KTP Integration Completed ✅
+- backend/src/modules/document/ocr-client.js
+- backend/src/modules/document/ocr-mapper.js
+- backend/src/modules/document/document.controller.js
+- frontend/src/pages/debitur/DebiturFormPage.jsx
 Sprint berikutnya:
 - Modul Laporan Komprehensif (Phase 12) atau MAK Generator (Phase 3)
 ```

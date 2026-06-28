@@ -23,6 +23,7 @@ export default function DebiturFormPage() {
   const updateField = (setter) => (field, value) => setter(prev => ({ ...prev, [field]: value }));
   const [ocrLoading, setOcrLoading] = useState(false);
   const [vlmEngine, setVlmEngine] = useState(null); // 'lfm' | 'tesseract' | null
+  const [confidences, setConfidences] = useState({});
 
   useEffect(() => {
     if (id) {
@@ -113,6 +114,7 @@ export default function DebiturFormPage() {
     setOcrLoading(true);
     setError('');
     setVlmEngine(null);
+    setConfidences({});
     const formData = new FormData();
     formData.append('file', file);
 
@@ -122,15 +124,16 @@ export default function DebiturFormPage() {
         const result = res.data.data;
         const d = result.data || {};
         setVlmEngine(result.engineUsed || 'lfm');
+        setConfidences(result.confidences || {});
 
         setPribadi(prev => ({
           ...prev,
           nik:          d.nik          || prev.nik,
           nama:         d.nama         || prev.nama,
-          tempatLahir:  d.tempat_lahir || prev.tempatLahir,
-          tanggalLahir: d.tanggal_lahir|| prev.tanggalLahir,
-          gender:       (d.jenis_kelamin?.includes('PEREMPUAN') ? 'P' : 'L') || prev.gender,
-          statusNikah:  d.status_perkawinan?.replace(' ', '_') || prev.statusNikah,
+          tempatLahir:  d.tempatLahir  || d.tempat_clean || d.tempat_lahir || prev.tempatLahir,
+          tanggalLahir: d.tanggalLahir || normalizeDate(d.tanggal_lahir) || prev.tanggalLahir,
+          gender:       d.gender       || (d.jenis_kelamin?.includes('PEREMPUAN') ? 'P' : 'L') || prev.gender,
+          statusNikah:  d.statusNikah  || d.status_perkawinan?.replace(' ', '_') || prev.statusNikah,
           alamat:       d.alamat       || prev.alamat,
           rt:           d.rt           || prev.rt,
           rw:           d.rw           || prev.rw,
@@ -139,7 +142,7 @@ export default function DebiturFormPage() {
           agama:        d.agama        || prev.agama,
           pekerjaan:    d.pekerjaan    || prev.pekerjaan,
           kewarganegaraan: d.kewarganegaraan || prev.kewarganegaraan,
-          berlakuHingga: d.berlaku_hingga || prev.berlakuHingga,
+          berlakuHingga: d.berlakuHingga || d.berlaku_hingga || prev.berlakuHingga,
         }));
       } else if (type === 'surat_nikah') {
         const res = await documentService.extractSuratNikah(formData);
@@ -193,18 +196,45 @@ export default function DebiturFormPage() {
     setLoading(false);
   };
 
-  const renderInput = (label, value, onChange, type = 'text', options = null) => (
-    <div>
-      <label className="label">{label}</label>
-      {options ? (
-        <select value={value} onChange={e => onChange(e.target.value)} className="input-field">
-          {options.map(o => typeof o === 'string' ? <option key={o} value={o}>{o}</option> : <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-      ) : (
-        <input type={type} value={value} onChange={e => onChange(type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)} className="input-field" />
-      )}
-    </div>
-  );
+  const renderInput = (label, value, onChange, type = 'text', options = null, fieldKey = null) => {
+    const confidence = fieldKey ? confidences[fieldKey] : null;
+    const isLowConfidence = confidence !== null && confidence !== undefined && confidence < 0.85;
+
+    return (
+      <div className="relative">
+        <div className="flex justify-between items-center mb-1">
+          <label className="label m-0">{label}</label>
+          {isLowConfidence && (
+            <span className="text-[10px] font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded animate-pulse">
+              Fuzzy ({Math.round(confidence * 100)}%)
+            </span>
+          )}
+        </div>
+        {options ? (
+          <select 
+            value={value} 
+            onChange={e => {
+              onChange(e.target.value);
+              if (fieldKey) setConfidences(prev => ({ ...prev, [fieldKey]: null }));
+            }} 
+            className={`input-field transition-all duration-300 ${isLowConfidence ? 'border-amber-500/60 focus:border-amber-500 focus:ring-amber-500/20 bg-amber-500/5' : ''}`}
+          >
+            {options.map(o => typeof o === 'string' ? <option key={o} value={o}>{o}</option> : <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        ) : (
+          <input 
+            type={type} 
+            value={value} 
+            onChange={e => {
+              onChange(type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value);
+              if (fieldKey) setConfidences(prev => ({ ...prev, [fieldKey]: null }));
+            }} 
+            className={`input-field transition-all duration-300 ${isLowConfidence ? 'border-amber-500/60 focus:border-amber-500 focus:ring-amber-500/20 bg-amber-500/5' : ''}`}
+          />
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -260,24 +290,24 @@ export default function DebiturFormPage() {
               </label>
             </div>
 
-            {renderInput('NIK *', pribadi.nik, v => updateField(setPribadi)('nik', v))}
-            {renderInput('Nama Lengkap *', pribadi.nama, v => updateField(setPribadi)('nama', v))}
-            {renderInput('Tempat Lahir', pribadi.tempatLahir, v => updateField(setPribadi)('tempatLahir', v))}
-            {renderInput('Tanggal Lahir', pribadi.tanggalLahir, v => updateField(setPribadi)('tanggalLahir', v), 'date')}
-            {renderInput('Jenis Kelamin', pribadi.gender, v => updateField(setPribadi)('gender', v), 'text', GENDER)}
-            {renderInput('Agama', pribadi.agama, v => updateField(setPribadi)('agama', v), 'text', ['ISLAM', 'KRISTEN', 'KATOLIK', 'HINDU', 'BUDDHA', 'KONGHUCU'])}
-            {renderInput('Status Nikah', pribadi.statusNikah, v => updateField(setPribadi)('statusNikah', v), 'text', STATUS_NIKAH)}
-            {renderInput('Pekerjaan', pribadi.pekerjaan, v => updateField(setPribadi)('pekerjaan', v))}
-            {renderInput('Kewarganegaraan', pribadi.kewarganegaraan, v => updateField(setPribadi)('kewarganegaraan', v), 'text', ['WNI', 'WNA'])}
-            {renderInput('Berlaku Hingga', pribadi.berlakuHingga, v => updateField(setPribadi)('berlakuHingga', v))}
+            {renderInput('NIK *', pribadi.nik, v => updateField(setPribadi)('nik', v), 'text', null, 'nik')}
+            {renderInput('Nama Lengkap *', pribadi.nama, v => updateField(setPribadi)('nama', v), 'text', null, 'nama')}
+            {renderInput('Tempat Lahir', pribadi.tempatLahir, v => updateField(setPribadi)('tempatLahir', v), 'text', null, 'tempatLahir')}
+            {renderInput('Tanggal Lahir', pribadi.tanggalLahir, v => updateField(setPribadi)('tanggalLahir', v), 'date', null, 'tanggalLahir')}
+            {renderInput('Jenis Kelamin', pribadi.gender, v => updateField(setPribadi)('gender', v), 'text', GENDER, 'gender')}
+            {renderInput('Agama', pribadi.agama, v => updateField(setPribadi)('agama', v), 'text', ['ISLAM', 'KRISTEN', 'KATOLIK', 'HINDU', 'BUDDHA', 'KONGHUCU'], 'agama')}
+            {renderInput('Status Nikah', pribadi.statusNikah, v => updateField(setPribadi)('statusNikah', v), 'text', STATUS_NIKAH, 'statusNikah')}
+            {renderInput('Pekerjaan', pribadi.pekerjaan, v => updateField(setPribadi)('pekerjaan', v), 'text', null, 'pekerjaan')}
+            {renderInput('Kewarganegaraan', pribadi.kewarganegaraan, v => updateField(setPribadi)('kewarganegaraan', v), 'text', ['WNI', 'WNA'], 'kewarganegaraan')}
+            {renderInput('Berlaku Hingga', pribadi.berlakuHingga, v => updateField(setPribadi)('berlakuHingga', v), 'text', null, 'berlakuHingga')}
             <div className="md:col-span-2 flex gap-4">
-               <div className="flex-[3]">{renderInput('Alamat', pribadi.alamat, v => updateField(setPribadi)('alamat', v))}</div>
-               <div className="flex-1">{renderInput('RT', pribadi.rt, v => updateField(setPribadi)('rt', v))}</div>
-               <div className="flex-1">{renderInput('RW', pribadi.rw, v => updateField(setPribadi)('rw', v))}</div>
+               <div className="flex-[3]">{renderInput('Alamat', pribadi.alamat, v => updateField(setPribadi)('alamat', v), 'text', null, 'alamat')}</div>
+               <div className="flex-1">{renderInput('RT', pribadi.rt, v => updateField(setPribadi)('rt', v), 'text', null, 'rt')}</div>
+               <div className="flex-1">{renderInput('RW', pribadi.rw, v => updateField(setPribadi)('rw', v), 'text', null, 'rw')}</div>
             </div>
-            {renderInput('Kelurahan/Desa', pribadi.kelurahan, v => updateField(setPribadi)('kelurahan', v))}
-            {renderInput('Kecamatan', pribadi.kecamatan, v => updateField(setPribadi)('kecamatan', v))}
-            {renderInput('Kabupaten/Kota', pribadi.kabupaten, v => updateField(setPribadi)('kabupaten', v))}
+            {renderInput('Kelurahan/Desa', pribadi.kelurahan, v => updateField(setPribadi)('kelurahan', v), 'text', null, 'kelurahan')}
+            {renderInput('Kecamatan', pribadi.kecamatan, v => updateField(setPribadi)('kecamatan', v), 'text', null, 'kecamatan')}
+            {renderInput('Kabupaten/Kota', pribadi.kabupaten, v => updateField(setPribadi)('kabupaten', v), 'text', null, 'kabupaten')}
             {renderInput('Pendidikan', pribadi.pendidikan, v => updateField(setPribadi)('pendidikan', v), 'text', PENDIDIKAN)}
             {renderInput('No HP *', pribadi.noHp, v => updateField(setPribadi)('noHp', v))}
             {renderInput('Kode Pos', pribadi.kodePos, v => updateField(setPribadi)('kodePos', v))}

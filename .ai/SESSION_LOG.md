@@ -1062,5 +1062,31 @@ Menyesuaikan prompt VLM untuk dokumen Sertifikat Hak Milik (SHM) agar sesuai den
 - `frontend/src/components/layout/Sidebar.jsx`
 - `backend/tests/modules/document-intelligence/document-intelligence.test.js` (baru)
 
+---
+
+## 🔧 Sesi 36 — 2026-06-28 | Model: Gemini 3.5 Flash (High) | Modul: Credit Analysis Integration (GLM OCR Service)
+**Goal:** Integrasikan GLM OCR Service ke dalam formulir KTP Debitur untuk pengisian otomatis (auto-population) lengkap dengan deteksi tingkat keyakinan (confidence highlight).
+**Yang selesai:**
+- [x] Membuat client API backend `ocr-client.js` untuk mengunggah gambar KTP secara langsung ke GLM OCR Service (`POST /ocr/ktp`).
+- [x] Mengonfigurasi `glmOcrServiceUrl` di `backend/src/config/index.js` dengan default `http://localhost:8000`.
+- [x] Membuat mapper data `ocr-mapper.js` untuk normalisasi tanggal lahir (DD-MM-YYYY ke YYYY-MM-DD), gender (L/P), status nikah, dan pemetaan skor confidence per kolom.
+- [x] Menghubungkan client dan mapper ke controller `processKTP` di `document.controller.js` untuk mengembalikan DTO Debitur yang bersih beserta metadata confidence.
+- [x] Membuat integration test backend `ocr-ktp-integration.test.js` dan memverifikasi 5/5 unit test berjalan sukses (100% pass).
+- [x] Menambahkan state `confidences` dan auto-fill mapper pada `DebiturFormPage.jsx` untuk auto-populasi field pribadi KTP.
+- [x] Menambahkan visual highlight di `DebiturFormPage.jsx` untuk field dengan confidence rendah (< 85%) berupa border/background oranye tipis dan lencana warning pulsa "Fuzzy (XX%)".
+- [x] Menambahkan trigger interaktif agar highlight confidence otomatis hilang/terhapus ketika kolom diedit secara manual oleh analis.
+**Keputusan baru:**
+- DTO hasil mapper di backend mendukung format camelCase dan snake_case secara bersamaan untuk memastikan fleksibilitas dan kompatibilitas penuh dengan frontend state dan representasi database.
+- Tingkat keyakinan (confidence) dihitung dalam skala 0.0 - 1.0. Batas threshold visual warning disetel pada nilai < 0.85 (85%).
+**File yang diubah/dibuat:**
+- `backend/src/config/index.js`
+- `backend/src/modules/document/ocr-client.js` (baru)
+- `backend/src/modules/document/ocr-mapper.js` (baru)
+- `backend/src/modules/document/document.controller.js`
+- `backend/tests/modules/document/ocr-ktp-integration.test.js` (baru)
+- `frontend/src/pages/debitur/DebiturFormPage.jsx`
+**Task berikutnya:** Penyempurnaan MAK Generator (Phase 3) atau Pembuatan Modul Laporan Komprehensif (Phase 12).
+
+
 
 
