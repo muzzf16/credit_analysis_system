@@ -63,12 +63,14 @@ function normalizeStatusNikah(val) {
 function mapOcrToDebtorDto(ocrResponse) {
   const rawData = ocrResponse.data || {};
   const fields = ocrResponse.fields || {};
-  const overallConfidence = ocrResponse.confidence !== undefined ? ocrResponse.confidence : 1.0;
+  // GLM returns confidence as 0-100, frontend expects 0-1
+  const overallConfidence = ocrResponse.confidence !== undefined ? ocrResponse.confidence / 100 : 1.0;
 
-  // Helper to extract confidence score
+  // Helper to extract confidence score (convert from 0-100 to 0-1 if needed)
   const getFieldConfidence = (fieldName) => {
     if (fields[fieldName] && fields[fieldName].confidence !== undefined) {
-      return fields[fieldName].confidence;
+      const conf = fields[fieldName].confidence;
+      return conf > 1 ? conf / 100 : conf;
     }
     return overallConfidence;
   };
@@ -80,9 +82,11 @@ function mapOcrToDebtorDto(ocrResponse) {
     
     tempatLahir: rawData.tempat_lahir || '',
     tempat_lahir: rawData.tempat_lahir || '',
+    tempat_clean: rawData.tempat_lahir || '',
     
     tanggalLahir: normalizeDate(rawData.tanggal_lahir),
     tanggal_lahir: normalizeDate(rawData.tanggal_lahir),
+    tanggal_clean: normalizeDate(rawData.tanggal_lahir),
     
     gender: normalizeGender(rawData.jenis_kelamin),
     jenis_kelamin: rawData.jenis_kelamin || '',

@@ -39,32 +39,61 @@ async function processKTP(req, res) {
     }
 
     // Call external GLM OCR Service
-    const ocrResult = await GlmOcrClient.uploadKtp(
-      req.file.buffer,
-      req.file.mimetype,
-      req.file.originalname
-    );
-
-    if (!ocrResult || !ocrResult.success) {
-      const errMsg = ocrResult?.errors?.[0]?.message || 'Gagal mengekstrak data dari KTP via GLM OCR Service.';
-      return error(res, errMsg, 422);
-    }
-
-    console.log('[DEBUG] GLM OCR Response:', JSON.stringify(ocrResult, null, 2));
-
-    // Map KtpOcrResponse to Debtor DTO
-    const mapped = ocrMapper.mapOcrToDebtorDto(ocrResult);
-
-    return success(res, mapped, 'Ekstraksi KTP via GLM OCR Service berhasil.');
-  } catch (err) {
-    console.error('Error in processKTP via GLM OCR Service:', err);
+    let ocrResult;
+    let engineUsed = 'glm';
     
-    // Check if it is a network error (e.g. connection refused)
-    if (err.message && (err.message.includes('fetch failed') || err.message.includes('ECONNREFUSED') || err.message.includes('connect ECONNREFUSED'))) {
-      return error(res, 'Layanan GLM OCR tidak dapat dihubungi. Pastikan service berjalan di port 8000.', 503);
+    try {
+      ocrResult = await GlmOcrClient.uploadKtp(
+        req.file.buffer,
+        req.file.mimetype,
+        req.file.originalname
+      );
+
+      if (!ocrResult || !ocrResult.success) {
+        const errMsg = ocrResult?.errors?.[0]?.message || 'Gagal mengekstrak data dari KTP via GLM OCR Service.';
+        return error(res, errMsg, 422);
+      }
+
+      console.log('[DEBUG] GLM OCR Response:', JSON.stringify(ocrResult, null, 2));
+
+      // Map KtpOcrResponse to Debtor DTO
+      ocrResult = ocrMapper.mapOcrToDebtorDto(ocrResult);
+    } catch (glmError) {
+      // Check if GLM model is unavailable - fallback to documentAiService (has Tesseract fallback chain)
+      if (glmError.message === 'GLM OCR model unavailable') {
+        console.warn('[Document AI] GLM OCR model unavailable, falling back to Tesseract OCR');
+        engineUsed = 'tesseract';
+        const fallbackResult = await documentAiService.extractDocumentData(
+          req.file.buffer,
+          'ktp',
+          req.file.mimetype,
+          req.file.originalname
+        );
+        // Build response matching GLM format with confidences
+        ocrResult = {
+          success: true,
+          engineUsed: fallbackResult.engineUsed,
+          data: fallbackResult.data,
+          confidences: fallbackResult.confidences || {
+            nik: 0.7,
+            nama: 0.7,
+            alamat: 0.6,
+            kecamatan: 0.6
+          }
+        };
+      } else {
+        // Other GLM errors - check for network errors
+        if (glmError.message && (glmError.message.includes('fetch failed') || glmError.message.includes('ECONNREFUSED') || glmError.message.includes('connect ECONNREFUSED'))) {
+          return error(res, 'Layanan GLM OCR tidak dapat dihubungi. Pastikan service berjalan di port 8000.', 503);
+        }
+        throw glmError; // Re-throw other errors
+      }
     }
 
-    return error(res, err.message || 'Gagal memproses KTP via GLM OCR Service.', err.status || 500);
+    return success(res, ocrResult, `Ekstraksi KTP berhasil via ${engineUsed}.`);
+  } catch (err) {
+    console.error('Error in processKTP:', err);
+    return error(res, err.message || 'Gagal memproses KTP.', err.status || 500);
   }
 }
 

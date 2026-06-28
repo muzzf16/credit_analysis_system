@@ -31,7 +31,7 @@ describe('GLM OCR KTP Integration Tests', () => {
   test('ocrMapper.mapOcrToDebtorDto should correctly map external response', () => {
     const mockOcrResponse = {
       success: true,
-      confidence: 0.95,
+      confidence: 95,
       data: {
         nik: '1234567890123456',
         nama: 'JOKO WIDODO',
@@ -52,9 +52,9 @@ describe('GLM OCR KTP Integration Tests', () => {
         berlaku_hingga: 'SEUMUR HIDUP'
       },
       fields: {
-        nik: { value: '1234567890123456', confidence: 0.99 },
-        nama: { value: 'JOKO WIDODO', confidence: 0.98 },
-        rt: { value: '02', confidence: 0.75 }
+        nik: { value: '1234567890123456', confidence: 99 },
+        nama: { value: 'JOKO WIDODO', confidence: 98 },
+        rt: { value: '02', confidence: 75 }
       }
     };
 
@@ -77,7 +77,7 @@ describe('GLM OCR KTP Integration Tests', () => {
     assert.strictEqual(mapped.data.kecamatan, 'MLATI');
     assert.strictEqual(mapped.data.kabupaten, 'SLEMAN');
 
-    // Confidences check
+    // Confidences check (GLM returns 0-100, mapper converts to 0-1)
     assert.strictEqual(mapped.confidences.nik, 0.99);
     assert.strictEqual(mapped.confidences.nama, 0.98);
     assert.strictEqual(mapped.confidences.rt, 0.75);
@@ -97,24 +97,24 @@ describe('GLM OCR KTP Integration Tests', () => {
         ok: true,
         text: async () => JSON.stringify({
           success: true,
-          confidence: 0.92,
+          confidence: 92,
           data: {
             nik: '3325010101900001',
             nama: 'BUDI SANTOSO'
           },
           fields: {
-            nik: { value: '3325010101900001', confidence: 0.95 }
+            nik: { value: '3325010101900001', confidence: 95 }
           }
         }),
         json: async () => ({
           success: true,
-          confidence: 0.92,
+          confidence: 92,
           data: {
             nik: '3325010101900001',
             nama: 'BUDI SANTOSO'
           },
           fields: {
-            nik: { value: '3325010101900001', confidence: 0.95 }
+            nik: { value: '3325010101900001', confidence: 95 }
           }
         })
       };
@@ -128,7 +128,7 @@ describe('GLM OCR KTP Integration Tests', () => {
       );
 
       assert.strictEqual(res.success, true);
-      assert.strictEqual(res.confidence, 0.92);
+      assert.strictEqual(res.confidence, 92);
       assert.strictEqual(res.data.nama, 'BUDI SANTOSO');
     } finally {
       global.fetch = originalFetch;

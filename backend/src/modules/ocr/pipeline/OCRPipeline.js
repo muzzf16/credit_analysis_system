@@ -31,20 +31,25 @@ class OCRPipeline {
       await engine.preprocess(this.context);
       this.context.timings.preprocessing = Date.now() - preStart;
       
-      const recStart = Date.now();
-      this.context.rawText = await engine.recognize(this.context);
-      this.context.timings.recognition = Date.now() - recStart;
-      
-      // Debug log for OCR text
-      console.log(`[OCR DEBUG] Type: ${this.context.documentType}, Raw Text:\n${this.context.rawText}`);
-
-      const postStart = Date.now();
-      await engine.postprocess(this.context);
-      this.context.timings.postprocessing = Date.now() - postStart;
-      
-      await this.normalize();
-      await this.parse();
-      await this.validateOutput();
+const recStart = Date.now();
+       this.context.rawText = await engine.recognize(this.context);
+       this.context.timings.recognition = Date.now() - recStart;
+       
+       // Debug log for OCR text
+       console.log(`[OCR DEBUG] Type: ${this.context.documentType}, Raw Text:\n${this.context.rawText}`);
+       
+       const postStart = Date.now();
+       await engine.postprocess(this.context);
+       this.context.timings.postprocessing = Date.now() - postStart;
+       
+       // Store Tesseract confidences before parse overwrites evidence
+       if (this.context.tesseractConfidences) {
+         this.context._tesseractConfidences = { ...this.context.tesseractConfidences };
+       }
+       
+       await this.normalize();
+       await this.parse();
+       await this.validateOutput();
       
       this.context.timings.total = Date.now() - this.context.timings.start;
       

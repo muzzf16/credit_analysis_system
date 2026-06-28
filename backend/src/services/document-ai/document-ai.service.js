@@ -654,65 +654,79 @@ async function extractDocumentData(fileBuffer, type, mimetype = '', originalname
     processingMime = 'image/png';
   }
 
-  // Preprocess Image (ImageMagick)
+  // Preprocess Image (ImageMagick) - skip grayscale for KTP (blue watermark)
   console.log(`[Document AI] Pre-processing image for better OCR accuracy...`);
   processingBuffer = await preprocessImage(processingBuffer, type);
 
   const selectedEngine = config.ocrEngine;
   console.log(`[Document AI] Engine terpilih: ${selectedEngine} | URL VLM: ${config.lfmApiUrl} | tipe: ${type}`);
 
-  if (selectedEngine === 'lfm') {
+  // Tesseract OCR as primary, VLM as enhancement fallback
+  if (selectedEngine === 'tesseract') {
+    console.log(`[Document AI] Menjalankan Tesseract sebagai engine utama...`);
+    const tesseractType = type === 'survey' ? 'ktp' : type;
+    const ocrResult = await ocrService.processOCR(fileBuffer, tesseractType, mimetype);
+    
+    const rawText = ocrResult.rawText || '';
+    const parsedData = parseTesseractFallback(rawText, type);
+    const cleaned = validateAndClean(parsedData, type);
+    
+    console.log(`[Document AI] ✅ Ekstraksi selesai via Tesseract. Confidence: ${(ocrResult.confidences?._overall || 0.65).toFixed(2)}`);
+    return {
+      engineUsed: 'tesseract',
+      success: true,
+      data: cleaned,
+      confidences: ocrResult.confidences
+    };
+  }
+
+  // LFM/GLM Vision as primary with Tesseract fallback
+  if (selectedEngine === 'lfm' || selectedEngine === 'glm') {
     try {
-      const rawResult = await callLfmVision(processingBuffer, processingMime, type);
-      console.log(`[Document AI] ✅ LFM berhasil. Validasi JSON schema...`);
+      let rawResult;
+      let engineName;
+      
+      if (selectedEngine === 'lfm') {
+        rawResult = await callLfmVision(processingBuffer, processingMime, type);
+        engineName = 'lfm';
+      } else {
+        rawResult = await callGlmVision(processingBuffer, processingMime, type);
+        engineName = 'glm';
+      }
+      
+      console.log(`[Document AI] ✅ ${engineName.toUpperCase()} berhasil. Validasi JSON schema...`);
       const cleaned = validateAndClean(rawResult, type);
-      console.log(`[Document AI] ✅ Ekstraksi selesai via LFM. Hasil:`, JSON.stringify(cleaned, null, 2));
+      console.log(`[Document AI] ✅ Ekstraksi selesai via ${engineName.toUpperCase()}. Hasil:`, JSON.stringify(cleaned, null, 2));
       return {
-        engineUsed: 'lfm',
+        engineUsed: engineName,
         success: true,
         data: cleaned
       };
-    } catch (lfmError) {
-      console.warn(
-        `[Document AI ⚠️] LFM gagal — fallback ke Tesseract OCR.\n` +
-        `  URL: ${config.lfmApiUrl}\n` +
-        `  Error: ${lfmError.message}`
-      );
-      // Lanjut ke Tesseract fallback
-    }
-  } else if (selectedEngine === 'glm') {
-    try {
-      const rawResult = await callGlmVision(processingBuffer, processingMime, type);
-      console.log(`[Document AI] ✅ GLM Vision berhasil. Validasi JSON schema...`);
-      const cleaned = validateAndClean(rawResult, type);
-      console.log(`[Document AI] ✅ Ekstraksi selesai via GLM Vision. Hasil:`, JSON.stringify(cleaned, null, 2));
-      return {
-        engineUsed: 'glm',
-        success: true,
-        data: cleaned
-      };
-    } catch (glmError) {
-      console.warn(
-        `[Document AI ⚠️] GLM Vision gagal — fallback ke Tesseract OCR.\n` +
-        `  URL: ${config.glmApiUrl}\n` +
-        `  Error: ${glmError.message}`
-      );
-      // Lanjut ke Tesseract fallback
+    } catch (vlmError) {
+      console.warn(`[Document AI ⚠️] VLM gagal — fallback ke Tesseract OCR. Error: ${vlmError.message}`);
     }
   }
 
-  // Tesseract OCR fallback
+  // Final Tesseract fallback
   console.log(`[Document AI] Menjalankan Tesseract fallback untuk tipe: ${type}`);
   const tesseractType = type === 'survey' ? 'ktp' : type;
   const ocrResult = await ocrService.processOCR(fileBuffer, tesseractType, mimetype);
-  
+
   const rawText = ocrResult.rawText || '';
   const parsedData = parseTesseractFallback(rawText, type);
+  const confidences = ocrResult.confidences || {
+    nik: 0.7,
+    nama: 0.7,
+    alamat: 0.6,
+    kecamatan: 0.6,
+    _overall: 0.65
+  };
 
   return {
     engineUsed: 'tesseract',
     success: true,
-    data: validateAndClean(parsedData, type)
+    data: validateAndClean(parsedData, type),
+    confidences
   };
 }
 

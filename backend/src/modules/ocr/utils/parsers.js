@@ -4,6 +4,27 @@
  */
 
 /**
+ * Enhanced normalization for Indonesian document OCR text
+ * Handles common character confusions specific to Indonesian documents
+ */
+function normalizeOcrText(text) {
+  return text.toUpperCase()
+    .replace(/[\s\-_]/g, '')
+    // Common OCR digit confusions
+    .replace(/I|L|l|\|/g, '1')
+    .replace(/O/g, '0')
+    .replace(/B/g, '8')
+    .replace(/S/g, '5')
+    .replace(/G/g, '9')
+    .replace(/Z/g, '2')
+    .replace(/Q/g, '0')
+    .replace(/R/g, '8')
+    // Common letter confusions
+    .replace(/0/g, 'O')  // Re-apply after digit fixes
+    .replace(/1/g, 'I'); // Re-apply for cleaner text
+}
+
+/**
  * Clean and normalize lines of text
  * @param {string} text 
  * @returns {string[]}
@@ -61,21 +82,15 @@ function parseKTP(text) {
     kabupaten: 'Batang'
   };
 
-  // 1. Extract NIK (16 digits)
-  // First normalize common OCR digit confusions in a text version stripped of spaces/symbols
-  const normalizedText = text.toUpperCase()
-    .replace(/[\s\-_]/g, '')
-    .replace(/I|L|i|l|\|/g, '1')
-    .replace(/O|D/g, '0')
-    .replace(/B/g, '8')
-    .replace(/S/g, '5')
-    .replace(/G/g, '9');
+  // 1. Extract NIK (16 digits) - Enhanced with better normalization
+  const normalizedText = normalizeOcrText(text);
   
-  const nikMatch = normalizedText.match(/\b\d{16}\b/) || normalizedText.match(/\d{16}/);
+  // Look for 16 consecutive digits pattern
+  const nikMatch = normalizedText.match(/\b(\d{16})\b/) || normalizedText.match(/(\d{16})/);
   if (nikMatch) {
-    data.nik = nikMatch[0];
+    data.nik = nikMatch[1];
   } else {
-    // Fallback: look line by line
+    // Fallback: look line by line with more aggressive normalization
     for (const line of lines) {
       const normLine = line.toUpperCase()
         .replace(/I|L|i|l|\|/g, '1')
@@ -83,8 +98,11 @@ function parseKTP(text) {
         .replace(/B/g, '8')
         .replace(/S/g, '5')
         .replace(/G/g, '9')
+        .replace(/Z/g, '2')
+        .replace(/Q/g, '0')
+        .replace(/R/g, '8')
         .replace(/[^0-9]/g, '');
-      if (normLine.length === 16) {
+      if (normLine.length === 16 && /^\d+$/.test(normLine)) {
         data.nik = normLine;
         break;
       }

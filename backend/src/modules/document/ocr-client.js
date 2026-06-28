@@ -30,6 +30,12 @@ class GlmOcrClient {
     }
 
     const result = await response.json();
+    
+    // Check for model unavailable error in successful response
+    if (result && result.success === false && result.errors?.[0]?.message?.includes('GGUF local model is not loaded/available')) {
+      throw new Error('GLM OCR model unavailable');
+    }
+    
     return result;
   }
 }

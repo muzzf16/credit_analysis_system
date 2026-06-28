@@ -49,10 +49,10 @@ services:
     networks:
       - bpr_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+      test: ["CMD", "/usr/bin/mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ============================================================
   # Backend API (Node.js + Express)
