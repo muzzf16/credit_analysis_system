@@ -86,11 +86,11 @@ class TesseractEngine extends BaseEngine {
         'tsv'
       ], { encoding: 'utf8', timeout: 30000 });
       
-      const tsvContent = fs.readFileSync(tmpTsv + '.tsv', 'utf8');
+      const tsvContent = fs.readFileSync(tmpTsv, 'utf8');
       const avgConf = this.parseTsvConfidence(tsvContent);
       confidences = { _overall: avgConf, ...this.getFieldConfidences(text.trim(), avgConf) };
       
-      fs.unlinkSync(tmpTsv + '.tsv');
+      fs.unlinkSync(tmpTsv);
     } catch (tsvErr) {
       // TSV extraction may fail, use default confidence
       console.warn('[Tesseract] Could not extract confidence scores:', tsvErr.message);
