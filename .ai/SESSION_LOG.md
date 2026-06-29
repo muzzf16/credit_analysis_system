@@ -1090,3 +1090,32 @@ Menyesuaikan prompt VLM untuk dokumen Sertifikat Hak Milik (SHM) agar sesuai den
 
 
 
+
+---
+
+## 🔧 Sesi 37 — 2026-06-29 | Model: Antigravity | Modul: Document AI (OpenCV Preprocessing)
+**Goal:** Memfaktorkan ulang (refactoring) OCR preprocessing dengan mengadopsi arsitektur pipeline OpenCV modular (Python) untuk meningkatkan akurasi ekstraksi Tesseract secara signifikan (KTP watermark, SHM perspective, dll).
+**Yang selesai:**
+- [x] Mensetup virtual environment Python di `backend/venv` dan menginstal `opencv-python-headless` serta `numpy`.
+- [x] Membuat pipeline preprocessing gambar berbasis Python: `deskew.py`, `perspective.py`, `resize.py`, `clahe.py`, `threshold.py`, `shadow.py`, `morphology.py`.
+- [x] Membuat modul preprocessor per tipe dokumen: `ktp.py` (ekstrak *red channel* untuk hilangkan watermark biru KTP) dan `general.py` (penanganan dokumen umum dengan pencahayaan tak merata).
+- [x] Menulis ulang struktur layanan OCR di Node.js menjadi berbasis Pipeline (`image.pipeline.js`, `ocr.pipeline.js`) dan Engine interface (`tesseract.engine.js`).
+- [x] Membersihkan logika *ImageMagick* yang usang dari `document-ai.service.js` dan menjadikannya fasad (*facade*) orkestrasi OCR yang bersih.
+- [x] Menghapus `backend/venv` dari tracking git (yang tidak sengaja terbawa commit sebelumnya) dan memasukkannya ke `.gitignore` agar repositori tidak membengkak karena library C++.
+**Keputusan baru:**
+- Semua *image preprocessing* ditangani secara modular di Python menggunakan OpenCV karena jauh lebih superior dibanding *ImageMagick*.
+- *Red Channel extraction* ditetapkan sebagai standar baru preprocessing KTP untuk membuang watermark Garuda latar biru tanpa merusak teks hitam.
+- Pipeline Node.js dipisah berlapis (*Engine, Pipeline, Parsers*) sehingga siap dihubungkan dengan *PaddleOCR* atau *Surya OCR* di masa depan.
+**File yang diubah/dibuat:**
+- `backend/src/services/document-ai/pipeline/image.pipeline.js` (baru)
+- `backend/src/services/document-ai/pipeline/ocr.pipeline.js` (baru)
+- `backend/src/services/document-ai/engines/tesseract.engine.js` (baru)
+- `backend/src/services/document-ai/python/preprocess.py` (baru)
+- `backend/src/services/document-ai/python/preprocessors/ktp.py` (baru)
+- `backend/src/services/document-ai/python/preprocessors/general.py` (baru)
+- `backend/src/services/document-ai/python/utils/...` (baru)
+- `backend/src/services/document-ai/document-ai.service.js`
+- `backend/.gitignore`
+**Bug yang ditemukan:** -
+**Hindari sesi berikutnya:** Menyatukan logika Python script menjadi monolith raksasa; gunakan selalu arsitektur `preprocessors` modular untuk dokumen tipe baru. 
+**Task berikutnya:** Rencanakan atau mulai pengerjaan modul Early Warning System (EWS) - Phase 5 atau Modul Laporan Komprehensif.
