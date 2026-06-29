@@ -449,6 +449,9 @@ async function extractDocumentData(fileBuffer, type, mimetype = '', originalname
   // Run OCR Pipeline
   // VLM fallback wrapper
   const vlmFallback = async (buffer, mime, t) => {
+    if (config.ocrEngine === 'lfm') {
+      return await callLfmVision(buffer, mime, t);
+    }
     return await callGlmVision(buffer, mime, t);
   };
 
