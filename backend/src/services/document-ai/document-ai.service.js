@@ -7,54 +7,9 @@ const execFileAsync = promisify(execFile);
 
 const config = require('../../config');
 const { validateAndClean } = require('./document-ai.schemas');
-const ocrService = require('../../modules/ocr/services/ocr.service');
+const ocrPipeline = require('./pipeline/ocr.pipeline');
 
-/**
- * Preprocess image for OCR using ImageMagick
- * @param {Buffer} imageBuffer 
- * @param {string} type - Tipe dokumen
- * @returns {Promise<Buffer>} Preprocessed Image Buffer
- */
-async function preprocessImage(imageBuffer, type) {
-  const tmpId = Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-  const tmpDir = path.join(os.tmpdir(), `img_prep_${tmpId}`);
-  fs.mkdirSync(tmpDir, { recursive: true });
 
-  const tmpIn = path.join(tmpDir, 'input.img');
-  const tmpOut = path.join(tmpDir, 'output.png');
-  fs.writeFileSync(tmpIn, imageBuffer);
-
-  try {
-    const args = [tmpIn, '-resize', '1600x1600>'];
-
-    // KTP memiliki watermark biru. Jika digrayscale/normalize, watermark menjadi gelap dan merusak teks.
-    if (type === 'ktp') {
-      args.push('-deskew', '40%', '-sharpen', '0x1');
-    } else {
-      args.push('-colorspace', 'gray', '-normalize', '-deskew', '40%', '-sharpen', '0x1');
-    }
-    args.push(tmpOut);
-
-    await execFileAsync('convert', args);
-    
-    if (fs.existsSync(tmpOut)) {
-      const processedBuffer = fs.readFileSync(tmpOut);
-      return processedBuffer;
-    } else {
-      console.warn(`[Document AI] Preprocessing failed to generate output, returning original buffer.`);
-      return imageBuffer;
-    }
-  } catch (err) {
-    console.error(`[Document AI] Error during ImageMagick preprocess:`, err.message);
-    return imageBuffer; // Fallback to original
-  } finally {
-    try {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    } catch (e) {
-      console.error(`[Document AI] Failed to clean up temp dir: ${tmpDir}`, e.message);
-    }
-  }
-}
 
 /**
  * Convert PDF to PNG Buffer (First page only)
@@ -491,85 +446,13 @@ async function extractDocumentData(fileBuffer, type, mimetype = '', originalname
     processingMime = 'image/png';
   }
 
-  // Preprocess Image (ImageMagick) - skip grayscale for KTP (blue watermark)
-  console.log(`[Document AI] Pre-processing image for better OCR accuracy...`);
-  processingBuffer = await preprocessImage(processingBuffer, type);
+  // Run OCR Pipeline
+  // VLM fallback wrapper
+  const vlmFallback = async (buffer, mime, t) => {
+    return await callGlmVision(buffer, mime, t);
+  };
 
-  let ocrResult;
-  let engineUsed = 'tesseract';
-  let tesseractConfidence = null;
-  let tesseractError = null;
-
-  // Try Tesseract OCR as primary engine
-  console.log(`[Document AI] Trying Tesseract as primary OCR engine...`);
-  try {
-    const tesseractType = type === 'survey' ? 'ktp' : type;
-    ocrResult = await ocrService.processOCR(processingBuffer, tesseractType, processingMime);
-    
-    tesseractConfidence = ocrResult.confidences?._overall || ocrResult.confidence || 0.65;
-    
-    // Check if Tesseract confidence is too low for fallback to GLM
-    const confidenceThreshold = config.tesseractConfidenceThreshold || 0.5;
-    if (tesseractConfidence < confidenceThreshold) {
-      console.warn(`[Document AI] Tesseract confidence too low (${tesseractConfidence.toFixed(2)}), falling back to GLM`);
-      tesseractError = new Error(`Low confidence: ${tesseractConfidence.toFixed(2)}`);
-    } else {
-      console.log(`[Document AI] ✅ Tesseract succeeded with confidence: ${tesseractConfidence.toFixed(2)}`);
-      return {
-        engineUsed: 'tesseract',
-        success: true,
-        data: validateAndClean(ocrResult.data || {}, type),
-        confidences: ocrResult.confidences,
-        warnings: ocrResult.warnings
-      };
-    }
-  } catch (tesseractErr) {
-    console.warn(`[Document AI] Tesseract failed:`, tesseractErr.message);
-    tesseractError = tesseractErr;
-  }
-
-  // GLM fallback (when Tesseract fails or low confidence)
-  console.log(`[Document AI] Trying GLM as fallback engine...`);
-  try {
-    let rawResult;
-    rawResult = await callGlmVision(processingBuffer, processingMime, type);
-    engineUsed = 'glm';
-    
-    console.log(`[Document AI] ✅ GLM succeeded as fallback.`);
-    const cleaned = validateAndClean(rawResult, type);
-    
-    return {
-      engineUsed: 'glm',
-      success: true,
-      data: cleaned,
-      confidences: { _overall: 0.8 },
-      warnings: [{
-        message: 'Tesseract failed or low confidence, used GLM fallback',
-        originalError: tesseractError?.message,
-        originalConfidence: tesseractConfidence
-      }]
-    };
-  } catch (vlmError) {
-    console.warn(`[Document AI ⚠️] GLM fallback also failed. Error: ${vlmError.message}`);
-    
-    // If we have partial Tesseract result, use it despite low confidence
-    if (ocrResult && tesseractError?.message?.startsWith('Low confidence')) {
-      console.log(`[Document AI] Returning low-confidence Tesseract result as last resort...`);
-      return {
-        engineUsed: 'tesseract',
-        success: true,
-        data: validateAndClean(ocrResult.data || {}, type),
-        confidences: ocrResult.confidences,
-        warnings: [{
-          message: 'Tesseract low confidence, GLM fallback failed',
-          originalConfidence: tesseractConfidence,
-          glmError: vlmError.message
-        }]
-      };
-    }
-    
-    throw new Error(`Both Tesseract and GLM OCR failed. Tesseract: ${tesseractError?.message}, GLM: ${vlmError.message}`);
-  }
+  return await ocrPipeline.run(processingBuffer, type, processingMime, vlmFallback);
 }
 
 module.exports = {
