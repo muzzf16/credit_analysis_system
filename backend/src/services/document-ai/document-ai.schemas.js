@@ -116,8 +116,12 @@ function validateAndClean(rawData, type) {
   switch (type.toLowerCase()) {
     case 'ktp': {
       const result = {};
+      // Normalize rawData keys to lowercase to handle VLM returning "NIK", "Nama", etc.
+      const lowerData = {};
+      Object.keys(data).forEach(k => { lowerData[k.toLowerCase()] = data[k]; });
+
       Object.keys(KTP_SCHEMA).forEach(key => {
-        let val = (data[key] !== undefined && data[key] !== null) ? String(data[key]).trim() : "";
+        let val = (lowerData[key] !== undefined && lowerData[key] !== null) ? String(lowerData[key]).trim() : "";
         if (key === 'nik') val = val.replace(/\D/g, '');
         if (key === 'jenis_kelamin') {
           val = val.toUpperCase();
@@ -128,8 +132,8 @@ function validateAndClean(rawData, type) {
       });
 
       // Parsing manual tempat_tgl_lahir
-      result.tempat_lahir = (data.tempat_lahir !== undefined && data.tempat_lahir !== null) ? String(data.tempat_lahir).trim() : "";
-      result.tanggal_lahir = (data.tanggal_lahir !== undefined && data.tanggal_lahir !== null) ? String(data.tanggal_lahir).trim() : "";
+      result.tempat_lahir = (lowerData.tempat_lahir !== undefined && lowerData.tempat_lahir !== null) ? String(lowerData.tempat_lahir).trim() : "";
+      result.tanggal_lahir = (lowerData.tanggal_lahir !== undefined && lowerData.tanggal_lahir !== null) ? String(lowerData.tanggal_lahir).trim() : "";
       if (result.tempat_tgl_lahir) {
         const parts = result.tempat_tgl_lahir.split(',');
         if (parts.length > 1) {
@@ -142,8 +146,8 @@ function validateAndClean(rawData, type) {
       }
 
       // Parsing rt_rw
-      result.rt = (data.rt !== undefined && data.rt !== null) ? String(data.rt).trim() : "";
-      result.rw = (data.rw !== undefined && data.rw !== null) ? String(data.rw).trim() : "";
+      result.rt = (lowerData.rt !== undefined && lowerData.rt !== null) ? String(lowerData.rt).trim() : "";
+      result.rw = (lowerData.rw !== undefined && lowerData.rw !== null) ? String(lowerData.rw).trim() : "";
       if (result.rt_rw) {
         const parts = result.rt_rw.split('/');
         result.rt = parts[0] ? parts[0].trim() : "";
