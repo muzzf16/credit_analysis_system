@@ -8,6 +8,7 @@ module.exports = {
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   encryptionKey: process.env.ENCRYPTION_KEY || '00000000000000000000000000000000',
   ocrEngine: process.env.OCR_ENGINE || 'tesseract',
+  tesseractConfidenceThreshold: parseFloat(process.env.TESSERACT_CONFIDENCE_THRESHOLD || '0.5'),
   lfmApiUrl: process.env.LFM_API_URL || 'http://localhost:1976',
   llmProvider: process.env.LLM_PROVIDER || 'openai',
   llmApiUrl: process.env.LLM_API_URL || 'http://localhost:1978/v1',

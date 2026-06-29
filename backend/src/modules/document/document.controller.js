@@ -59,9 +59,17 @@ async function processKTP(req, res) {
       // Map KtpOcrResponse to Debtor DTO
       ocrResult = ocrMapper.mapOcrToDebtorDto(ocrResult);
     } catch (glmError) {
-      // Check if GLM model is unavailable - fallback to documentAiService (has Tesseract fallback chain)
-      if (glmError.message === 'GLM OCR model unavailable') {
-        console.warn('[Document AI] GLM OCR model unavailable, falling back to Tesseract OCR');
+      // Check for GLM service unavailability - fallback to documentAiService (has Tesseract fallback chain)
+      const isUnavailable = glmError.message === 'GLM OCR model unavailable' ||
+                            glmError.message.includes('fetch failed') ||
+                            glmError.message.includes('ECONNREFUSED') ||
+                            glmError.message.includes('connect ECONNREFUSED') ||
+                            glmError.message.includes('GLM OCR Service error (503)') ||
+                            glmError.message.includes('GLM OCR Service error (500)') ||
+                            glmError.message.includes('network error');
+      
+      if (isUnavailable) {
+        console.warn('[Document AI] GLM OCR service unavailable, falling back to Tesseract OCR');
         engineUsed = 'tesseract';
         const fallbackResult = await documentAiService.extractDocumentData(
           req.file.buffer,
@@ -82,10 +90,6 @@ async function processKTP(req, res) {
           }
         };
       } else {
-        // Other GLM errors - check for network errors
-        if (glmError.message && (glmError.message.includes('fetch failed') || glmError.message.includes('ECONNREFUSED') || glmError.message.includes('connect ECONNREFUSED'))) {
-          return error(res, 'Layanan GLM OCR tidak dapat dihubungi. Pastikan service berjalan di port 8000.', 503);
-        }
         throw glmError; // Re-throw other errors
       }
     }

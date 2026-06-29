@@ -107,6 +107,55 @@ export default function DebiturFormPage() {
     return cleanVal;
   };
 
+  const extractTempatLahir = (d) => {
+    return d.tempat_lahir || d.tempatLahir || d.tempat_tgl_lahir?.split(',')?.[0]?.trim() || '';
+  };
+
+  const extractTanggalLahir = (d, fallback = '') => {
+    return normalizeDate(
+      d.tanggal_lahir ||
+      d.tanggalLahir ||
+      d.tempat_tgl_lahir?.split(',')?.slice(1).join(',') ||
+      fallback
+    );
+  };
+
+  const extractRt = (d) => {
+    if (d.rt) return d.rt;
+    if (d.rt_rw && d.rt_rw.includes('/')) return d.rt_rw.split('/')[0]?.trim() || '';
+    return '';
+  };
+
+  const extractRw = (d) => {
+    if (d.rw) return d.rw;
+    if (d.rt_rw && d.rt_rw.includes('/')) return d.rt_rw.split('/')[1]?.trim() || '';
+    return '';
+  };
+
+  const extractKelurahan = (d) => d.kel_desa || d.kelurahan || d.desa || d.desa_kelurahan || '';
+
+  const extractKtpData = (payload) => {
+    if (!payload || typeof payload !== 'object') return {};
+
+    const candidates = [
+      payload?.data?.data,
+      payload?.data,
+      payload?.result?.data,
+      payload?.result,
+      payload
+    ];
+
+    for (const candidate of candidates) {
+      if (candidate && typeof candidate === 'object') {
+        if (candidate.nik || candidate.nama || candidate.tempat_lahir || candidate.tempatLahir || candidate.tempat_tgl_lahir) {
+          return candidate;
+        }
+      }
+    }
+
+    return {};
+  };
+
   const handleOcrScan = async (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -121,23 +170,29 @@ export default function DebiturFormPage() {
     try {
       if (type === 'ktp') {
         const res = await documentService.extractKtp(formData);
-        const result = res.data.data;
-        const d = result.data || {};
-        setVlmEngine(result.engineUsed || 'lfm');
-        setConfidences(result.confidences || {});
+        const result = res.data?.data || {};
+        const d = extractKtpData(result);
+        const resultEngine = result.engineUsed || res.data?.engineUsed || 'lfm';
+        const resultConfidences = result.confidences || res.data?.confidences || {};
+
+        console.log('[OCR KTP] Raw response:', res.data);
+        console.log('[OCR KTP] Normalized payload:', d);
+
+        setVlmEngine(resultEngine);
+        setConfidences(resultConfidences);
 
         setPribadi(prev => ({
           ...prev,
           nik:          d.nik          || prev.nik,
           nama:         d.nama         || prev.nama,
-          tempatLahir:  d.tempatLahir  || d.tempat_clean || d.tempat_lahir || prev.tempatLahir,
-          tanggalLahir: d.tanggalLahir || normalizeDate(d.tanggal_lahir) || prev.tanggalLahir,
-          gender:       d.gender       || (d.jenis_kelamin?.includes('PEREMPUAN') ? 'P' : 'L') || prev.gender,
-          statusNikah:  d.statusNikah  || d.status_perkawinan?.replace(' ', '_') || prev.statusNikah,
+          tempatLahir:  extractTempatLahir(d) || prev.tempatLahir,
+          tanggalLahir: extractTanggalLahir(d, prev.tanggalLahir) || prev.tanggalLahir,
+          gender:       d.gender       || (d.jenis_kelamin === 'PEREMPUAN' ? 'P' : d.jenis_kelamin === 'LAKI-LAKI' ? 'L' : prev.gender),
+          statusNikah:  d.statusNikah  || d.status_nikah?.replace('_', ' ') || prev.statusNikah,
           alamat:       d.alamat       || prev.alamat,
-          rt:           d.rt           || prev.rt,
-          rw:           d.rw           || prev.rw,
-          kelurahan:    d.kelurahan    || prev.kelurahan,
+          rt:           extractRt(d)   || prev.rt,
+          rw:           extractRw(d)   || prev.rw,
+          kelurahan:    extractKelurahan(d) || prev.kelurahan,
           kecamatan:    d.kecamatan    || prev.kecamatan,
           agama:        d.agama        || prev.agama,
           pekerjaan:    d.pekerjaan    || prev.pekerjaan,

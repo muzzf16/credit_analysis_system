@@ -4,27 +4,6 @@
  */
 
 /**
- * Enhanced normalization for Indonesian document OCR text
- * Handles common character confusions specific to Indonesian documents
- */
-function normalizeOcrText(text) {
-  return text.toUpperCase()
-    .replace(/[\s\-_]/g, '')
-    // Common OCR digit confusions
-    .replace(/I|L|l|\|/g, '1')
-    .replace(/O/g, '0')
-    .replace(/B/g, '8')
-    .replace(/S/g, '5')
-    .replace(/G/g, '9')
-    .replace(/Z/g, '2')
-    .replace(/Q/g, '0')
-    .replace(/R/g, '8')
-    // Common letter confusions
-    .replace(/0/g, 'O')  // Re-apply after digit fixes
-    .replace(/1/g, 'I'); // Re-apply for cleaner text
-}
-
-/**
  * Clean and normalize lines of text
  * @param {string} text 
  * @returns {string[]}
@@ -37,282 +16,705 @@ function getCleanLines(text) {
 }
 
 /**
- * Find value after a label with flexible colon match
- * @param {string[]} lines 
- * @param {RegExp} labelRegex 
+ * Split OCR text into better KTP-oriented lines when Tesseract returns
+ * a mostly single-line paragraph.
+ * @param {string} text
  * @returns {string}
  */
-function findValueAfterLabel(lines, labelRegex) {
-  for (const line of lines) {
-    if (labelRegex.test(line)) {
-      // Extract everything after the colon or after the match
-      const parts = line.split(/[:;=]/);
-      if (parts.length > 1) {
-        return parts.slice(1).join(':').trim();
-      }
-      // If no colon, extract what follows the regex match
-      const match = line.match(labelRegex);
-      if (match) {
-        const index = line.indexOf(match[0]) + match[0].length;
-        return line.substring(index).trim().replace(/^[:;=\s]+/, '');
-      }
-    }
+function segmentKtpText(text) {
+  let out = String(text || '').replace(/\r/g, '\n');
+
+  // Ensure known labels begin on their own line.
+  const labels = [
+    'NIK',
+    'NAMA',
+    'TEMPAT/TGL LAHIR',
+    'TEMPAT LAHIR',
+    'TGL LAHIR',
+    'JENIS KELAMIN',
+    'ALAMAT',
+    'RT/RW',
+    'RTRW',
+    'KEL/DESA',
+    'KELURAHAN',
+    'DESA',
+    'KECAMATAN',
+    'AGAMA',
+    'STATUS PERKAWINAN',
+    'PEKERJAAN',
+    'KEWARGANEGARAAN',
+    'BERLAKU HINGGA'
+  ];
+
+  for (const label of labels) {
+    const pattern = new RegExp(`\\s*${label.replace(/\//g, '\\/')}\\s*[:;=]?`, 'gi');
+    out = out.replace(pattern, (match) => `\n${match.trim()}`);
+  }
+
+  // Put obvious value separators on new lines too.
+  out = out
+    .replace(/\b([A-Z]{2,})\s{2,}([A-Z]{2,})\b/g, '$1\n$2')
+    .replace(/(\d{16})\s+(?=[A-Z])/g, '$1\n')
+    .replace(/(\d{2}\s*[\/\-]\s*\d{2,3})\s+(?=[A-Z])/g, '$1\n');
+
+  return out;
+}
+
+/**
+ * Normalize OCR text for numeric extraction only.
+ * This keeps digits intact and converts common letter confusions to digits.
+ * @param {string} text
+ * @returns {string}
+ */
+function normalizeOcrDigits(text) {
+  return String(text || '')
+    .toUpperCase()
+    .replace(/[IL|]/g, '1')
+    .replace(/[ODQ]/g, '0')
+    .replace(/S/g, '5')
+    .replace(/B/g, '8')
+    .replace(/G/g, '6')
+    .replace(/Z/g, '2');
+}
+
+/**
+ * Normalize OCR text for label matching and comparisons.
+ * @param {string} text
+ * @returns {string}
+ */
+function normalizeOcrText(text) {
+  return String(text || '').toUpperCase().replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Extract the value part from a label line.
+ * @param {string} line
+ * @returns {string}
+ */
+function extractInlineValue(line) {
+  const parts = String(line || '').split(/[:;=]/);
+  if (parts.length < 2) return '';
+  return parts.slice(1).join(':').trim();
+}
+
+/**
+ * Extract text after a label even if no separator exists.
+ * @param {string} line
+ * @param {RegExp} labelRegex
+ * @returns {string}
+ */
+function extractValueAfterLabelMatch(line, labelRegex) {
+  const text = String(line || '');
+  const permissiveSource = labelRegex.source.replace(/\\b/g, '');
+  const permissiveFlags = labelRegex.flags.replace(/g/g, '');
+  const permissiveRegex = new RegExp(permissiveSource, permissiveFlags);
+  const match = text.match(permissiveRegex);
+  if (!match) return '';
+  return text.slice(match.index + match[0].length).replace(/^[:;=\s]+/, '').trim();
+}
+
+/**
+ * Determine whether a line likely contains an OCR label.
+ * @param {string} line
+ * @returns {boolean}
+ */
+function isLikelyLabelLine(line) {
+  const normalized = normalizeOcrText(line);
+  if (!normalized) return false;
+  return /^(NIK|NAMA|TEMPAT\b|TGL\b|TEMPAT\/TGL|JENIS\s*KELAMIN|ALAMAT|RT\s*\/\s*RW|RTRW|KEL\s*\/\s*DESA|KELURAHAN|DESA|KECAMATAN|AGAMA|STATUS\s*PERKAWINAN|STATUS\s*KAWIN|PEKERJAAN|KEWARGANEGARAAN|PEMEGANG\s*HAK|ATAS\s*NAMA|NOMOR|MERK|MEREK|TIPE|TAHUN|KABUPATEN|KOTA|LUAS|NIB|SURAT|HAK)\b/i.test(normalized);
+}
+
+/**
+ * Check whether a line is a KTP label.
+ * @param {string} line
+ * @returns {boolean}
+ */
+function isKtpLabelLine(line) {
+  const normalized = normalizeOcrText(line);
+  if (!normalized) return false;
+  return /^(NIK|NAMA|TEMPAT(?:\s*\/\s*TGL)?(?:\s*LAHIR)?|TGL\s*LAHIR|JENIS\s*KELAMIN|ALAMAT|RT\s*\/\s*RW|RTRW|KEL\s*\/\s*DESA|KELURAHAN|DESA|KECAMATAN|AGAMA|STATUS\s*PERKAWINAN|STATUS\s*KAWIN|PEKERJAAN|KEWARGANEGARAAN)\b/i.test(normalized);
+}
+
+/**
+ * Find the next meaningful non-empty line after a given index.
+ * @param {string[]} lines
+ * @param {number} index
+ * @returns {string}
+ */
+function getNextMeaningfulLine(lines, index) {
+  for (let i = index + 1; i < lines.length; i++) {
+    const candidate = lines[i]?.trim();
+    if (candidate) return candidate;
   }
   return '';
 }
 
 /**
- * Parser for KTP (Kartu Tanda Penduduk)
+ * Collect value lines after a label until a stop condition is met.
+ * @param {string[]} lines
+ * @param {number} index
+ * @param {object} options
+ * @returns {string[]}
+ */
+function collectFollowingValueLines(lines, index, options = {}) {
+  const {
+    maxLines = 3,
+    stopWhen = () => false,
+    allowInline = true
+  } = options;
+
+  const collected = [];
+  if (allowInline) {
+    const inlineValue = extractInlineValue(lines[index]);
+    if (inlineValue) collected.push(inlineValue);
+  }
+
+  for (let i = index + 1; i < lines.length && collected.length < maxLines; i++) {
+    const candidate = lines[i]?.trim();
+    if (!candidate) continue;
+    if (stopWhen(candidate)) break;
+    collected.push(candidate);
+  }
+
+  return collected;
+}
+
+/**
+ * Parse RT/RW from a chunk of OCR text.
+ * @param {string} text
+ * @returns {string}
+ */
+function parseRtRw(text) {
+  const raw = String(text || '');
+  if (!/[0-9\/\-\s]/.test(raw)) return '';
+  if (!/[\/\-]/.test(raw) && raw.replace(/\D/g, '').length > 8) return '';
+
+  const normalized = normalizeOcrDigits(raw).replace(/[^0-9\/\-\s]/g, ' ');
+  const match = normalized.match(/\b(\d{3})\s*(?:[\/\-\s])\s*(\d{3})\b/);
+  if (!match) return '';
+
+  const left = match[1].replace(/\D/g, '').padStart(3, '0');
+  const right = match[2].replace(/\D/g, '').padStart(3, '0');
+  return `${left}/${right}`;
+}
+
+/**
+ * Parse a TTL chunk into place and YYYY-MM-DD date.
+ * @param {string} text
+ * @returns {{ place: string, date: string }}
+ */
+function parseTtlChunk(text) {
+  const raw = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!raw) return { place: '', date: '' };
+
+  const withoutLabel = raw
+    .replace(/^(?:TEMPAT(?:\s*\/\s*TGL)?(?:\s*LAHIR)?|TGL\s*LAHIR)\s*[:;=,\-/]*/i, '')
+    .trim();
+  const normalizedDigits = normalizeOcrDigits(withoutLabel);
+  const dateMatch = normalizedDigits.match(/(\d{1,2})\s*[-\/.]\s*(\d{1,2})\s*[-\/.]\s*(\d{4})/);
+
+  let place = withoutLabel || raw;
+  let date = '';
+
+  if (dateMatch) {
+    const [, d, m, y] = dateMatch;
+    date = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    const beforeDate = withoutLabel.slice(0, dateMatch.index).replace(/[,;:-]+$/g, '').trim();
+    if (beforeDate) {
+      place = beforeDate;
+    } else {
+      const commaIdx = withoutLabel.indexOf(',');
+      if (commaIdx !== -1) {
+        place = withoutLabel.slice(0, commaIdx).trim();
+      } else {
+        place = withoutLabel.slice(0, withoutLabel.toUpperCase().indexOf(dateMatch[0].toUpperCase())).trim();
+      }
+    }
+  } else {
+    const dateOnlyMatch = normalizedDigits.match(/(\d{1,2})\s*[-\/.]\s*(\d{1,2})\s*[-\/.]\s*(\d{4})/);
+    if (dateOnlyMatch) {
+      const [, d, m, y] = dateOnlyMatch;
+      date = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+  }
+
+  place = place
+    .replace(/^(?:TEMPAT(?:\s*\/\s*TGL)?(?:\s*LAHIR)?|TGL\s*LAHIR)\s*[:;=,\-/]*/i, '')
+    .replace(/\bTEMPAT\b|\bTGL\b|\bLAHIR\b|\bLAHIR\b/gi, ' ')
+    .replace(/[,:;]+$/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+
+  return { place, date };
+}
+
+/**
+ * Extract a KTP field block from raw OCR text until the next known label.
+ * Works for both inline values and multi-line OCR output.
+ * @param {string} text
+ * @param {string[]} labels
+ * @param {string[]} nextLabels
+ * @returns {string}
+ */
+function extractKtpFieldBlock(text, labels, nextLabels) {
+  const source = String(text || '').replace(/\r/g, '\n');
+  if (!source) return '';
+
+  const escapedLabels = labels.map(label =>
+    label
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\s+/g, '\\s*')
+      .replace(/\//g, '\\s*\\/\\s*')
+  );
+  const escapedNextLabels = nextLabels.map(label =>
+    label
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\s+/g, '\\s*')
+      .replace(/\//g, '\\s*\\/\\s*')
+  );
+
+  const labelPattern = escapedLabels.join('|');
+  const stopPattern = escapedNextLabels.length
+    ? `(?=\\n\\s*(?:${escapedNextLabels.join('|')})\\b|$)`
+    : '$';
+
+  const regex = new RegExp(
+    `(?:^|\\n)\\s*(?:${labelPattern})\\b\\s*[:;=]?\\s*([\\s\\S]*?)${stopPattern}`,
+    'i'
+  );
+  const match = source.match(regex);
+  return match ? match[1].trim() : '';
+}
+
+/**
+ * Generic helper to find the value after a label.
+ * @param {string[]} lines
+ * @param {RegExp} labelRegex
+ * @param {object} options
+ * @returns {string}
+ */
+function findValueAfterLabel(lines, labelRegex, options = {}) {
+  const {
+    maxLookahead = 3,
+    allowInline = true,
+    stopWhen = isLikelyLabelLine
+  } = options;
+  const permissiveSource = labelRegex.source.replace(/\\b/g, '');
+  const permissiveFlags = labelRegex.flags.replace(/g/g, '');
+  const permissiveRegex = new RegExp(permissiveSource, permissiveFlags);
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!labelRegex.test(line) && !permissiveRegex.test(line)) continue;
+
+    if (allowInline) {
+      const inlineValue = extractInlineValue(line);
+      if (inlineValue && !stopWhen(inlineValue)) {
+        return inlineValue.trim();
+      }
+
+      const inlineAfterLabel = extractValueAfterLabelMatch(line, labelRegex);
+      if (inlineAfterLabel && !stopWhen(inlineAfterLabel)) {
+        return inlineAfterLabel.trim();
+      }
+    }
+
+    const collected = [];
+    for (let j = i + 1; j < lines.length && collected.length < maxLookahead; j++) {
+      const candidate = lines[j]?.trim();
+      if (!candidate) continue;
+      if (stopWhen(candidate)) break;
+      collected.push(candidate);
+      if (candidate.includes(':')) break;
+    }
+
+    if (collected.length > 0) {
+      return collected.join(' ').trim();
+    }
+  }
+
+  return '';
+}
+
+/**
+ * Parser for KTP (Kartu Tanda Penduduk) - State Machine Approach
  * @param {string} text 
  * @returns {object}
  */
 function parseKTP(text) {
-  const lines = getCleanLines(text);
+  const rawText = String(text || '').replace(/\r/g, '\n');
+  const lines = getCleanLines(rawText);
+
   const data = {
     nik: '',
     nama: '',
-    tempatLahir: '',
-    tanggalLahir: '',
-    gender: 'L',
-    statusNikah: '',
-    pendidikan: 'SMA',
+    tempat_tgl_lahir: '',
+    jenis_kelamin: 'LAKI-LAKI',
     alamat: '',
-    kelurahan: '',
+    rt_rw: '',
+    kel_desa: '',
     kecamatan: '',
-    kabupaten: 'Batang'
+    agama: '',
+    status_perkawinan: 'BELUM_KAWIN',
+    pekerjaan: '',
+    kewarganegaraan: 'WNI',
+    berlaku_hingga: 'SEUMUR HIDUP'
   };
 
-  // 1. Extract NIK (16 digits) - Enhanced with better normalization
-  const normalizedText = normalizeOcrText(text);
-  
-  // Look for 16 consecutive digits pattern
-  const nikMatch = normalizedText.match(/\b(\d{16})\b/) || normalizedText.match(/(\d{16})/);
-  if (nikMatch) {
-    data.nik = nikMatch[1];
-  } else {
-    // Fallback: look line by line with more aggressive normalization
-    for (const line of lines) {
-      const normLine = line.toUpperCase()
-        .replace(/I|L|i|l|\|/g, '1')
-        .replace(/O|D/g, '0')
-        .replace(/B/g, '8')
-        .replace(/S/g, '5')
-        .replace(/G/g, '9')
-        .replace(/Z/g, '2')
-        .replace(/Q/g, '0')
-        .replace(/R/g, '8')
-        .replace(/[^0-9]/g, '');
-      if (normLine.length === 16 && /^\d+$/.test(normLine)) {
-        data.nik = normLine;
-        break;
+  // Extract NIK first. Use numeric-only OCR normalization so digits never
+  // get converted back into letters.
+  const nikBlock = extractKtpFieldBlock(rawText, ['NIK'], [
+    'Nama',
+    'Tempat/Tgl Lahir',
+    'Tempat Lahir',
+    'Tgl Lahir',
+    'Jenis Kelamin'
+  ]);
+  const nikCandidates = [
+    nikBlock,
+    segmentKtpText(rawText),
+    rawText,
+    ...lines,
+    ...lines.map((line, index) => `${line} ${getNextMeaningfulLine(lines, index)}`)
+  ];
+  for (const candidate of nikCandidates) {
+    const normalized = normalizeOcrDigits(candidate).replace(/\D/g, '');
+    const nikMatch = normalized.match(/\d{16}/);
+    if (nikMatch) {
+      data.nik = nikMatch[0];
+      break;
+    }
+  }
+
+  const namaBlock = extractKtpFieldBlock(rawText, ['Nama'], [
+    'Tempat/Tgl Lahir',
+    'Tempat Lahir',
+    'Tgl Lahir',
+    'Jenis Kelamin',
+    'Alamat'
+  ]);
+  if (namaBlock) {
+    data.nama = namaBlock
+      .split('\n')[0]
+      .toUpperCase()
+      .replace(/[^A-Z\s.,']/g, ' ')
+      .replace(/\b(?:AN|BIN|BINTI)\s*$/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  const ttlBlock = extractKtpFieldBlock(rawText, ['Tempat/Tgl Lahir', 'Tempat Lahir', 'Tgl Lahir'], [
+    'Jenis Kelamin',
+    'Alamat'
+  ]);
+  if (ttlBlock) {
+    const { place, date } = parseTtlChunk(ttlBlock);
+    if (place && date) data.tempat_tgl_lahir = `${place}, ${date}`;
+    else if (place) data.tempat_tgl_lahir = place;
+  }
+
+  const alamatBlock = extractKtpFieldBlock(rawText, ['Alamat'], [
+    'RT/RW',
+    'RTRW',
+    'Kel/Desa',
+    'Kelurahan',
+    'Desa',
+    'Kecamatan',
+    'Agama'
+  ]);
+  if (alamatBlock) {
+    const cleanedAddressLines = alamatBlock
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+      .filter(line => !parseRtRw(line));
+    data.alamat = cleanedAddressLines
+      .join(' ')
+      .replace(/[^A-Z0-9\s\/\-().]/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+  }
+
+  const rtRwBlock = extractKtpFieldBlock(rawText, ['RT/RW', 'RTRW'], [
+    'Kel/Desa',
+    'Kelurahan',
+    'Desa',
+    'Kecamatan',
+    'Agama'
+  ]);
+  const parsedRtRwBlock = parseRtRw(rtRwBlock);
+  if (parsedRtRwBlock) data.rt_rw = parsedRtRwBlock;
+
+  const kelDesaBlock = extractKtpFieldBlock(rawText, ['Kel/Desa', 'Kelurahan', 'Desa'], [
+    'Kecamatan',
+    'Agama',
+    'Status Perkawinan',
+    'Pekerjaan'
+  ]);
+  if (kelDesaBlock && !parseRtRw(kelDesaBlock) && !isKtpLabelLine(kelDesaBlock)) {
+    data.kel_desa = kelDesaBlock
+      .split('\n')[0]
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s\-()]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  const kecamatanBlock = extractKtpFieldBlock(rawText, ['Kecamatan'], [
+    'Agama',
+    'Status Perkawinan',
+    'Pekerjaan',
+    'Kewarganegaraan'
+  ]);
+  if (kecamatanBlock && !parseRtRw(kecamatanBlock) && !isKtpLabelLine(kecamatanBlock)) {
+    data.kecamatan = kecamatanBlock
+      .split('\n')[0]
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s\-()]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const nextLine = lines[i + 1] || '';
+    const nextNextLine = lines[i + 2] || '';
+    const normalizedLine = normalizeOcrText(line);
+    const normalizedNext = normalizeOcrText(nextLine);
+
+    // Detect label and switch state
+    if (/\bNIK\b/i.test(normalizedLine) && !data.nik) {
+      const nikChunk = collectFollowingValueLines(lines, i, {
+        maxLines: 2,
+        stopWhen: isKtpLabelLine
+      }).join(' ');
+      const candidate = normalizeOcrDigits(`${line} ${nikChunk}`);
+      const nikMatch = candidate.match(/\b\d{16}\b/);
+      if (nikMatch) {
+        data.nik = nikMatch[0];
+      }
+      continue;
+    }
+
+    if (/\bNAMA\b/i.test(normalizedLine) && !data.nama) {
+      const value = findValueAfterLabel(lines.slice(i), /\bNAMA\b/i, {
+        maxLookahead: 2,
+        stopWhen: isKtpLabelLine
+      });
+      if (value && !/\d/.test(value)) {
+        data.nama = value.toUpperCase().replace(/[^A-Z\s.,']/g, '').trim();
+      }
+      continue;
+    }
+
+    if ((/\bTEMPAT\b/i.test(normalizedLine) || /\bTGL\b.*\bLAHIR\b/i.test(normalizedLine)) && !data.tempat_tgl_lahir) {
+      const ttlChunk = collectFollowingValueLines(lines, i, {
+        maxLines: 3,
+        stopWhen: isKtpLabelLine
+      }).join(' ');
+      const { place, date } = parseTtlChunk(`${line} ${ttlChunk}`);
+      if (place && date) {
+        data.tempat_tgl_lahir = `${place}, ${date}`;
+      } else if (place && !data.tempat_tgl_lahir) {
+        data.tempat_tgl_lahir = place;
+      }
+      continue;
+    }
+
+    if (/\bJENIS\b.*\bKELAMIN\b/i.test(normalizedLine)) {
+      const sexChunk = `${line} ${nextLine} ${nextNextLine}`;
+      if (/\bPEREMPUAN\b|\bWANITA\b/i.test(sexChunk)) {
+        data.jenis_kelamin = 'PEREMPUAN';
+      } else if (/\bLAKI[- ]?LAKI\b/i.test(sexChunk) || normalizedNext === 'L') {
+        data.jenis_kelamin = 'LAKI-LAKI';
+      } else if (normalizedNext === 'P') {
+        data.jenis_kelamin = 'PEREMPUAN';
+      } else {
+        data.jenis_kelamin = 'LAKI-LAKI';
+      }
+      continue;
+    }
+
+    if (/\bALAMAT\b/i.test(normalizedLine) && !data.alamat) {
+      const addressLines = [];
+      const inlineValue = extractInlineValue(line);
+      if (inlineValue) addressLines.push(inlineValue);
+
+      for (let j = i + 1; j < lines.length; j++) {
+        const candidate = lines[j]?.trim();
+        if (!candidate) continue;
+        if (isKtpLabelLine(candidate)) break;
+
+        const rtRwFromCandidate = parseRtRw(candidate);
+        if (rtRwFromCandidate) {
+          data.rt_rw = rtRwFromCandidate;
+          break;
+        }
+
+        addressLines.push(candidate);
+        if (addressLines.length >= 4) break;
+      }
+
+      let address = addressLines.join(' ').toUpperCase();
+      const embeddedRtRwMatch = normalizeOcrDigits(address).match(/\b\d{3}\s*(?:[\/\-])\s*\d{3}\b/);
+      if (embeddedRtRwMatch) {
+        const embeddedRtRw = parseRtRw(embeddedRtRwMatch[0]);
+        data.rt_rw = embeddedRtRw;
+        address = address.replace(/\d{1,3}\s*(?:[\/\-\s])\s*\d{1,3}.*/g, ' ');
+      }
+      data.alamat = address.replace(/[^A-Z0-9\s\/\-()]/g, ' ').replace(/\s+/g, ' ').trim();
+      continue;
+    }
+
+    if ((/\bRT\s*\/\s*RW\b|\bRTRW\b/i.test(normalizedLine)) && !data.rt_rw) {
+      const rtRwChunk = collectFollowingValueLines(lines, i, {
+        maxLines: 2,
+        stopWhen: isKtpLabelLine
+      }).join(' ');
+      const rtRw = parseRtRw(`${line} ${rtRwChunk}`);
+      if (rtRw) data.rt_rw = rtRw;
+      continue;
+    }
+
+    if ((/\bKEL\s*\/\s*DESA\b|\bKELURAHAN\b|\bDESA\b/i.test(normalizedLine)) && !data.kel_desa) {
+      let value = extractInlineValue(line);
+      if (!value || isKtpLabelLine(value) || parseRtRw(value)) {
+        const nextValue = getNextMeaningfulLine(lines, i);
+        if (nextValue && !isKtpLabelLine(nextValue) && !parseRtRw(nextValue)) {
+          value = nextValue;
+        }
+      }
+      if (value && !isKtpLabelLine(value) && !parseRtRw(value)) {
+        data.kel_desa = value.toUpperCase().replace(/[^A-Z0-9\s\-()]/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      continue;
+    }
+
+    if (/\bKECAMATAN\b/i.test(normalizedLine) && !data.kecamatan) {
+      const value = findValueAfterLabel(lines.slice(i), /\bKECAMATAN\b/i, {
+        maxLookahead: 2,
+        stopWhen: isKtpLabelLine
+      });
+      if (value && !isKtpLabelLine(value) && !parseRtRw(value)) {
+        data.kecamatan = value.toUpperCase().replace(/[^A-Z0-9\s\-()]/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      continue;
+    }
+
+    if (/\bAGAMA\b/i.test(normalizedLine)) {
+      const value = findValueAfterLabel(lines.slice(i), /\bAGAMA\b/i, {
+        maxLookahead: 1,
+        stopWhen: isKtpLabelLine
+      });
+      if (value) {
+        data.agama = value.toUpperCase().trim();
+      }
+      continue;
+    }
+
+    if (/\bSTATUS\b.*\bPERKAWINAN\b|\bSTATUS\b.*\bKAWIN\b/i.test(normalizedLine)) {
+      const statusChunk = collectFollowingValueLines(lines, i, {
+        maxLines: 2,
+        stopWhen: isKtpLabelLine
+      }).join(' ');
+      if (/BELUM/i.test(statusChunk)) data.status_perkawinan = 'BELUM_KAWIN';
+      else if (/CERAI.*MATI/i.test(statusChunk)) data.status_perkawinan = 'CERAI_MATI';
+      else if (/CERAI.*HIDUP/i.test(statusChunk)) data.status_perkawinan = 'CERAI_HIDUP';
+      else if (/KAWIN|MENIKAH/i.test(statusChunk)) data.status_perkawinan = 'KAWIN';
+      continue;
+    }
+
+    if (/\bPEKERJAAN\b/i.test(normalizedLine)) {
+      const value = findValueAfterLabel(lines.slice(i), /\bPEKERJAAN\b/i, {
+        maxLookahead: 2,
+        stopWhen: isKtpLabelLine
+      });
+      if (value) {
+        data.pekerjaan = value.toUpperCase().replace(/[^A-Z0-9\s\-()\/.]/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      continue;
+    }
+
+    if (/\bKEWARGANEGARAAN\b/i.test(normalizedLine)) {
+      const value = findValueAfterLabel(lines.slice(i), /\bKEWARGANEGARAAN\b/i, {
+        maxLookahead: 1,
+        stopWhen: isKtpLabelLine
+      });
+      if (/WNA/i.test(value)) data.kewarganegaraan = 'WNA';
+      else if (/WNI/i.test(value)) data.kewarganegaraan = 'WNI';
+      continue;
+    }
+
+    // Backstop for very fragmented OCR where label/value are split across
+    // consecutive lines without punctuation.
+    if (!data.rt_rw) {
+      const rtRw = parseRtRw(`${line} ${nextLine}`);
+      if (rtRw && /^(?:\d{1,3}\s*[\/\-\s]\s*\d{1,3})$/.test(normalizeOcrDigits(`${line} ${nextLine}`).replace(/[^0-9\/\-\s]/g, ' ').trim())) {
+        data.rt_rw = rtRw;
       }
     }
   }
 
-  // Helper to check if a line is a label
-  const isLabel = (line) => {
-    return /nik|nama|lahir|kelamin|alamat|rt\/rw|desa|kelurahan|kecamatan|agama|perkawinan|pekerjaan|kewarganegaraan|berlaku|seumur/i.test(line);
-  };
-
-  // 2. Extract Nama
-  let namaVal = findValueAfterLabel(lines, /nama/i);
-  if (!namaVal) {
-    // Heuristic: search lines around the "Nama" label (window of +1 to +4 lines)
-    const idx = lines.findIndex(l => /nama/i.test(l) && !/kecamatan|tempat/i.test(l));
+  // Fallbacks for OCR that produces label/value on separate lines with little structure.
+  if (!data.nama) {
+    const idx = lines.findIndex(l => /\bNAMA\b/i.test(normalizeOcrText(l)));
     if (idx !== -1) {
-      for (let offset = 1; offset <= 4; offset++) {
-        const checkIdx = idx + offset;
-        if (checkIdx < lines.length) {
-          const l = lines[checkIdx];
-          if (!isLabel(l) && !/\d/.test(l) && l.length > 2) {
-            namaVal = l;
-            break;
-          }
+      for (let j = idx + 1; j < lines.length; j++) {
+        const candidate = lines[j]?.trim();
+        if (!candidate) continue;
+        if (isKtpLabelLine(candidate)) break;
+        if (!/\d/.test(candidate)) {
+          data.nama = candidate.toUpperCase().replace(/[^A-Z\s.,']/g, '').trim();
+          break;
+        }
+      }
+    }
+    if (!data.nama) {
+      const nikIdx = lines.findIndex(l => /\bNIK\b/i.test(normalizeOcrText(l)));
+      if (nikIdx !== -1) {
+        for (let j = nikIdx + 1; j < lines.length; j++) {
+          const candidate = lines[j]?.trim();
+          if (!candidate) continue;
+          if (isKtpLabelLine(candidate) || /\d{8,}/.test(candidate)) continue;
+          data.nama = candidate.toUpperCase().replace(/[^A-Z\s.,']/g, '').trim();
+          if (data.nama) break;
         }
       }
     }
   }
-  if (namaVal) {
-    data.nama = namaVal.toUpperCase().replace(/[^A-Z\s.,']/g, '').trim();
-  }
 
-  // 3. Extract Tempat & Tanggal Lahir
-  let ttlVal = findValueAfterLabel(lines, /tempat.*lahir|tgl.*lahir/i);
-  let dateStr = '';
-  let placeStr = '';
-
-  // Heuristic: find any line containing a date pattern DD-MM-YYYY or DD.MM.YYYY
-  const dateLineIdx = lines.findIndex(l => {
-    const norm = l.toUpperCase().replace(/O/g, '0').replace(/I|L|l/g, '1').replace(/S/g, '5').replace(/B/g, '8');
-    return /(\d{2})[-/.](\d{2})[-/.](\d{4})/.test(norm);
-  });
-
-  if (dateLineIdx !== -1) {
-    const rawLine = lines[dateLineIdx];
-    const normLine = rawLine.toUpperCase()
-      .replace(/O/g, '0')
-      .replace(/I|L|l/g, '1')
-      .replace(/S/g, '5')
-      .replace(/B/g, '8');
-    const match = normLine.match(/(\d{2})[-/.](\d{2})[-/.](\d{4})/);
-    if (match) {
-      dateStr = `${match[3]}-${match[2]}-${match[1]}`;
-      // The place is everything before the date in that line (minus punctuation)
-      placeStr = rawLine.substring(0, rawLine.indexOf(match[0])).replace(/[^A-Za-z\s]/g, '').trim();
-    }
-  }
-
-  if (dateStr) {
-    data.tanggalLahir = dateStr;
-    if (placeStr) {
-      data.tempatLahir = placeStr.toUpperCase();
-    }
-  }
-
-  if (!data.tempatLahir && ttlVal) {
-    const parts = ttlVal.split(/[,.]/);
-    if (parts.length > 0) {
-      data.tempatLahir = parts[0].trim().toUpperCase().replace(/[^A-Z\s]/g, '');
-    }
-  }
-
-  // 4. Extract Gender
-  const genderVal = findValueAfterLabel(lines, /jenis.*kelamin|kelamin/i);
-  if (genderVal) {
-    if (/perempuan|wanita|p/i.test(genderVal)) {
-      data.gender = 'P';
-    } else if (/laki|l/i.test(genderVal)) {
-      data.gender = 'L';
-    }
-  } else {
-    // Check if any line matches gender values
-    const hasPerempuan = lines.some(l => /perempuan|wanita/i.test(l) && !isLabel(l));
-    const hasLaki = lines.some(l => /laki-laki|laki/i.test(l) && !isLabel(l));
-    if (hasPerempuan) {
-      data.gender = 'P';
-    } else if (hasLaki) {
-      data.gender = 'L';
-    } else if (/perempuan|wanita/i.test(text)) {
-      data.gender = 'P';
-    } else {
-      data.gender = 'L';
-    }
-  }
-
-  // 5. Extract Status Perkawinan
-  const statusVal = findValueAfterLabel(lines, /status.*perkawinan|kawin/i);
-  let statusSearchArea = statusVal || text;
-
-  // Heuristic: check if any standalone line contains status values
-  for (const l of lines) {
-    if (/belum\s*kawin/i.test(l)) {
-      data.statusNikah = 'BELUM_KAWIN';
-      break;
-    } else if (/cerai\s*mati/i.test(l)) {
-      data.statusNikah = 'CERAI_MATI';
-      break;
-    } else if (/cerai\s*hidup/i.test(l)) {
-      data.statusNikah = 'CERAI_HIDUP';
-      break;
-    } else if (/kawin|menikah/i.test(l) && !/status/i.test(l)) {
-      data.statusNikah = 'KAWIN';
-      break;
-    }
-  }
-
-  if (!data.statusNikah) {
-    if (/belum/i.test(statusSearchArea)) {
-      data.statusNikah = 'BELUM_KAWIN';
-    } else if (/cerai.*mati/i.test(statusSearchArea)) {
-      data.statusNikah = 'CERAI_MATI';
-    } else if (/cerai.*hidup/i.test(statusSearchArea)) {
-      data.statusNikah = 'CERAI_HIDUP';
-    } else if (/kawin|menikah|kwn/i.test(statusSearchArea)) {
-      data.statusNikah = 'KAWIN';
-    }
-  }
-
-  // 6. Extract Alamat, Kelurahan, Kecamatan
-  let alamatVal = findValueAfterLabel(lines, /^alamat/i);
-  if (!alamatVal) {
-    const idx = lines.findIndex(l => /^alamat/i.test(l));
-    if (idx !== -1 && idx + 1 < lines.length) {
-      alamatVal = lines[idx + 1];
-    }
-  }
-  if (alamatVal) {
-    data.alamat = alamatVal.toUpperCase().trim();
-  }
-
-  // Try to append RT/RW to Alamat if found
-  let rtrwVal = findValueAfterLabel(lines, /rt[-/]*rw/i);
-  if (!rtrwVal) {
-    // Heuristic: search for pattern like 000/000 or digits/digits on any line
-    const rtrwLine = lines.find(l => /\b\d{2,3}\s*\/\s*\d{2,3}\b/.test(l));
-    if (rtrwLine) {
-      const match = rtrwLine.match(/\b\d{2,3}\s*\/\s*\d{2,3}\b/);
-      if (match) rtrwVal = match[0];
-    }
-  }
-  if (rtrwVal) {
-    data.alamat = `${data.alamat} RT/RW ${rtrwVal}`.trim().toUpperCase();
-  }
-
-  // Kelurahan / Desa
-  let kelVal = findValueAfterLabel(lines, /kel.*desa|kelurahan|desa/i);
-  if (!kelVal) {
-    const idx = lines.findIndex(l => /kel.*desa|kelurahan|desa/i.test(l));
+  if (!data.alamat) {
+    const idx = lines.findIndex(l => /\bALAMAT\b/i.test(normalizeOcrText(l)));
     if (idx !== -1) {
-      for (const offset of [1, -1, -2, 2]) {
-        const checkIdx = idx + offset;
-        if (checkIdx >= 0 && checkIdx < lines.length) {
-          const l = lines[checkIdx];
-          if (!isLabel(l) && !/\d/.test(l) && l.length > 2) {
-            kelVal = l;
-            break;
-          }
+      const collected = [];
+      for (let j = idx + 1; j < lines.length; j++) {
+        const candidate = lines[j]?.trim();
+        if (!candidate) continue;
+        if (isKtpLabelLine(candidate)) break;
+        const rtRw = parseRtRw(candidate);
+        if (rtRw) {
+          data.rt_rw = data.rt_rw || rtRw;
+          continue;
         }
+        collected.push(candidate);
+        if (collected.length >= 4) break;
+      }
+      if (collected.length > 0) {
+        data.alamat = collected.join(' ').toUpperCase().replace(/[^A-Z0-9\s\/\-()]/g, ' ').replace(/\s+/g, ' ').trim();
       }
     }
   }
-  if (kelVal) {
-    data.kelurahan = kelVal.toUpperCase().trim();
+
+  if (!data.rt_rw) {
+    const rtLine = lines.find(l => parseRtRw(l));
+    if (rtLine) data.rt_rw = parseRtRw(rtLine);
   }
 
-  // Kecamatan
-  let kecVal = findValueAfterLabel(lines, /kecamatan|kec/i);
-  if (!kecVal) {
-    const idx = lines.findIndex(l => /kecamatan|kec/i.test(l));
-    if (idx !== -1) {
-      for (const offset of [1, -1, 2]) {
-        const checkIdx = idx + offset;
-        if (checkIdx >= 0 && checkIdx < lines.length) {
-          const l = lines[checkIdx];
-          if (!isLabel(l) && !/\d/.test(l) && l.length > 2) {
-            kecVal = l;
-            break;
-          }
-        }
-      }
-    }
-  }
-  if (kecVal) {
-    data.kecamatan = kecVal.toUpperCase().trim();
-  }
-  
-  const kabMatch = text.match(/(?:kabupaten|kota)\s+([A-Za-z]+)/i);
-  if (kabMatch && kabMatch[1]) {
-    data.kabupaten = kabMatch[1].toUpperCase();
-  }
-
-  if (!data.statusNikah) {
-    data.statusNikah = 'BELUM_KAWIN';
-  }
-
-  // Clean empty strings/nulls
-  Object.keys(data).forEach(key => {
-    if (typeof data[key] === 'string') data[key] = data[key].trim();
-  });
+  // Clean and normalize fields
+  if (data.nama) data.nama = data.nama.replace(/[^A-Z\s.,']/g, '').replace(/\s+/g, ' ').trim();
+  if (data.alamat) data.alamat = data.alamat.replace(/\s+/g, ' ').trim();
 
   return data;
 }

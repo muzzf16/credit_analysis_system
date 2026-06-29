@@ -25,31 +25,38 @@ class OCRPipeline {
       
       await this.selectEngine();
       
-      const engine = this.context.engine;
-      
       const preStart = Date.now();
-      await engine.preprocess(this.context);
+      await this.context.engine.preprocess(this.context);
       this.context.timings.preprocessing = Date.now() - preStart;
       
-const recStart = Date.now();
-       this.context.rawText = await engine.recognize(this.context);
-       this.context.timings.recognition = Date.now() - recStart;
-       
-       // Debug log for OCR text
-       console.log(`[OCR DEBUG] Type: ${this.context.documentType}, Raw Text:\n${this.context.rawText}`);
-       
-       const postStart = Date.now();
-       await engine.postprocess(this.context);
-       this.context.timings.postprocessing = Date.now() - postStart;
-       
-       // Store Tesseract confidences before parse overwrites evidence
-       if (this.context.tesseractConfidences) {
-         this.context._tesseractConfidences = { ...this.context.tesseractConfidences };
-       }
-       
-       await this.normalize();
-       await this.parse();
-       await this.validateOutput();
+      const recStart = Date.now();
+      this.context.rawText = await this.context.engine.recognize(this.context);
+      this.context.timings.recognition = Date.now() - recStart;
+      
+      // Debug log for OCR text
+      console.log(`[OCR DEBUG] Type: ${this.context.documentType}, Engine: ${this.context.engine.constructor.name}, Raw Text:\n${this.context.rawText}`);
+      if (this.context.documentType === 'ktp') {
+        const fs = require('fs');
+        const path = require('path');
+        const debugDir = path.resolve(__dirname, '../../../../tmp');
+        fs.mkdirSync(debugDir, { recursive: true });
+        const debugPath = path.join(debugDir, 'ktp_raw_text.txt');
+        fs.writeFileSync(debugPath, this.context.rawText || '');
+        console.log(`[OCR KTP] Full raw text saved to ${debugPath}`);
+      }
+      
+      const postStart = Date.now();
+      await this.context.engine.postprocess(this.context);
+      this.context.timings.postprocessing = Date.now() - postStart;
+      
+      // Store Tesseract confidences before parse overwrites evidence
+      if (this.context.tesseractConfidences) {
+        this.context._tesseractConfidences = { ...this.context.tesseractConfidences };
+      }
+      
+      await this.normalize();
+      await this.parse();
+      await this.validateOutput();
       
       this.context.timings.total = Date.now() - this.context.timings.start;
       

@@ -80,7 +80,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-BprMinio@2024}
       MINIO_BUCKET: bpr-bapera
-      MINIO_USE_SSL: false
+      MINIO_USE_SSL: "false"
       # Document AI / VLM — llama.cpp server berjalan di host, bukan di container
       # 172.22.0.1 = docker bridge gateway → host machine
       LFM_API_URL: http://172.22.0.1:1976
@@ -103,6 +103,7 @@ services:
       - bpr_network
     volumes:
       - ./backend/logs:/app/logs
+      - ./backend/tmp:/app/tmp
 
   # ============================================================
   # Frontend (React + Vite, served via Nginx)
