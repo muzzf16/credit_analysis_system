@@ -53,11 +53,11 @@ async function convertPdfToPngBuffer(pdfBuffer) {
 function getPromptForType(type) {
   switch (type.toLowerCase()) {
     case 'ktp':
-      return `Baca KTP Indonesia secara akurat.
-ATURAN: Jangan menebak. Jika tidak terbaca isi string kosong "". HANYA JSON.
+      return `Ekstrak data dari gambar KTP ini.
+Tulis ulang semua teks KTP ke dalam format JSON. Jika tidak terbaca, kosongkan. HANYA KELUARKAN JSON.
 
-Output JSON:
-{"nik":"","nama":"","tempat_tgl_lahir":"","jenis_kelamin":"","alamat":"","rt_rw":"","kel_desa":"","kecamatan":"","agama":"","status_perkawinan":"","pekerjaan":"","kewarganegaraan":"","berlaku_hingga":""}`;
+Format JSON:
+{"nik":"isi_nik","nama":"isi_nama","tempat_tgl_lahir":"isi_tempat_tgl_lahir","jenis_kelamin":"isi_jenis_kelamin","alamat":"isi_alamat","rt_rw":"isi_rt_rw","kel_desa":"isi_kel_desa","kecamatan":"isi_kecamatan","agama":"isi_agama","status_perkawinan":"isi_status_perkawinan","pekerjaan":"isi_pekerjaan","kewarganegaraan":"isi_kewarganegaraan","berlaku_hingga":"isi_berlaku_hingga"}`;
 
     case 'surat_nikah':
       return `Kamu adalah sistem OCR dokumen Indonesia. BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR KUTIPAN AKTA NIKAH / BUKU NIKAH.
@@ -294,6 +294,8 @@ async function callLfmVisionOnce(buffer, mimetype, type, timeoutMs = 90000) {
     }
 
     const parsed = JSON.parse(content.trim());
+    console.log(`[LFM VLM RAW] Output:`, content);
+    console.log(`[LFM VLM PARSED] Output:`, parsed);
     return parsed;
   } catch (err) {
     clearTimeout(timeoutId);
