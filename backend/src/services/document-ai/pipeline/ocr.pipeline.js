@@ -47,7 +47,9 @@ class OcrPipeline {
     if (vlmFallbackFn) {
       console.log(`[OcrPipeline] Primary engine failed or low confidence. Triggering VLM Fallback...`);
       try {
-        const vlmResult = await vlmFallbackFn(processedBuffer, mimetype, type);
+        // Use the ORIGINAL fileBuffer (raw colored image) for VLM!
+        // VLMs perform much better on natural colored images than heavily binarized OpenCV outputs.
+        const vlmResult = await vlmFallbackFn(fileBuffer, mimetype, type);
         console.log(`[OcrPipeline] ✅ VLM Fallback succeeded.`);
         return {
           engineUsed: 'vlm',
