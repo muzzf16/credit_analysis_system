@@ -4,6 +4,7 @@ const EngineFactory = require('../engines/EngineFactory');
 const DocumentRegistry = require('../learning/registry/document-registry');
 const EventStore = require('../learning/events/event.store');
 const ManifestLoader = require('../manifest/manifest.loader');
+const OCRDebugger = require('../utils/OCRDebugger');
 const crypto = require('crypto');
 
 class OCRPipeline {
@@ -33,18 +34,7 @@ class OCRPipeline {
       this.context.rawText = await this.context.engine.recognize(this.context);
       this.context.timings.recognition = Date.now() - recStart;
       
-      // Debug log for OCR text
-      console.log(`[OCR DEBUG] Type: ${this.context.documentType}, Engine: ${this.context.engine.constructor.name}, Raw Text:\n${this.context.rawText}`);
-      if (this.context.documentType === 'ktp') {
-        const fs = require('fs');
-        const path = require('path');
-        const debugDir = path.resolve(__dirname, '../../../../tmp');
-        fs.mkdirSync(debugDir, { recursive: true });
-        const debugPath = path.join(debugDir, 'ktp_raw_text.txt');
-        fs.writeFileSync(debugPath, this.context.rawText || '');
-        console.log(`[OCR KTP] Full raw text saved to ${debugPath}`);
-      }
-      
+      OCRDebugger.logInfo(this.context, `Engine: ${this.context.engine.constructor.name}, Raw Text Length: ${this.context.rawText?.length || 0}`);
       const postStart = Date.now();
       await this.context.engine.postprocess(this.context);
       this.context.timings.postprocessing = Date.now() - postStart;
@@ -65,7 +55,7 @@ class OCRPipeline {
       
       return this.response();
     } catch (error) {
-      console.error('OCR Pipeline failed:', error);
+      OCRDebugger.logError(this.context || { documentType: this.documentType }, 'OCR Pipeline failed', error);
       if (this.context) {
         await this.logEvent('OCR_FAILED', { error: error.message });
       }
@@ -132,33 +122,7 @@ class OCRPipeline {
     const { parseDocumentText } = require('../utils/parsers');
     this.context.parsedData = parseDocumentText(this.context.rawText, this.context.documentType);
     
-    // SLIK Debugging from original code
-    if (this.context.documentType === 'slik') {
-      const parsedData = this.context.parsedData;
-      const text = this.context.rawText;
-      console.log('[OCR SLIK] Parsed result:', JSON.stringify({
-        totalFasilitas: parsedData.totalFasilitas,
-        totalPlafon: parsedData.totalPlafon,
-        totalBakiDebet: parsedData.totalBakiDebet,
-        kolektibilitasTertinggi: parsedData.kolektibilitasTertinggi,
-        facilities: parsedData.detailSlik?.map(f => ({
-          bank: f.bank,
-          plafon: f.plafon,
-          bakiDebet: f.bakiDebet,
-          jatuhTempo: f.jatuhTempo,
-          kolektibilitas: f.kolektibilitas
-        }))
-      }, null, 2));
-      
-      const busanIdx = text.indexOf('BUSSAN');
-      const seaIdx = text.indexOf('SEABANK');
-      const sampleIdx = busanIdx >= 0 ? busanIdx : seaIdx >= 0 ? seaIdx : 1000;
-      console.log('[OCR SLIK] Text around first bank (±500 chars):\n', 
-        text.substring(Math.max(0, sampleIdx - 200), sampleIdx + 600));
-      
-      require('fs').writeFileSync('/tmp/slik_raw.txt', text);
-      console.log('[OCR SLIK] Full raw text saved to /tmp/slik_raw.txt');
-    }
+    OCRDebugger.saveDebugData(this.context);
   }
 
   async validateOutput() {

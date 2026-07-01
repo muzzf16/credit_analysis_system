@@ -105,6 +105,49 @@ const SURVEY_SCHEMA = {
 };
 
 /**
+ * Helper to extract fields from SHM raw_text when LLM fails or is bypassed
+ */
+function extractShmRegex(rawTextArr) {
+  const text = Array.isArray(rawTextArr) ? rawTextArr.join('\n') : String(rawTextArr || '');
+  const result = {};
+  
+  const nibMatch = text.match(/\b(\d{2,3}(?:\.\d{1,5}){4,})\b/);
+  if (nibMatch) result.nib = nibMatch[1];
+  
+  const noMatch = text.match(/HAK\s*:?\s*MIL+IK\s*:?\s*No\.?\s*:?\s*(\d+)/i) || text.match(/No\.?\s*:?\s*(\d{3,5})\b/i);
+  if (noMatch) result.nomor_sertifikat = noMatch[1];
+  
+  const provMatch = text.match(/PROP?INSI\s*:\s*([^\n]+)/i);
+  if (provMatch) result.provinsi = provMatch[1].trim();
+  
+  const kabMatch = text.match(/KABUPATEN(?:[/\\]?KOTAMADYA)?\s*:\s*([^\n]+)/i);
+  if (kabMatch) result.kabupaten_kota = kabMatch[1].trim();
+  
+  const kecMatch = text.match(/KECAMATAN\s*:\s*([^\n]+)/i);
+  if (kecMatch) result.kecamatan = kecMatch[1].trim();
+  
+  const desaMatch = text.match(/DES\s*A(?:[/\\]?KELURAHAN)?\s*:\s*([^\n]+)/i) || text.match(/DESA(?:[/\\]?KELURAHAN)?\s*:\s*([^\n]+)/i);
+  if (desaMatch) result.desa_kelurahan = desaMatch[1].trim();
+
+  const luasMatch = text.match(/Luas\s*:?\s*(\d+)\s*m2/i) || text.match(/Luas\s*(\d+)\s*m2/i) || text.match(/(\d+)\s*m2/i);
+  if (luasMatch) result.luas_m2 = parseInt(luasMatch[1], 10);
+
+  const namaMatch = text.match(/NAMA PEMEGANG HAK\s*:?\s*([^\n]+)/i);
+  if (namaMatch) {
+    result.nama_pemegang_hak = namaMatch[1].trim();
+    result.atas_nama = namaMatch[1].trim();
+  }
+
+  const suMatch = text.match(/Surat Ukur\s*(?:Tgl|Tanggal)?\s*([\d-]+)\s*No\.?\s*([^\n]+)/i);
+  if (suMatch) {
+    result.tanggal_surat_ukur = suMatch[1].trim();
+    result.nomor_surat_ukur = suMatch[2].trim();
+  }
+  
+  return result;
+}
+
+/**
  * Validate and clean the parsed object to match the schema
  * @param {object} rawData - Object parsed from LLM JSON response
  * @param {string} type - ktp, kk, npwp, shm, bpkb, survey
@@ -112,6 +155,11 @@ const SURVEY_SCHEMA = {
  */
 function validateAndClean(rawData, type) {
   const data = rawData && typeof rawData === 'object' ? rawData : {};
+
+  if (type.startsWith('shm') && data.raw_text) {
+    const extracted = extractShmRegex(data.raw_text);
+    Object.assign(data, extracted);
+  }
 
   switch (type.toLowerCase()) {
     case 'ktp': {

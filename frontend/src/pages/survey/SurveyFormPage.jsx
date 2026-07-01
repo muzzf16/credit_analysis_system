@@ -56,7 +56,7 @@ export default function SurveyFormPage() {
       await surveyService.create({
         pengajuanId, ...form,
         lingkungan,
-        usaha: usaha.jenisUsaha ? usaha : undefined,
+        usaha: (usaha.jenisUsaha || usaha.omsetHarian || usaha.omsetBulanan) ? usaha : undefined,
       });
       navigate(`/pengajuan/${pengajuanId}`);
     } catch (err) {

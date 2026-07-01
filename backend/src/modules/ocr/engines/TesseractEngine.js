@@ -5,6 +5,9 @@ const execFileAsync = promisify(execFile);
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const FileUtils = require('../utils/fileUtils');
+const OCRDebugger = require('../utils/OCRDebugger');
+const imagePipeline = require('../../services/document-ai/pipeline/image.pipeline');
 
 class TesseractEngine extends BaseEngine {
   getExtensionFromMime(mimetype = '') {

@@ -69,7 +69,7 @@ function segmentKtpText(text) {
 function normalizeOcrDigits(text) {
   return String(text || '')
     .toUpperCase()
-    .replace(/[IL|]/g, '1')
+    .replace(/[IL|l\[\]]/g, '1')
     .replace(/[ODQ]/g, '0')
     .replace(/S/g, '5')
     .replace(/B/g, '8')
@@ -343,7 +343,28 @@ function findValueAfterLabel(lines, labelRegex, options = {}) {
  * @returns {object}
  */
 function parseKTP(text) {
-  const rawText = String(text || '').replace(/\r/g, '\n');
+  let rawText = String(text || '').replace(/\r/g, '\n');
+  
+  // OCR Label Normalization to fix common Tesseract typos
+  rawText = rawText
+    .replace(/\bN[A4]M[A4E]\b/gi, 'Nama')
+    .replace(/\bN[I1l|]K\b/gi, 'NIK')
+    .replace(/\bT[E6]MP[A4]T\b/gi, 'Tempat')
+    .replace(/\bL[A4]H[I1l|]R\b/gi, 'Lahir')
+    .replace(/\b[A4]L[A4]M[A4]T\b/gi, 'Alamat')
+    .replace(/\b[A4]G[A4]M[A4]\b/gi, 'Agama')
+    .replace(/\bK[E6]C[A4]M[A4]T[A4]N\b/gi, 'Kecamatan')
+    .replace(/\bK[E6]LUR[A4]H[A4]N\b/gi, 'Kelurahan')
+    .replace(/\bK[E6]L\s*[\/\\]\s*D[E6]S[A4]\b/gi, 'Kel/Desa')
+    .replace(/\bJ[E6]N[I1l|]S\b/gi, 'Jenis')
+    .replace(/\bK[E6]L[A4]M[I1l|]N\b/gi, 'Kelamin')
+    .replace(/\bP[E6]K[E6]RJ[A4][A4]N\b/gi, 'Pekerjaan')
+    .replace(/\bK[E6]W[A4]RG[A4]N[E6]G[A4]R[A4][A4]N\b/gi, 'Kewarganegaraan')
+    .replace(/\bB[E6]RL[A4]KU\b/gi, 'Berlaku')
+    .replace(/\bH[I1l|]NGG[A4]\b/gi, 'Hingga')
+    .replace(/\bS[E6]UMUR\b/gi, 'SEUMUR')
+    .replace(/\bH[I1l|]DUP\b/gi, 'HIDUP');
+
   const lines = getCleanLines(rawText);
 
   const data = {
@@ -373,16 +394,15 @@ function parseKTP(text) {
   ]);
   const nikCandidates = [
     nikBlock,
-    segmentKtpText(rawText),
-    rawText,
-    ...lines,
-    ...lines.map((line, index) => `${line} ${getNextMeaningfulLine(lines, index)}`)
+    ...lines
   ];
-  for (const candidate of nikCandidates) {
-    const normalized = normalizeOcrDigits(candidate).replace(/\D/g, '');
-    const nikMatch = normalized.match(/\d{16}/);
-    if (nikMatch) {
-      data.nik = nikMatch[0];
+  for (const cand of nikCandidates) {
+    const cleaned = normalizeOcrDigits(cand);
+    // Strip all non-digits from the candidate line to handle stray punctuation in the middle of NIK
+    const digitsOnly = cleaned.replace(/\D/g, '');
+    const match = digitsOnly.match(/\d{14,17}/);
+    if (match) {
+      data.nik = match[0];
       break;
     }
   }
@@ -671,15 +691,29 @@ function parseKTP(text) {
         }
       }
     }
-    if (!data.nama) {
-      const nikIdx = lines.findIndex(l => /\bNIK\b/i.test(normalizeOcrText(l)));
+    // If still no Nama, check right below NIK
+    if (!data.nama && data.nik) {
+      const nikIdx = lines.findIndex(l => {
+        const stripped = l.replace(/\D/g, '');
+        return stripped.includes(data.nik) || /\bNIK\b/i.test(normalizeOcrText(l));
+      });
       if (nikIdx !== -1) {
         for (let j = nikIdx + 1; j < lines.length; j++) {
           const candidate = lines[j]?.trim();
           if (!candidate) continue;
-          if (isKtpLabelLine(candidate) || /\d{8,}/.test(candidate)) continue;
-          data.nama = candidate.toUpperCase().replace(/[^A-Z\s.,']/g, '').trim();
-          if (data.nama) break;
+          
+          // Skip if it's an obvious label or looks like a date/address component
+          if (isKtpLabelLine(candidate) || /\d{8,}/.test(candidate) || /^\d+$/.test(candidate)) continue;
+          
+          // Nama might be attached to label e.g., "NamaJohn Doe"
+          let cleaned = candidate.toUpperCase().replace(/^(?:NAMA|MAMA|NEMA)\s*[:;=]?\s*/i, '');
+          cleaned = cleaned.replace(/[^A-Z\s.,']/g, '').trim();
+          
+          // Typical name is at least 3 letters
+          if (cleaned.length >= 3) {
+            data.nama = cleaned;
+            break;
+          }
         }
       }
     }

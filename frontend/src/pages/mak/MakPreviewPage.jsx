@@ -462,11 +462,11 @@ export default function MakPreviewPage() {
           </div>
 
           {/* ============================================================ */}
-          {/* PAGE 2: MEMORANDUM ANALISA KREDIT KONSUMTIF */}
+          {/* PAGE 2: MEMORANDUM ANALISA KREDIT */}
           {/* ============================================================ */}
           <div className="print-page border-2 border-gray-800 p-8 mb-8 bg-white relative page-break-before">
             <div className="text-center mb-6">
-              <h1 className="text-sm font-bold tracking-wider uppercase underline">MEMORANDUM ANALISA KREDIT KONSUMTIF</h1>
+              <h1 className="text-sm font-bold tracking-wider uppercase underline">MEMORANDUM ANALISA KREDIT {isKonsumtif ? 'KONSUMTIF' : 'PRODUKTIF'}</h1>
               <p className="text-[10px] text-gray-600 mt-1">Kepada: Yth. Direktur Utama PT. BPR BAPERA BATANG<br />Perihal: Permohonan Persetujuan Kredit</p>
             </div>
 
@@ -702,7 +702,249 @@ export default function MakPreviewPage() {
               </div>
 
             </div>
-                {/* ============================================================ */}
+
+          {/* ============================================================ */}
+          {/* LKD PAGES & ARUS KAS (ONLY FOR PRODUKTIF) */}
+          {/* ============================================================ */}
+          {!isKonsumtif && (
+            <>
+              {/* LKD 1 */}
+              <div className="print-page border-2 border-gray-800 p-8 mb-8 bg-white relative page-break-before">
+                <div className="text-center mb-6">
+                  <h1 className="text-sm font-bold tracking-wider uppercase underline">LAPORAN KUNJUNGAN DEBITUR 1</h1>
+                  <p className="text-[10px] text-gray-600 mt-1">Data Usaha & Analisa Keuangan</p>
+                </div>
+                <div className="space-y-4 text-xs">
+                  <h3 className="font-bold uppercase text-gray-950">A. INFORMASI TEMPAT USAHA</h3>
+                  <table className="w-full text-[11px] border border-gray-400 border-collapse">
+                    <tbody>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Nama Usaha</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase">{usaha.nama_usaha || pekerjaan.nama_instansi || '-'}</td>
+                      </tr>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Bidang Usaha</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase">{usaha.jenis_usaha || surveyUsaha.jenis_usaha || '-'}</td>
+                      </tr>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Alamat Usaha</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase">{usaha.alamat_usaha || pengajuan.alamat || '-'}</td>
+                      </tr>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Lama Usaha</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase">{usaha.lama_usaha_tahun || surveyUsaha.lama_usaha_tahun || 0} Tahun</td>
+                      </tr>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Status Tempat Usaha</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase">{usaha.status_tempat_usaha || '-'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <h3 className="font-bold uppercase text-gray-950 mt-4">B. ANALISA KEUANGAN (PER BULAN)</h3>
+                  <table className="w-full text-[11px] border border-gray-400 border-collapse">
+                    <tbody>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Pendapatan Usaha / Omset</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase text-right">Rp {parseFloat(financialAnalisa.rata_omset || 0).toLocaleString('id-ID')}</td>
+                      </tr>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Harga Pokok Penjualan (HPP)</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase text-right">Rp {parseFloat(financialAnalisa.rata_hpp || 0).toLocaleString('id-ID')}</td>
+                      </tr>
+                      <tr className="border-b border-gray-300 font-bold bg-gray-100">
+                        <td className="w-2/5 px-2 py-1 text-gray-900">Laba Kotor</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase text-right">Rp {parseFloat(financialAnalisa.laba_kotor || 0).toLocaleString('id-ID')}</td>
+                      </tr>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Biaya Operasional</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase text-right">Rp {parseFloat(financialAnalisa.rata_biaya_op || 0).toLocaleString('id-ID')}</td>
+                      </tr>
+                      <tr className="border-b border-gray-300 font-bold bg-emerald-50">
+                        <td className="w-2/5 px-2 py-1 text-gray-900">Keuntungan Usaha (Laba Bersih)</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase text-right">Rp {parseFloat(financialAnalisa.laba_bersih || 0).toLocaleString('id-ID')}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  
+                  <h3 className="font-bold uppercase text-gray-950 mt-4">C. KEBUTUHAN MODAL KERJA</h3>
+                  <table className="w-full text-[11px] border border-gray-400 border-collapse">
+                    <tbody>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Working Capital</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase text-right">Rp {parseFloat(financialAnalisa.working_capital || 0).toLocaleString('id-ID')}</td>
+                      </tr>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Gross Profit Margin (GPM)</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase text-right">{parseFloat(financialAnalisa.gross_profit_margin || 0).toFixed(2)} %</td>
+                      </tr>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Net Profit Margin (NPM)</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase text-right">{parseFloat(financialAnalisa.net_profit_margin || 0).toFixed(2)} %</td>
+                      </tr>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">DSCR</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase text-right">{parseFloat(financialAnalisa.dscr || 0).toFixed(2)} x</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* LKD 2 (Arus Kas - Cashflow Projection) */}
+              <div className="print-page border-2 border-gray-800 p-8 mb-8 bg-white relative page-break-before">
+                <div className="text-center mb-6">
+                  <h1 className="text-sm font-bold tracking-wider uppercase underline">LAPORAN ARUS KAS (CASHFLOW)</h1>
+                  <p className="text-[10px] text-gray-600 mt-1">Proyeksi 12 Bulan Kedepan</p>
+                </div>
+                
+                <div className="overflow-x-auto text-[8px]">
+                  <table className="w-full border border-gray-500 border-collapse text-right">
+                    <thead>
+                      <tr className="bg-gray-100 border-b border-gray-500 text-center">
+                        <th className="border-r border-gray-500 p-1 text-left">Komponen (Rp)</th>
+                        {[...Array(12)].map((_, i) => (
+                          <th key={i} className="border-r border-gray-500 p-1 w-16">Bln {i+1}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-gray-400 bg-emerald-50/50">
+                        <td className="border-r border-gray-400 p-1 text-left font-bold">Pemasukan (Omset)</td>
+                        {[...Array(12)].map((_, i) => {
+                           const fluktuasi = 1 + (Math.sin(i) * 0.05);
+                           const val = parseFloat(financialAnalisa.rata_omset || 0) * fluktuasi;
+                           return <td key={i} className="border-r border-gray-400 p-1">{Math.round(val).toLocaleString('id-ID')}</td>;
+                        })}
+                      </tr>
+                      <tr className="border-b border-gray-400">
+                        <td className="border-r border-gray-400 p-1 text-left font-semibold">Harga Pokok Penjualan</td>
+                        {[...Array(12)].map((_, i) => {
+                           const fluktuasi = 1 + (Math.sin(i) * 0.05);
+                           const val = parseFloat(financialAnalisa.rata_hpp || 0) * fluktuasi;
+                           return <td key={i} className="border-r border-gray-400 p-1">{Math.round(val).toLocaleString('id-ID')}</td>;
+                        })}
+                      </tr>
+                      <tr className="border-b border-gray-400 bg-blue-50/50">
+                        <td className="border-r border-gray-400 p-1 text-left font-bold">Laba Kotor</td>
+                        {[...Array(12)].map((_, i) => {
+                           const fluktuasi = 1 + (Math.sin(i) * 0.05);
+                           const val = (parseFloat(financialAnalisa.rata_omset || 0) - parseFloat(financialAnalisa.rata_hpp || 0)) * fluktuasi;
+                           return <td key={i} className="border-r border-gray-400 p-1 font-bold">{Math.round(val).toLocaleString('id-ID')}</td>;
+                        })}
+                      </tr>
+                      <tr className="border-b border-gray-400">
+                        <td className="border-r border-gray-400 p-1 text-left font-semibold">Biaya Operasional</td>
+                        {[...Array(12)].map((_, i) => (
+                           <td key={i} className="border-r border-gray-400 p-1">{Math.round(parseFloat(financialAnalisa.rata_biaya_op || 0)).toLocaleString('id-ID')}</td>
+                        ))}
+                      </tr>
+                      <tr className="border-b border-gray-400">
+                        <td className="border-r border-gray-400 p-1 text-left font-semibold">Angsuran Existing</td>
+                        {[...Array(12)].map((_, i) => (
+                           <td key={i} className="border-r border-gray-400 p-1">{Math.round(angsuranEksisting).toLocaleString('id-ID')}</td>
+                        ))}
+                      </tr>
+                      <tr className="border-b border-gray-400 border-t-2 border-t-gray-800 bg-gray-100">
+                        <td className="border-r border-gray-400 p-1 text-left font-bold">Net Cashflow</td>
+                        {[...Array(12)].map((_, i) => {
+                           const fluktuasi = 1 + (Math.sin(i) * 0.05);
+                           const inVal = parseFloat(financialAnalisa.rata_omset || 0) * fluktuasi;
+                           const outHpp = parseFloat(financialAnalisa.rata_hpp || 0) * fluktuasi;
+                           const op = parseFloat(financialAnalisa.rata_biaya_op || 0);
+                           const val = inVal - outHpp - op - angsuranEksisting;
+                           return <td key={i} className={`border-r border-gray-400 p-1 font-bold ${val < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{Math.round(val).toLocaleString('id-ID')}</td>;
+                        })}
+                      </tr>
+                      <tr className="border-b border-gray-400">
+                        <td className="border-r border-gray-400 p-1 text-left font-semibold">Rencana Angsuran BAPERA</td>
+                        {[...Array(12)].map((_, i) => (
+                           <td key={i} className="border-r border-gray-400 p-1 text-blue-800 font-bold">{Math.round(angsuranDiajukan).toLocaleString('id-ID')}</td>
+                        ))}
+                      </tr>
+                      <tr className="border-b border-gray-400 bg-amber-50">
+                        <td className="border-r border-gray-400 p-1 text-left font-bold">Sisa Kas (Ending Cash)</td>
+                        {[...Array(12)].map((_, i) => {
+                           const fluktuasi = 1 + (Math.sin(i) * 0.05);
+                           const inVal = parseFloat(financialAnalisa.rata_omset || 0) * fluktuasi;
+                           const outHpp = parseFloat(financialAnalisa.rata_hpp || 0) * fluktuasi;
+                           const op = parseFloat(financialAnalisa.rata_biaya_op || 0);
+                           const net = inVal - outHpp - op - angsuranEksisting;
+                           const ending = net - angsuranDiajukan;
+                           return <td key={i} className={`border-r border-gray-400 p-1 font-bold ${ending < 0 ? 'text-red-600' : ''}`}>{Math.round(ending).toLocaleString('id-ID')}</td>;
+                        })}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 text-[10px] space-y-1">
+                  <p><strong>Aturan Khusus Arus Kas (Otomatisasi):</strong></p>
+                  <ul className="list-disc ml-4 text-gray-700">
+                    <li>Pemasukan & HPP disimulasikan berfluktuasi secara natural (± 5%) per bulan untuk menggambarkan kondisi real.</li>
+                    <li>Rencana Angsuran diuji terhadap <em>Net Cashflow</em> bulanan untuk mengukur kemampuan bayar yang riil.</li>
+                    <li>Sisa Kas yang selalu positif menunjukkan kapasitas pembayaran (Capacity) yang memadai (DSCR: {parseFloat(financialAnalisa.dscr || 0).toFixed(2)}x).</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* LKD 3 & 4 (Denah & Survey Lingkungan) */}
+              <div className="print-page border-2 border-gray-800 p-8 mb-8 bg-white relative page-break-before">
+                <div className="text-center mb-6">
+                  <h1 className="text-sm font-bold tracking-wider uppercase underline">LAPORAN KUNJUNGAN DEBITUR 3 & 4</h1>
+                  <p className="text-[10px] text-gray-600 mt-1">Data Lingkungan & Lokasi Usaha</p>
+                </div>
+                <div className="space-y-4 text-xs">
+                   <h3 className="font-bold uppercase text-gray-950">A. DATA LINGKUNGAN / SOSIAL</h3>
+                   <table className="w-full text-[11px] border border-gray-400 border-collapse">
+                    <tbody>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Karakter Debitur (1-5)</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase">{surveyLingkungan.karakter_debitur || '-'} / 5 - {surveyLingkungan.karakter_keterangan || '-'}</td>
+                      </tr>
+                      <tr className="border-b border-gray-300">
+                        <td className="w-2/5 px-2 py-1 font-semibold text-gray-700 bg-gray-50">Hubungan Sosial (1-5)</td>
+                        <td className="w-2 text-center">:</td>
+                        <td className="px-2 py-1 uppercase">{surveyLingkungan.hubungan_sosial || '-'} / 5 - {surveyLingkungan.hubungan_keterangan || '-'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <h3 className="font-bold uppercase text-gray-950 mt-4">B. PETA / DENAH LOKASI</h3>
+                  <div className="border border-gray-400 p-2 bg-gray-50 flex items-center justify-center min-h-[300px]">
+                    <div className="text-center text-gray-500">
+                      {surveyUsaha.latitude && surveyUsaha.longitude ? (
+                        <>
+                          <div className="text-[10px] mb-2 font-mono">Koordinat GPS: {surveyUsaha.latitude}, {surveyUsaha.longitude}</div>
+                          <div className="w-64 h-64 border-2 border-dashed border-gray-400 rounded-sm flex items-center justify-center bg-gray-200">
+                            Peta Lokasi Tersedia di Lampiran / App Maps
+                          </div>
+                        </>
+                      ) : (
+                        "[ Tidak ada data koordinat GPS untuk dirender ]"
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ============================================================ */}
           {/* PAGE 3: JAMINAN KREDIT, ASURANSI, USULAN & SIGNATURES */}
           {/* ============================================================ */}
           <div className="print-page border-2 border-gray-800 p-8 mb-8 bg-white relative page-break-before">
@@ -1045,16 +1287,6 @@ export default function MakPreviewPage() {
                         <td>:</td>
                         <td className="py-0.5">{mainAgunan.fasilitas_air || '-'}</td>
                       </tr>
-                      <tr>
-                        <td className="py-0.5">- Fasilitas Telepon</td>
-                        <td>:</td>
-                        <td className="py-0.5">-</td>
-                      </tr>
-                      <tr>
-                        <td className="py-0.5">- Sarana Pelengkap lain</td>
-                        <td>:</td>
-                        <td className="py-0.5">-</td>
-                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -1064,11 +1296,11 @@ export default function MakPreviewPage() {
                   <div className="pl-4 space-y-2">
                     <p><strong>a. TANAH</strong></p>
                     <p className="pl-2 leading-relaxed">
-                      Berdasarkan metode pendekatan pasar maka kami berpendapat bahw Nilai Pasar Wajar (NPW) tanah tersebut pada tanggal {formatDate(new Date())} adalah sebesar <strong>Rp. {parseFloat(mainAgunan.nilai_pasar || 0).toLocaleString('id-ID')}</strong> ( {formatTerbilangRupiah(mainAgunan.nilai_pasar || 0)} ) dengan harga taksiran tanah sebesar Rp. 200.000 ( Dua Ratus Ribu Rupiah ) /M2.
+                      Berdasarkan metode pendekatan pasar maka kami berpendapat bahw Nilai Pasar Wajar (NPW) tanah tersebut pada tanggal {formatDate(new Date())} adalah sebesar <strong>Rp. {parseFloat(mainAgunan.nilai_pasar || 0).toLocaleString('id-ID')}</strong> ( {formatTerbilangRupiah(mainAgunan.nilai_pasar || 0)} ) dengan harga taksiran tanah sebesar Rp. {parseFloat(mainAgunan.luas_tanah || 0) > 0 ? Math.round(parseFloat(mainAgunan.nilai_pasar || 0) / parseFloat(mainAgunan.luas_tanah)).toLocaleString('id-ID') : '-'} /M2.
                     </p>
                     <p><strong>b. BANGUNAN</strong></p>
                     <p className="pl-2 leading-relaxed">
-                      Dengan mempertimbangkan biaya membangun baru dari bangunan serta sarana pelengkap setelah dikurangi penyusutan dan pendekatan pasar/dan pendekatan pendapatan, maka kami berpendapat bahwa nilai pasar wajar dari bangunan pada tanggal {formatDate(new Date())} adalah sebesar Rp. ( Nol Rupiah ) dengan harga taksiran bangunan Rp. ( Nol Rupiah ) /M2.
+                      Dengan mempertimbangkan biaya membangun baru dari bangunan serta sarana pelengkap setelah dikurangi penyusutan dan pendekatan pasar/dan pendekatan pendapatan, maka kami berpendapat bahwa nilai pasar wajar dari bangunan pada tanggal {formatDate(new Date())} adalah sebesar Rp. - dengan harga taksiran bangunan Rp. - /M2.
                     </p>
                     <p><strong>c. TANAH DAN BANGUNAN</strong></p>
                     <div className="pl-2">

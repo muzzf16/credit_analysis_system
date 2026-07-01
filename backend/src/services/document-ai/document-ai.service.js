@@ -109,53 +109,12 @@ Gunakan format persis berikut:
 {"nomor_npwp":"","nama":"","alamat":""}`;
 
     case 'shm':
-      return `Kamu adalah sistem OCR dokumen Indonesia yang ahli membaca Sertifikat Hak Milik (SHM) Indonesia.
-ATURAN KETAT:
-1. DILARANG mengarang, menebak, atau menambah data yang tidak tertulis di gambar.
-2. Jika field tidak terbaca atau tidak ada di gambar ini, isi dengan string kosong "" atau null.
-3. Kembalikan HANYA JSON valid tanpa markdown, tanpa komentar.
-
-Gambar ini mungkin salah satu halaman SHM: Cover (DAFTAR ISIAN 206), Pendaftaran Pertama, Peralihan Hak/HT, atau Surat Ukur (DAFTAR ISIAN 207). Ekstrak semua yang terlihat.
-
-PANDUAN BACA:
-- Pojok kiri/kanan atas: KODE DOKUMEN format 3 huruf+6 angka (contoh: AAW579903)
-- "HAK : MILIK  No. XXXXX" = jenis_hak dan nomor_sertifikat
-- Barcode kotak-kotak bawah = NIB format 11.32.08.05.XXXXX (baca tiap kotak, titik = pemisah)
-- "f) NAMA PEMEGANG HAK" = nama_pemegang_hak (huruf kapital)
-- "Tanggal lahir / akta pendirian" di bawah nama = tanggal_lahir_pemegang (format DD-MM-YYYY, 31051992 = 31-05-1992)
-- "b) NIB" = nib
-- "e) SURAT UKUR  No." = nomor_surat_ukur (format XXXXX/NamaDesa/TAHUN)
-- "Luas :" atau "e) Luas:" = luas dalam m²
-- "DAFTAR ISIAN 307 No." dan "DAFTAR ISIAN 208 No." = nomor pencatatan
-- "HAK TANGGUNGAN Nomor XXXXX/YYYY" di tabel peralihan = nomor_ht
-- Nama bank/kreditur di kolom kanan tabel peralihan = nama_kreditur_ht
-
-Kembalikan JSON persis berikut (isi apa yang terbaca, kosongkan yang tidak ada):
-{
-  "kode_dokumen": "",
-  "nomor_sertifikat": "",
-  "jenis_hak": "HAK MILIK",
-  "nib": "",
-  "nama_pemegang_hak": "",
-  "tanggal_lahir_pemegang": "",
-  "provinsi": "",
-  "kabupaten_kota": "",
-  "kecamatan": "",
-  "desa_kelurahan": "",
-  "kantor_pertanahan": "",
-  "luas_m2": 0,
-  "luas_terbilang": "",
-  "keadaan_tanah": "",
-  "nomor_surat_ukur": "",
-  "tanggal_surat_ukur": "",
-  "asal_hak": "",
-  "tanggal_pembukuan": "",
-  "daftar_isian_307": "",
-  "daftar_isian_208": "",
-  "hak_tanggungan_aktif": false,
-  "nama_kreditur_ht": "",
-  "nomor_ht": ""
-}`;
+    case 'shm_cover':
+    case 'shm_pendaftaran':
+    case 'shm_peralihan':
+    case 'shm_surat_ukur':
+    case 'shm_peta':
+      return `text recognition`;
 
     case 'bpkb':
       return `Kamu adalah sistem OCR dokumen Indonesia. BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR BPKB KENDARAAN.
@@ -184,45 +143,98 @@ Gunakan format persis berikut:
 {"jenis_usaha":"","perkiraan_skala":"kecil/menengah/besar","kondisi_bangunan":"baik/sedang/kurang","indikasi_aktif":true,"catatan":""}
 Pada field catatan, tuliskan observasi singkat tentang kondisi usaha yang terlihat di foto.`;
 
-    case 'shm_cover':
-      return `Baca HALAMAN COVER Sertifikat Hak Milik (SHM).
-ATURAN: Baca secara akurat. HANYA JSON.
 
-Output JSON:
-{"kode_dokumen":"","nomor_sertifikat":"","jenis_hak":"HAK MILIK","nib":"","provinsi":"","kabupaten_kota":"","kecamatan":"","desa_kelurahan":"","kantor_pertanahan":"","daftar_isian_307":"","daftar_isian_208":""}`;
-
-    // ── SHM: Halaman Pendaftaran Pertama ────────────────────────────────────
-    case 'shm_pendaftaran':
-      return `Baca halaman PENDAFTARAN - PERTAMA Sertifikat Hak Milik.
-ATURAN: Baca tulisan tangan/ketikan di kotak secara akurat. HANYA JSON.
-
-Output JSON:
-{"nama_pemegang_hak":"","tanggal_lahir_pemegang":"","nib":"","nomor_sertifikat":"","desa_kelurahan":"","asal_hak":"","luas_m2":0,"keadaan_tanah":"","nomor_surat_ukur":"","tanggal_surat_ukur":"","tanggal_pembukuan":""}`;
-
-    // ── SHM: Halaman Peralihan Hak / Hak Tanggungan ─────────────────────────
-    case 'shm_peralihan':
-      return `Baca tabel PENDAFTARAN PERALIHAN HAK/HAK TANGGUNGAN di SHM.
-ATURAN: Deteksi semua kejadian (HAK TANGGUNGAN, Jual Beli, Pewarisan, dll) di tabel. HANYA JSON.
-
-Output JSON:
-{"hak_tanggungan_aktif":false,"nama_kreditur_ht":"","nomor_ht":"","tanggal_apht":"","apht_ppat":"","kejadian":[]}`;
-
-    // ── SHM: Halaman Surat Ukur (DAFTAR ISIAN 207) ──────────────────────────
-    case 'shm_surat_ukur':
-      return `Baca SURAT UKUR di Sertifikat Hak Milik. HANYA JSON.
-
-Output JSON:
-{"kode_dokumen":"","nib":"","nomor_surat_ukur":"","provinsi":"","kabupaten_kota":"","kecamatan":"","desa_kelurahan":"","peta_lembar":"","peta_kotak":"","keadaan_tanah":"","luas_m2":0,"luas_terbilang":"","koordinat":""}`;
-
-    // ── SHM: Halaman Peta Bidang ─────────────────────────────────────────────
-    case 'shm_peta':
-      return `Baca PETA BIDANG TANAH / SURAT UKUR di SHM. HANYA JSON.
-
-Output JSON:
-{"skala":"","nomor_bidang_utama":"","nama_tetangga":[],"label_objek":[],"koordinat":"","penjelasan_legenda":""}`;
 
     default:
       return `Ekstrak semua teks dan data dari dokumen ini. Kembalikan JSON valid tanpa markdown.`;
+  }
+}
+
+/**
+ * Pass 2: Parsing raw text from VLM using LLM (Qwen3.5)
+ */
+async function callLlmParsing(rawText, type) {
+  let schemaInstruction = '';
+  switch (type.toLowerCase()) {
+    case 'shm_cover':
+      schemaInstruction = `{"kode_dokumen":"","nomor_sertifikat":"","jenis_hak":"HAK MILIK","nib":"","provinsi":"","kabupaten_kota":"","kecamatan":"","desa_kelurahan":"","kantor_pertanahan":"","daftar_isian_307":"","daftar_isian_208":""}`;
+      break;
+    case 'shm_pendaftaran':
+      schemaInstruction = `{"nama_pemegang_hak":"","tanggal_lahir_pemegang":"","nib":"","nomor_sertifikat":"","desa_kelurahan":"","asal_hak":"","luas_m2":0,"keadaan_tanah":"","nomor_surat_ukur":"","tanggal_surat_ukur":"","tanggal_pembukuan":""}`;
+      break;
+    case 'shm_peralihan':
+      schemaInstruction = `{"hak_tanggungan_aktif":false,"nama_kreditur_ht":"","nomor_ht":"","tanggal_apht":"","apht_ppat":"","kejadian":[]}`;
+      break;
+    case 'shm_surat_ukur':
+      schemaInstruction = `{"kode_dokumen":"","nib":"","nomor_surat_ukur":"","provinsi":"","kabupaten_kota":"","kecamatan":"","desa_kelurahan":"","peta_lembar":"","peta_kotak":"","keadaan_tanah":"","luas_m2":0,"luas_terbilang":"","koordinat":""}`;
+      break;
+    case 'shm_peta':
+      schemaInstruction = `{"skala":"","nomor_bidang_utama":"","nama_tetangga":[],"label_objek":[],"koordinat":"","penjelasan_legenda":""}`;
+      break;
+    default:
+      schemaInstruction = `{"kode_dokumen":"","nomor_sertifikat":"","jenis_hak":"HAK MILIK","nib":"","nama_pemegang_hak":"","tanggal_lahir_pemegang":"","provinsi":"","kabupaten_kota":"","kecamatan":"","desa_kelurahan":"","kantor_pertanahan":"","luas_m2":0,"luas_terbilang":"","keadaan_tanah":"","nomor_surat_ukur":"","tanggal_surat_ukur":"","asal_hak":"","tanggal_pembukuan":"","daftar_isian_307":"","daftar_isian_208":"","hak_tanggungan_aktif":false,"nama_kreditur_ht":"","nomor_ht":""}`;
+      break;
+  }
+
+  const prompt = `Kamu adalah AI ekstraksi data profesional. Ekstrak entitas dari teks OCR mentah berikut ke dalam format JSON yang sangat ketat.
+ATURAN KETAT:
+1. Jika data tidak ada di teks mentah, kosongkan ("" atau 0 atau null).
+2. HANYA keluarkan JSON valid tanpa markdown atau teks pengantar.
+
+FORMAT JSON YANG DIHARAPKAN:
+${schemaInstruction}
+
+TEKS OCR MENTAH:
+${rawText}`;
+
+  const payload = {
+    model: config.llmModelName || "qwen3.5",
+    messages: [
+      { role: "system", content: "You are a precise JSON data extraction AI." },
+      { role: "user", content: prompt }
+    ],
+    temperature: 0.0,
+    response_format: { type: "json_object" }
+  };
+
+  const url = `${config.llmApiUrl}/chat/completions`;
+  console.log(`[Document AI] Memanggil LLM Parsing di ${url} untuk tipe ${type}`);
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.llmApiKey}`
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`LLM HTTP ${response.status}: ${await response.text()}`);
+    }
+
+    const resJson = await response.json();
+    let content = resJson?.choices?.[0]?.message?.content || '{}';
+    content = content.trim();
+    if (content.startsWith('```')) {
+      content = content.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+    }
+    const jsonStart = content.indexOf('{');
+    if (jsonStart > 0) {
+      content = content.substring(jsonStart);
+    }
+    return JSON.parse(content);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.error('[Document AI] LLM Parsing Error:', err.message);
+    throw err;
   }
 }
 
@@ -249,9 +261,13 @@ async function callLfmVisionOnce(buffer, mimetype, type, timeoutMs = 90000) {
       }
     ],
     temperature: 0.0,
-    max_tokens: 1024,
-    response_format: { type: "json_object" }
+    max_tokens: 1024
   };
+
+  // Hanya terapkan grammar JSON untuk dokumen yang prompt-nya mengharapkan JSON
+  if (!type.startsWith('shm')) {
+    payload.response_format = { type: "json_object" };
+  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -293,8 +309,16 @@ async function callLfmVisionOnce(buffer, mimetype, type, timeoutMs = 90000) {
       content = content.substring(jsonStart);
     }
 
-    const parsed = JSON.parse(content.trim());
-    console.log(`[LFM VLM RAW] Output:`, content);
+    let parsed;
+    try {
+      parsed = JSON.parse(content.trim());
+    } catch (parseError) {
+      // Jika model mengembalikan plain text (karena json_object dimatikan),
+      // kita bungkus manual agar pipeline bisa mengekstraknya
+      console.log(`[LFM VLM RAW] Output (Not JSON):`, content);
+      parsed = { raw_text: content.trim().split('\n') };
+    }
+    
     console.log(`[LFM VLM PARSED] Output:`, parsed);
     return parsed;
   } catch (err) {
@@ -449,12 +473,27 @@ async function extractDocumentData(fileBuffer, type, mimetype = '', originalname
   }
 
   // Run OCR Pipeline
-  // VLM fallback wrapper
+  // VLM fallback wrapper (dengan implementasi Two-Pass untuk SHM)
   const vlmFallback = async (buffer, mime, t) => {
+    let result;
     if (config.ocrEngine === 'lfm') {
-      return await callLfmVision(buffer, mime, t);
+      result = await callLfmVision(buffer, mime, t);
+    } else {
+      result = await callGlmVision(buffer, mime, t);
     }
-    return await callGlmVision(buffer, mime, t);
+    
+    // Single-Pass Pipeline untuk SHM (Bypass LLM, lempar raw_text ke frontend)
+    if (t.startsWith('shm')) {
+      console.log(`[Document AI] SHM Single-Pass: Mengembalikan hasil raw_text langsung ke frontend`);
+      if (result.raw_text) {
+        let textToParse = Array.isArray(result.raw_text) ? result.raw_text.join('\n') : result.raw_text;
+        return { raw_text: textToParse };
+      } else {
+        return result;
+      }
+    }
+    
+    return result;
   };
 
   return await ocrPipeline.run(processingBuffer, type, processingMime, vlmFallback);

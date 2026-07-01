@@ -1,0 +1,969 @@
+--- sheet001.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:1.0in .75in 1.0in .75in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(0);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | <!-- --> | <!--
+
+function msoCommentShow(com_id,anchor_id) {
+	if(msoBrowserCheck()) {
+	   c = document.all(com_id);
+	   a = document.all(anchor_id);
+	   if (null != c) {
+		var cw = c.offsetWidth;
+		var ch = c.offsetHeight;
+		var aw = a.offsetWidth;
+		var ah = a.offsetHeight;
+		var x = a.offsetLeft;
+		var y = a.offsetTop;
+		var el = a;
+		while (el.tagName != "BODY") {
+		   el = el.offsetParent;
+		   x = x + el.offsetLeft;
+		   y = y + el.offsetTop;
+		   }		
+		var bw = document.body.clientWidth;
+		var bh = document.body.clientHeight;
+		var bsl = document.body.scrollLeft;
+		var bst = document.body.scrollTop;
+		if (x + cw + ah/2 > bw + bsl && x + aw - ah/2 - cw >= bsl ) {
+		   c.style.left = x + aw - ah / 2 - cw; 
+		}
+		else {
+		   c.style.left = x + ah/2; 
+		}
+		if (y + ch + ah/2 > bh + bst && y + ah/2 - ch >= bst ) {
+	 	   c.style.top = y + ah/2 - ch;
+		} 
+		else {
+		   c.style.top = y + ah/2;
+		}
+		c.style.visibility = "visible";
+	   }
+	}
+}
+
+function msoCommentHide(com_id) {
+	if(msoBrowserCheck()) {
+	  c = document.all(com_id)
+	  if (null != c) {
+	    c.style.visibility = "hidden";
+	    c.style.left = "-10000";
+	    c.style.top = "-10000";
+	  }
+	}
+}
+
+function msoBrowserCheck() {
+ ms=navigator.appVersion.indexOf("MSIE");
+ vers = navigator.appVersion.substring(ms+5, ms+6);
+ ie4 = (ms>0) && (parseInt(vers) >=4);
+ return ie4
+}
+
+if (msoBrowserCheck()) {
+document.styleSheets.dynCom.addRule(".ms...
+
+--- sheet002.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in .7in .75in .7in;
+	mso-header-margin:.3in;
+	mso-footer-margin:.3in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(1);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | <!-- --> | <!--
+
+function msoCommentShow(com_id,anchor_id) {
+	if(msoBrowserCheck()) {
+	   c = document.all(com_id);
+	   a = document.all(anchor_id);
+	   if (null != c) {
+		var cw = c.offsetWidth;
+		var ch = c.offsetHeight;
+		var aw = a.offsetWidth;
+		var ah = a.offsetHeight;
+		var x = a.offsetLeft;
+		var y = a.offsetTop;
+		var el = a;
+		while (el.tagName != "BODY") {
+		   el = el.offsetParent;
+		   x = x + el.offsetLeft;
+		   y = y + el.offsetTop;
+		   }		
+		var bw = document.body.clientWidth;
+		var bh = document.body.clientHeight;
+		var bsl = document.body.scrollLeft;
+		var bst = document.body.scrollTop;
+		if (x + cw + ah/2 > bw + bsl && x + aw - ah/2 - cw >= bsl ) {
+		   c.style.left = x + aw - ah / 2 - cw; 
+		}
+		else {
+		   c.style.left = x + ah/2; 
+		}
+		if (y + ch + ah/2 > bh + bst && y + ah/2 - ch >= bst ) {
+	 	   c.style.top = y + ah/2 - ch;
+		} 
+		else {
+		   c.style.top = y + ah/2;
+		}
+		c.style.visibility = "visible";
+	   }
+	}
+}
+
+function msoCommentHide(com_id) {
+	if(msoBrowserCheck()) {
+	  c = document.all(com_id)
+	  if (null != c) {
+	    c.style.visibility = "hidden";
+	    c.style.left = "-10000";
+	    c.style.top = "-10000";
+	  }
+	}
+}
+
+function msoBrowserCheck() {
+ ms=navigator.appVersion.indexOf("MSIE");
+ vers = navigator.appVersion.substring(ms+5, ms+6);
+ ie4 = (ms>0) && (parseInt(vers) >=4);
+ return ie4
+}
+
+if (msoBrowserCheck()) {
+document.styleSheets.dynCom.addRule(".msoc...
+
+--- sheet003.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in 0in .75in 0in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(2);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | <!-- --> | <!--
+
+function msoCommentShow(com_id,anchor_id) {
+	if(msoBrowserCheck()) {
+	   c = document.all(com_id);
+	   a = document.all(anchor_id);
+	   if (null != c) {
+		var cw = c.offsetWidth;
+		var ch = c.offsetHeight;
+		var aw = a.offsetWidth;
+		var ah = a.offsetHeight;
+		var x = a.offsetLeft;
+		var y = a.offsetTop;
+		var el = a;
+		while (el.tagName != "BODY") {
+		   el = el.offsetParent;
+		   x = x + el.offsetLeft;
+		   y = y + el.offsetTop;
+		   }		
+		var bw = document.body.clientWidth;
+		var bh = document.body.clientHeight;
+		var bsl = document.body.scrollLeft;
+		var bst = document.body.scrollTop;
+		if (x + cw + ah/2 > bw + bsl && x + aw - ah/2 - cw >= bsl ) {
+		   c.style.left = x + aw - ah / 2 - cw; 
+		}
+		else {
+		   c.style.left = x + ah/2; 
+		}
+		if (y + ch + ah/2 > bh + bst && y + ah/2 - ch >= bst ) {
+	 	   c.style.top = y + ah/2 - ch;
+		} 
+		else {
+		   c.style.top = y + ah/2;
+		}
+		c.style.visibility = "visible";
+	   }
+	}
+}
+
+function msoCommentHide(com_id) {
+	if(msoBrowserCheck()) {
+	  c = document.all(com_id)
+	  if (null != c) {
+	    c.style.visibility = "hidden";
+	    c.style.left = "-10000";
+	    c.style.top = "-10000";
+	  }
+	}
+}
+
+function msoBrowserCheck() {
+ ms=navigator.appVersion.indexOf("MSIE");
+ vers = navigator.appVersion.substring(ms+5, ms+6);
+ ie4 = (ms>0) && (parseInt(vers) >=4);
+ return ie4
+}
+
+if (msoBrowserCheck()) {
+document.styleSheets.dynCom.addRule(".msoc...
+
+--- sheet004.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in .7in .75in .7in;
+	mso-header-margin:.3in;
+	mso-footer-margin:.3in;
+	mso-horizontal-page-align:center;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(3);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | OPINI | KEPATUHAN | Data Debitur | Nama
+  Debitur | BAMBANG HADIYANTO | Plafond
+  (Rp) | Rp | 50,000,000 | ( | Lima Puluh Juta Rupiah ) | Jangka
+  Waktu | 36 | Bulan | Angsuran/bula | n | Rp | 1,807,650 | ( | Satu Juta Delapan Ratus Tujuh Ribu Enam Ratu | s
+  Lima Puluh Rupiah ) | Alamat
+  Debitur | DUSUN DEPOK KULON RT:03 RW:02 DEPOK KANDEMAN | Jenis
+  Kredit | SEJAHTERA | Agunan | 0 | Catatan Kepatuhan | 1. | Pemberian kredit kepada
+  calon debitur besar | Ya | Tidak | 2. | Keterkaitan dengan BPR | Terkait | Tidak | 3. | Kredit kepada PEP | Ya | Tidak | 4. | Histori pinjaman
+  bermasalah pada bank lain | Ada | Tidak | 5. | Kredit restrukturisasi
+  yang bernilai besar | Ya | Tidak | 6. | Kredit Sindikasi | Ya | Tidak | 7. | Kredit melebihi batas BMPK baik untuk
+  perorangan, kelompok maupun pihak terkait | Ya | Tidak | 8. | Kredit
+  ber-resiko lain yang memerlukan pertimbangan untuk memitigasi potensi | potensi resiko yang akan diambil | Ya | Tidak | Mengetahui | Batang,
+  .............................. | PE Kepatuhan | Direktur | DINA SAPTARIANI, SE | IFAN ARDANA, S.E, M.Si.
+
+--- sheet005.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in .2in .75in .2in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(4);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | MEMORANDUM ANALISA KREDIT KONSUMTIF | Kepada | : Yth. Direktur Utama
+  PT. BPR BAPERA BATANG | Perihal | : Permohonan Persetujuan
+  Kredit | A. | DATA UMUM PEMOHON | Nama Pemohon | : | BAMBANG HADIYA | NTO | Tempat, tanggal lahir | : | 02/07/1977 | Umur : | 48 TAHUN 11 BULAN | Umur | : | 48 TAHUN | Kewarganegaraan | : | WNI | Alamat | : | DUSUN DEPOK KULON
+  RT:03 RW:02 DEPOK KANDEMAN | Perusahaan / Instansi | : | - | Jabatan | : | N I P | : | - | Nama gadis ibu kandung | : | SUPRIYATI | Usaha diluar instansi | : | Klasifikasi usaha | : | KECIL/SEDANG/BESAR | N P W P (plafond 100 jt
+  keatas) | : | - | Hubungan dengan Bank | : | NASABAH BARU | { Diisi | : | Nasabah Lama / Nasabah Baru } | Kredit yang sedang
+  dinikmati | : | 1 | { Diisi | : | (1) Ada | (2) Tidak ada } | Jika ada (1) harap diisi
+  : | CIMB | 21,019,451 | 21,019,451 | 32 | 8.15% | 1 | 733,050 | Catatan
+  SLIK | FIF | 2,335,495 | 2,335,495 | 35 | 27.61% | 1 | 97,900 | NAMA BANK | PLAFOND | BAKI DEBET | JW | BUNGA | KOL | ANGSURAN | Catatan SLIK
+  Pasangan | BRI | 55,000,000 | # | 33,538,604 | 60 | 22.00% | 1 | 1,519,050 | PPPK | 3,976,600 | 3,463,600 | KADES | 3,172,000 | 3,168,000 | TOTAL | 55,000,000 | 54,558,055 | 1,519,050 | SEKDES | 2,365,600 | 2,361,600 | KAUR/KA | SI/KADUS | 2,099,630 | 2,095,653 | B. | ASPEK KEUANGAN | B.1. | Data Pendapatan dan Pengeluaran per Bulan | A | Penghasilan per bulan
+  yang diterima Pemoh...
+
+--- sheet006.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.87in 0in .75in .55in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(5);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | MEMORANDUM ANALISA KREDIT PRODUKTIF | Tanggal: | 16/05/2026 | Area | BAPERA PUSAT | Nama Debitur | AMAT ASARI | Jenis Usaha | LAINNYA | Alamat Usaha | KECEPAK RT 004 RW 002
+  BATANG | Profil Kredit | Jenis Produk Kredit Yang Diajukan | SEJAHTERA | Fasilitas Yang Diajukan | Rp | 50,000,000 | 50000000.. | Jangka
+  Waktu (bulan) | 36 | 36.. | Suku
+  Bunga (p.a.) | 18.00% | ANUITAS | .18. | Angsuran | Rp | 1,807,650 | 1807650.. | Provisi | 2.00% | Tujuan Pengajuan Kredit | JUAL BELI GABAH/PADI
+  KERING 70 TON | Fasilitas kredit di BPR BAPERA | CIMB | 20,000,000 | 6,283,000 | 24 | 13.30% | 5 | 953,700 | NAMA BANK | PLAFOND | BAKI DEBET | JW | BUNGA | KOL | ANGSURAN | FIF | 2,335,495 | 2,335,495 | 35 | 27.61% | 1 | 97,900 | ISTRI | Jumlah | - | - | - | Fasilitas kredit/Pembiayaan di Tempat Lain | NAMA BANK | PLAFOND | BAKI DEBET | JW | BUNGA | KOL | ANGSURAN | BRI | 20,000,000 | 6,283,000 | 24 | 12.30% | 5 | 953,700 | TANAH DAN BANGUNAN | HARGA SESUAI NJOP/M | Jumlah | 20,000,000 | 6,283,000 | 953,700 | Jaminan | (Tidak termasuk untuk fasilitas
+  berjalan, kecuali untuk penggabungan fasilitas) | Jenis Jaminan ke 1 & No. Dokumen | Alamat Jaminan | LT / LB (m2) | Jenis | Atas Nama | Jenis | SHM | TANAH | 135,000 | 25,245,000 | SHM No.11.32.000012124.0 | DEPOK/KANDEMAN | 511
+  / 60 | TANAH DAN BANGUNAN | BAMBANG
+  HADIYANTO | No SHM/SHGB | 000555 | BANGUNAN | 500,000 | 37,500,000 | Nama Pemilik |...
+
+--- sheet007.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in 0in .75in .2in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(6);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | LAPORAN KUNJUNGAN DEBITUR 1 (Dipisah per Usaha) | Tanggal Penilaian | 02/06/2026 | No Aplikasi | - | Status Permohonan | BARU | Nama Orang Yang Ditemui | BAMBANG HADIYANTO DAN - | Unit/Area | BAPERA PUSAT | Nama Calon Deb. | BAMBANG HADIYANTO | Hubungan | Pemohon Sendiri dan Pemilik Jaminan | INFORMASI TEMPAT USAHA | Nama Usaha | JUAL BELI GABAH/PADI KERING | Bidang Usaha | PERDAGANGAN | Alamat Usaha | DUSUN DEPOK KULON RT:03 RW:02 DEPOK
+  KANDEMAN | Telp/Fax | '082221665377 | Lama Usaha di Usaha ini | 7 Tahun | Status Tempat Usaha | MILIK SENDIRI-BELI | Jenis Tempat Usaha | LAINNYA | Aspek Pemasaran | LAINNYA | Jenis Usaha | LAINNYA | Lokasi Usaha | PASAR SEKUNDER | Jarak Lokasi Usaha ke UM | 5.0 | Km | ANALISA KEUANGAN (PER BULAN) | Pendapatan Usaha/Sales | Rp | 7,500,000 | Harga Pokok Penjualan | Rp | 3,750,000 | Sewa/Kontrak | Rp | - | Gaji Pegawai | Rp | - | Telpon, Listrik & Air | Rp | 300,000 | Transportasi | Rp | 500,000 | Pengeluaran Lainnya | Rp | 700,000 | Pengeluaran Usaha | Rp | 5,250,000 | Keuntungan Usaha | Rp | 2,250,000 | Penghasilan Lainnya | Rp | 4,600,000 | Total Penghasilan | Rp | 6,850,000 | ANALISA KEBUTUHAN MODAL KERJA (WI) | CARA
+  1: | PERSEDIAAN/INVENTORY | Rp | 150,000,000 | PIUTANG DAGANG | Rp | - | UTANG DAGANG | Rp | - | WI NERACA | Rp | 150,000,000 | DOH (hari) | 26 | DOH (hari) | 0 | DOH (hari) | 0 | Gr | oss Profit Margin | 50% | CARA 2: | PERPUTARAN PERS...
+
+--- sheet008.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in 0in .75in .3in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(7);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | <!-- --> | <!--
+
+function msoCommentShow(com_id,anchor_id) {
+	if(msoBrowserCheck()) {
+	   c = document.all(com_id);
+	   a = document.all(anchor_id);
+	   if (null != c) {
+		var cw = c.offsetWidth;
+		var ch = c.offsetHeight;
+		var aw = a.offsetWidth;
+		var ah = a.offsetHeight;
+		var x = a.offsetLeft;
+		var y = a.offsetTop;
+		var el = a;
+		while (el.tagName != "BODY") {
+		   el = el.offsetParent;
+		   x = x + el.offsetLeft;
+		   y = y + el.offsetTop;
+		   }		
+		var bw = document.body.clientWidth;
+		var bh = document.body.clientHeight;
+		var bsl = document.body.scrollLeft;
+		var bst = document.body.scrollTop;
+		if (x + cw + ah/2 > bw + bsl && x + aw - ah/2 - cw >= bsl ) {
+		   c.style.left = x + aw - ah / 2 - cw; 
+		}
+		else {
+		   c.style.left = x + ah/2; 
+		}
+		if (y + ch + ah/2 > bh + bst && y + ah/2 - ch >= bst ) {
+	 	   c.style.top = y + ah/2 - ch;
+		} 
+		else {
+		   c.style.top = y + ah/2;
+		}
+		c.style.visibility = "visible";
+	   }
+	}
+}
+
+function msoCommentHide(com_id) {
+	if(msoBrowserCheck()) {
+	  c = document.all(com_id)
+	  if (null != c) {
+	    c.style.visibility = "hidden";
+	    c.style.left = "-10000";
+	    c.style.top = "-10000";
+	  }
+	}
+}
+
+function msoBrowserCheck() {
+ ms=navigator.appVersion.indexOf("MSIE");
+ vers = navigator.appVersion.substring(ms+5, ms+6);
+ ie4 = (ms>0) && (parseInt(vers) >=4);
+ return ie4
+}
+
+if (msoBrowserCheck()) {
+document.styleSheets.dynCom.addRule(".mso...
+
+--- sheet009.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in 0in .75in .35in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(8);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | LAPORAN KUNJUNGAN DEBITUR 3
+  - CO | Ta | nggal Penilaian | 02/06/2026 | Unit/Area | BAPERA PUSAT | No | Aplikasi | - | Nama Calon Deb. | BAMBANG HADI | YANTO | Latar Belakang Pengajuan Fasilitas Kredit | (Penjelasan singkat mengenai tujuan pinjaman, latar belakang
+  dan perkembangan usaha nasabah) | 1.
+  Latar Belakang Usaha | (Jelaskan mengenai
+  kapan Usaha dimulai dan bagaimana Usaha ini dibangun serta tujuan dari
+  pinjaman) | 1. | Kapan usaha ini di mulai dan bagaimana perkembangannya.? | - | Ybs (48 tahun) adalah seorang yang memiliki usaha JUAL BELI
+  GABAH/PADI KERING | - | Ybs adalah pedagang dengan pelanggan yang relatif banyak. | - | Usaha ybs buka setiap hari, dari jam 07.00 S.D. 16.00 WIB | - | 2. | Tujuan
+  Pinjaman | - | Tujuan
+  pinjaman fasilitas kredit dengan plafon Rp. 50000000..,- jangka waktu 36
+  bulan akan digunakan untuk tambahan modal usaha. | - | 3. | Note | - | Dari verifikasi di
+  lapangan, tidak ditemukan informasi negatif mengenai karakter dan usaha
+  debitur. | - | Slik aktif pasangan: | NAMA BANK | PLAFOND | BAKI DEBET | JW | BUNGA | KOL | ANGSURAN | 22 | CIMB | ######## | 21,019,451 | 32 | 8.15% | 1 | 733,050 | 5 | ############ | CASWATI | FIF | ######## | 2,335,495 | 35 | 27.61% | 1 | 97,900 | 1 | ############ | TOTAL | - | - | - | LOKASI JAMINAN &
+  LOKASI USAHA: | - | https://maps.app.goo.gl/Hxrg3GtiQKQu3Mmb6 | 2.
+  Kondisi Usaha Saat | Ini | (Jelaska...
+
+--- sheet010.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in 0in .75in .61in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(9);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | LAPORAN KUNJUNGAN DEBITUR 4
+  - KABID PEMASARAN | Ta | nggal Penilaian | 02/06/2026 | Unit/Area | BAPERA PUSAT | No | Aplikasi | - | Nama Calon Debitur | BAMBANG HADI | YANTO | Konfirmasi Dengan Pihak Ketiga | 1 | Nama Orang Yg Ditemui | Hubungan | PEJABAT SETEMPAT | Lama
+  Berhubungan | V | > 3 thn | 1-3 thn | <1 t | hn | ---beri t | anda | Apakah
+  Karakter Pemohon Baik? | V | Ya | Tidak | Tid | ak tahu | ---beri t | anda | Apakah
+  Usaha Dikelola Dengan Baik? | V | Ya | Tidak | Tid | ak tahu | ---beri t | anda | Nomor
+  telepon / handphone | 2 | Nama Orang Yg Ditemui | Tetangga Usaha | Hubungan | TETANGGA USAHA | Lama
+  Berhubungan | V | > 3 thn | 1-3 thn | <1 t | hn | ---beri t | anda | > 3 thn | Apakah
+  Karakter Pemohon Baik? | V | Ya | Tidak | Tid | ak tahu | ---beri t | anda | Apakah
+  Usaha Dikelola Dengan Baik? | V | Ya | Tidak | Tid | ak tahu | ---beri t | anda | Nomor
+  telepon / handphone | Ya | 3 | Nama Orang Yg Ditemui | Hubungan | KERABAT PEMOHON | Ya | Lama
+  Berhubungan | V | > 3 thn | 1-3 thn | <1 t | hn | ---beri t | anda | Apakah
+  Karakter Pemohon Baik? | V | Ya | Tidak | Tid | ak tahu | ---beri t | anda | Apakah
+  Usaha Dikelola Dengan Baik? | V | Ya | Tidak | Tid | ak tahu | ---beri t | anda | Nomor
+  telepon / handphone | Penjelasan Singkat Tentang Karakter Calon Nasabah dan Tujuan
+  Pengajuan Kredit | 1 | Informasi Karakter
+  Nasabah | - | Dari cek lingkungan ti...
+
+--- sheet011.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.51in .28in .55in .24in;
+	mso-header-margin:.2in;
+	mso-footer-margin:.31in;
+	mso-horizontal-page-align:center;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(10);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | LAPORAN PENILAIAN JAMINAN | Nama | BAMBANG HADIYANTO | Alamat | DUSUN DEPOK KULON RT:03
+  RW:02 DEPOK KANDEMAN | Usaha | JUAL BELI GABAH/PADI
+  KERING | Sertifikat No Hak Milik | 11.32.000 | 012124.0 | IDENTIFIKASI TANAH DI LAPANGAN | 1. | LOKASI TANAH | a. | Lokasi / Letak Jaminan | Rt / Rw | Kelurahan/Kecamatan | D | EPOK/KANDEMAN | Kabupaten/Kota | B | ATANG | b. | Batas-batas tanah | Utara | J | ALAN DESA | Timur | S | RI RAHAYU | Selatan | N | URSUWITO | Barat | J | ALAN GANG
+  WASIJAN | 2. | BENTUK DAN UKURAN TANAH | a. | Bentuk tanah segi empat/ | segitiga/tidak beraturan | b. | Permukan tanah rata/ | bergelombang/landai
+  dengan ketinggian meter lebih rendah/tinggi/hampir sama dengan | didepannya. | c. | Akses jalan masuk
+  simpangan mobil/hanya masuk satu mobil/simpangan sepeda motor | d. | Jenis jalan
+  aspal/paving/beton cor/tanah | e. | Luas tanah | 511 | m | 3. | STRUKTUR BANGUNAN | - | Lantai Bangunan | lantai | - | Luas Tanah | 511 | m | - | Luas Bangunan | 60 | m | - | Rangka atap | Kayu | - | Penutup Atap | Genteng | - | Lantai | Granit | - | Dinding | Bata Plesteran | - | Pagar | Besi kombinasi Bata Plesteran | - | Jenis Plafond | Gypsum | - | Kusen Pintu | Kayu | - | Fasilitas Listrik | 1300 | - | Fasilitas Air | Pdam | - | Fasilitas Telepon | - | - | Sarana
+  Pelengkap lain | - | 4. | PENILAIAN | a. | TANAH | #REF! | Berdasarkan me...
+
+--- sheet012.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.51in .28in .55in .24in;
+	mso-header-margin:.2in;
+	mso-footer-margin:.31in;
+	mso-horizontal-page-align:center;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(11);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | LAPORAN PENILAIAN JAMINAN | Nama | BAMBANG HADIYANTO | Alamat | DUSUN DEPOK KULON RT:03
+  RW:02 DEPOK KANDEMAN | Usaha | JUAL BELI GABAH/PADI
+  KERING | Sertifikat No Hak Milik | 01144 | IDENTIFIKASI TANAH DI LAPANGAN | 1. | LOKASI TANAH | a. | Lokasi / Letak Jaminan | Rt / Rw | Kelurahan/Kecamatan | D | EPOK/KANDEMAN | Kabupaten/Kota | B | ATANG | b. | Batas-batas tanah | Utara | 0 | 0306 | Timur | 0 | 1402 | Selatan | J | ALAN | Barat | 0 | 1406 | 2. | BENTUK DAN UKURAN TANAH | a. | Bentuk tanah segi empat/ | segitiga/tidak beraturan | b. | Permukan tanah rata/ | bergelombang/landai
+  dengan ketinggian meter lebih rendah/tinggi/hampir sama dengan | didepannya. | c. | Akses jalan masuk
+  simpangan mobil/hanya masuk satu mobil/simpangan sepeda motor | d. | Jenis jalan
+  aspal/paving/beton cor/tanah | e. | Luas tanah | 451 | m | 3. | STRUKTUR BANGUNAN | - | Lantai Bangunan | lantai | - | Luas Tanah | 451 | m | - | Luas Bangunan | 0 | m | - | Rangka atap | - | - | Penutup Atap | - | - | Lantai | - | - | Dinding | - | - | Pagar | - | - | Jenis Plafond | - | - | Kusen Pintu | - | - | Fasilitas Listrik | - | - | Fasilitas Air | - | - | Fasilitas Telepon | - | - | Sarana
+  Pelengkap lain | - | 4. | PENILAIAN | a. | TANAH | #REF! | #NAME? | b | BANGUNAN | #NAME? | HARGA/M | TOTAL | Tanah | 1,000,000 | 451,000,000 | 1000000.. | 451000000.. | #NAME? | #NAME? |...
+
+--- sheet013.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:1.4in .39in .39in .39in;
+	mso-header-margin:.26in;
+	mso-footer-margin:.43in;
+	mso-horizontal-page-align:center;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(12);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | FOTO JAMINAN / FOTO RUMAH
+  TEMPAT TINGGAL | Nama Debitur | BAMBANG HADIYANTO | Alamat | DUSUN DEPOK KULON RT:03 RW:02 DEPOK KANDEMAN | Usaha | JUAL BELI GABAH/PADI KERING | Gambar Foto Jaminan | Gambar Foto Rumah Tempat Tinggal | Kabid. Pemasaran | Petugas
+  Analisa | EVI NOVIANTI, SE | DIAN
+  WICAKSANA ADI, ST
+
+--- sheet014.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.85in .43in .51in .59in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(13);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | FOTO LOKASI USAHA /
+  PEKERJAAN | Nama | BAMBANG HADIYANTO | Alamat | DUSUN DEPOK KULON RT:03
+  RW:02 DEPOK KANDEMAN | Usaha | JUAL BELI GABAH/PADI
+  KERING | Gambar/Foto | Kabid. Pemasaran | Petugas Analisa | EVI NOVIANTI, SE | DIAN WICAKSANA ADI, ST
+
+--- sheet015.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in .43in .51in .67in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(14);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | DENAH LOKASI JAMINAN KE KANTOR BPR BAPERA BATANG | Nama | BAMBANG HADIYANTO | Alamat | DUSUN DEPOK KULON RT:03
+  RW:02 DEPOK KANDEMAN | Usaha | JUAL BELI GABAH/PADI
+  KERING | Gambar/Foto | Jarak | 5 | , | 02 KM | Alamat Maps | https://maps.app.goo.gl/Hxrg3GtiQKQu3Mmb6 | DENAH LOKASI USAHA KE KANTOR BPR BAPERA BATANG | Gambar/Foto | Jarak | 5 | , | 03 KM | Alamat Maps | https://maps.app.goo.gl/oF3NVGUsnMLSGkaf7 | Kabid. Pemasaran | Petugas Analisa | EVI NOVIANTI, SE | DIAN
+  WICAKSANA ADI, ST
+
+--- sheet016.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:1.28in .43in .51in .59in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(15);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | FOTO HASIL USAHA / PEKERJAAN | Nama | BAMBANG HADIYANTO | Alamat | DUSUN DEPOK KULON RT:03
+  RW:02 DEPOK KANDEMAN | Usaha | JUAL BELI GABAH/PADI
+  KERING | Gambar/Foto | Kabid. Pemasaran | Petugas
+  Analisa | EVI NOVIANTI, SE | DIAN
+  WICAKSANA ADI, ST
+
+--- sheet017.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.74in .43in .51in .59in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(16);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | DENAH LOKASI JAMINAN | Nama | BAMBANG HADIYANTO | Alamat | DUSUN DEPOK KULON RT:03
+  RW:02 DEPOK KANDEMAN | Usaha | JUAL BELI GABAH/PADI
+  KERING | Gambar/Foto | Kabid. Pemasaran | Petugas
+  Analisa | EVI NOVIANTI, SE | DIAN
+  WICAKSANA ADI, ST
+
+--- sheet018.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in .7in .75in .7in;
+	mso-header-margin:.3in;
+	mso-footer-margin:.3in;
+	mso-page-orientation:landscape;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(17);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | NERACA periode tgl | LAPORAN
+  KEUANGAN | PERHITUNGAN
+  RPC (REPAYMENT CAPACITY) | PERHITUNGAN
+  NILAI LIKUIDASI AGUNAN | ✅
+  2. STANDAR BPR TERKAIT LTV (Loan to Value) | Aset | Laba Rugi | Proyeksi Laba Rugi | Nilai Pasar Wajar | Berikut | standar praktik umum BPR | (mengacu
+  kehati-hatian OJK & praktik perbankan): | Kas | 1 | Pendapatan Usaha/Sales | Rp | 7,500,000 | 1 | Pendapatan Usaha/Sales | Rp | 7,500,000 | Total Nilai Agunan | 601,000,000 | Tabungan dan Deposito | Margin | 25% | Margin | 25% | A. LTV Berdasarkan Jenis
+  Agunan | Investasi Lainnya | 2 | Harga Pokok Penjualan | Rp | 5,625,000 | 2 | Harga Pokok Penjualan | Rp | 5,625,000 | Plafond Kredit | 50,000,000 | Piutang | Sewa/Kontrak | Rp | - | Sewa/Kontrak | Rp | - | Jenis Agunan | LTV Maksimal (Umum BPR) | Uang Muka yang telah dibayar | Gaji Pegawai | Rp | 1,000,000 | Gaji Pegawai | Rp | 1,000,000 | Loan To Value Ratio | 8.32% | Tanah & Bangunan
+  (SHM/SH | GB) | 70%  80% | Tanah dan Gedung | Telpon, Listrik & Air | Rp | 500,000 | Telpon, Listrik & Air | Rp | 500,000 | (LTV) | Kendaraan Bermotor
+  (BPKB) | 50%  70% | Mesin dan peralatan Kerja | Transportasi | Rp | 250,000 | Pajak dan Retribusi | Mesin / Alat Produksi | 50%  60% | Kendaraan | Pengeluaran Lainnya | Rp | 3,000,000 | Transportasi | Rp | 250,000 | Agunan kombinasi | ≤ 80% | Persediaan/Invebtory | Pengeluaran Usaha | Rp | 10,375,...
+
+--- sheet019.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:0in .71in 0in 0in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;
+	mso-page-orientation:landscape;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(18);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | REKAP ARUS KAS TAHUN 2024 | BULAN | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 | 10 | 11 | 12 | 3,000,000 | 150,000 | 1,000,000 | 497,000 | 147,500 | 2,997,500 | 1,550,000 | 2,880,000 | 3,000,000 | 600,000 | 847,000 | 4,610,000 | 5,000,000 | 3,000,000 | 730,000 | 370,000 | 7,000,000 | 1,315,000 | 19,000,000 | 990,000 | 2,460,000 | 1,039,000 | 85,000 | 75,000 | 235,000 | 510,000 | 100,000 | 1,080,000 | 2,484,000 | 3,620,000 | 5,580,000 | 3,500,000 | 1,500,000 | 95,000 | 490,000 | 100,000 | 265,000 | 200,000 | 210,000 | 2,000,000 | 75,000 | 500,000 | 1,000,000 | 50,000 | 200,000 | 150,000 | 1,110,000 | 411,000 | 572,000 | 70,000 | 150,000 | 1,240,000 | 1,955,000 | 2,320,000 | 2,325,000 | 500,000 | 150,000 | 1,390,000 | 4,000,000 | 1,700,000 | 546,000 | 544,000 | 4,800,000 | 3,000,000 | 1,000,000 | 175,000 | 200,000 | 915,000 | 75,000 | 415,000 | 1,610,000 | 7,958,363 | 70,000 | 2,000,000 | 1,000,000 | 4,000,000 | 1,500,000 | 5,000,000 | 210,000 | 2,720,000 | 350,000 | 4,025,925 | 305,000 | 1,000,000 | 206,000 | 1,080,000 | 700,000 | 1,500,000 | 14,000,000 | 650,000 | 900,000 | 1,518,500 | 1,000,000 | 575,000 | 100,000 | 2,000,000 | 400,000 | 565,000 | 1,500,000 | 500,000 | 105,000 | 120,000 | 8,835,000 | 582,000 | 1,240,000 | 2,000,000 | 5,000,000 | 25,000,000 | 500,000 | 3,807,000 | 115,000 | 4,500,000 | 500,000 | 270,000 | 140,000 | 600,000 | 370,000 | 1,940...
+
+--- sheet020.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in .51in .75in .51in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;
+	mso-horizontal-page-align:center;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(19);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | LAPORAN PENILAIAN AGUNAN (LPA) | Tanggal
+  Pemeriksaan: | 02/06/2026 | BENTUK B | ANGUNAN | BERTINGK | AT | PERAWAT | AN | KONSTRUK | SI | LANTAI | ATAP | KM | WC | PAM/SUMUR | LISTRIK | TELP | HUB AN. HAK D | G DEB | STATUS PEN | GHUNI | HUB PENG | HUNI DG AN. HAK | JENIS DOK | IMB1 | IMB2 | CEK BPN | HASIL | PERUNTU | KAN | Rumah Tin | ggal | Ya | Baik | Batu/Beton/B | aja | Keramik | Genteng | Ada | Ada | Ada | Ada | Ada | Sendiri | Sewa | Sendiri | SHM | ADA | ADA | YA | OKE | Perumahan | NAMA
+  DEBITUR | BAMBANG HADIYANTO | Ruko | Tidak | Kurang | Kayu/Lainny | a | Semen | Asbes | Tidak Ada | Tidak Ad | a | Tidak Ada | Tidak Ada | Tidak | Ada | Sumai-Istri | Penjaga | Sumai-Istri | SHGB | TIDAK ADA | TIDAK ADA | TIDAK | TIDAK OKE | Daerah Industri | Toko | Tiak Baik | Kayu/Lainn | ya | Seng/Lainnya | Orang Tua | Sendiri | Orang Tua | SHM SARUSUN | Pertokoan | BENTUK
+  BANGUNAN | Rumah Pengganti Kayu | BERTINGKAT | Tidak | Kantor | Anak | Lainnya | Anak | Sawah/Ladang | Pabrik | Pemilik Sebelu | mnya | Pemilik Sebelumnya | Tambak | USIA
+  BANGUNAN | 180 | Bulan | PERAWATAN | Baik | Gudang | Lainnya | Lainnya | Lainnya | Rumah Pe | ngganti Kayu | KONSTRUKSI
+  BANGUNAN | Batu/Beton/Baja | Lantai | Kayu/Lainnya | Atap | Genteng | Lainnya | KAMAR
+  MANDI | Ada | WC | Ada | PAM/SUMUR | Ada | LISTRIK | Ada | 900 | Kwh | TELEPON | Ada | '082221665377 | ...
+
+--- sheet021.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in .7in .75in .7in;
+	mso-header-margin:.3in;
+	mso-footer-margin:.3in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(20);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | Nama | :
+  BAMBANG HADIYANTO | Alama | t | : DUSUN DEPOK KULON
+  RT:03 RW:02 DEPOK KANDEMAN | Usaha | : JUAL BELI GABAH/PADI
+  KERING | Harga
+  modal kaos polos + sablon | : | 60,000 | per pcs | 25% | Harga
+  jual rata-rata | : | 80,000 | per pcs | 20,000 | Penjualan
+  per bulan | : | 350 | pcs | Biaya
+  operasional bulanan | : | Sewa/Kontrak | : | - | Gaji Pegawai | : | - | Telpon, Listrik &
+  Air | : | 300,000 | Transportasi | : | 500,000 | Pengeluaran Lainnya | : | 400,000 | Total | : | 1,200,000 | /bulan | Penjualan | : | 28,000,000 | HPP
+  (Hargta Pokok Penjualan) | : | 21,000,000 | Laba
+  Kotor | : | 7,000,000 | Laba
+  bersih | : | 5,800,000
+
+--- sheet022.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.35in .71in .75in .71in;
+	mso-header-margin:.31in;
+	mso-footer-margin:.31in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(21);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | NOMOR REKENING | : | 107 | -001-0000 | ........... | NAMA | : | BAMBANG HADIYANTO | ALAMAT | : | DUSUN
+  DEPOK KULON RT:03 RW:02 DEPOK KANDEMAN | PALFOND | : | 50,000,000 | ANGSURAN | : | 1,807,650 | SUKUBUNGA
+  (PA) | : | 18.00% | POKOK | : | - | TANGGAL
+  AKAD | : | 29/06/2026 | BUNGA | : | - | JANGKA
+  WAKTU | : | 36 | bulan | JATUH TEMPO | : | 29/06/2029
+
+--- sheet023.htm ---
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in .7in .75in .7in;
+	mso-header-margin:.3in;
+	mso-footer-margin:.3in;}
+--> | <!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(22);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../MAK%20PRODUKTIF-BAMBANG%20HADIYANTO-DEPOK.htm");
+else
+ fnUpdateTabs();
+//--> | PERSETUJUAN KOMISARIS | Data Debitur | Nama
+  Debitur | : | BAMBANG
+  HADIYANTO | Tanggal Survey | : | 02/06/2026 | Plafond
+  (Rp) | : | Rp | 50,000,000 | #NAME? | Jangka
+  Waktu | : | 36 | Bulan | Angsuran | : | 1,807,650 | / Bulan | Alamat
+  Debitur | : | DUSUN DEPOK
+  KULON RT:03 RW:02 DEPOK KANDEMAN | Jenis
+  Kredit | : | KARYAWAN
+  BAPERA | Agunan | : | 0 | CATATAN KOMISARIS | -
+  Disetujui untuk permohonan fasiltas kredit Karyawan dengan Potong Gaji
+  sebagai Dasar angsuran | - Jaminan tambahan berupa sertifikat tanah
+  dan bagunan. | Persetujuan | Batang,26-06-2023 | Komisaris | Dien Anggraheni, A.Md
+

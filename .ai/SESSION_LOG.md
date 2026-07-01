@@ -1131,3 +1131,13 @@ Menyesuaikan prompt VLM untuk dokumen Sertifikat Hak Milik (SHM) agar sesuai den
 - **Fix Unnecessary VLM Fallback untuk KTP Jernih**: Memperbaiki _bug_ di `TesseractEngine.js` yang mencari file `.tsv.tsv` alih-alih `.tsv` saat mengekstrak _confidence score_ dari Tesseract. Bug ini menyebabkan Tesseract selalu mengembalikan nilai default `0.65`, yang selalu di bawah ambang batas baru `0.85`, sehingga memaksa **semua KTP (termasuk yang jernih)** jatuh ke _fallback_ VLM. Dengan perbaikan ini, KTP jernih (seperti atas nama Sapto Nugroho) akan sukses diekstrak oleh Tesseract secara instan dan akurat tanpa perlu melibatkan LFM VLM.
 
 - **Fix Hallucination pada VLM KTP**: Menemukan bahwa model VLM (LFM-1.6B) berhalusinasi parah saat menerima gambar (seperti membaca _"SELURUH MEMBANGUNAN"_). Masalah ini terjadi karena _pipeline_ sebelumnya meneruskan gambar hasil manipulasi OpenCV (yang sudah menjadi hitam-putih dan sangat dikontraskan untuk Tesseract) ke VLM. VLM dilatih dengan gambar berwarna natural dan akan sangat kebingungan jika menerima gambar artifisial hitam-putih biner. Modifikasi telah dilakukan di `ocr.pipeline.js` agar VLM sekarang memproses gambar KTP asli (berwarna) sehingga akurasi pembacaan menjadi jauh lebih logis dan akurat.
+
+## 🔧 Sesi 38 — 2026-06-30 | Model: Antigravity | Modul: Document AI (SHM Two-Pass OCR)
+**Goal:** Mengimplementasikan pipeline ekstraksi cerdas "Two-Pass" (VLM + LLM) untuk dokumen Sertifikat Hak Milik (SHM) demi mengatasi keterbatasan *reasoning/formatting* model VLM kecil.
+**Yang selesai:**
+- [x] Membuat preprocessor Python OpenCV modular khusus SHM (`shm.py`) yang memanfaatkan ekstraksi Green Channel dan penghapusan bayangan (*shadow removal*).
+- [x] Menyederhanakan prompt SHM di VLM hanya menjadi perintah OCR untuk memaksimalkan _throughput_ dan kelengkapan _raw text_ OCR tanpa beban pemaksaan JSON *schema*.
+- [x] Membangun fungsi `callLlmParsing` (Pass 2) yang memanggil LLM (Qwen3.5 - Port 1978) untuk menerima _raw text_ dan merapikannya ke dalam struktur _strict JSON_ sesuai skema `shm_cover`, `shm_pendaftaran`, dll.
+- [x] Mengubah `vlmFallback` pada `document-ai.service.js` menjadi orkestrator 2 langkah khusus untuk _prefix_ tipe dokumen `shm`.
+**Hindari sesi berikutnya:** Menggunakan prompt JSON raksasa untuk model VLM 1.6B. Model VLM kecil (seperti LFM-1.6B) lebih optimal difokuskan pada ekstraksi teks murni (OCR), dan menyerahkan urusan logika JSON kepada LLM teks tulen.
+**Task berikutnya:** Penyempurnaan MAK Generator (Phase 3) atau Pembuatan Modul Laporan Komprehensif (Phase 12).

@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from preprocessors.ktp import process_ktp
 from preprocessors.general import process_general
+from preprocessors.shm import process_shm
 
 def main():
     parser = argparse.ArgumentParser(description="Document Image Preprocessor for OCR")
@@ -32,6 +33,8 @@ def main():
         # Route to appropriate preprocessor
         if doc_type == 'ktp':
             processed = process_ktp(image)
+        elif doc_type.startswith('shm'):
+            processed = process_shm(image)
         else:
             processed = process_general(image)
             

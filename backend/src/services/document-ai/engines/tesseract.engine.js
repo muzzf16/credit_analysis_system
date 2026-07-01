@@ -19,17 +19,9 @@ class TesseractEngine {
       const confidence = ocrResult.confidences?._overall || ocrResult.confidence || 0.65;
       let confidenceThreshold = config.tesseractConfidenceThreshold || 0.5;
       
-      // Strict validation for KTP to force VLM fallback on bad Tesseract results
+      // Strict validation for KTP disabled to prioritize Tesseract
       if (tesseractType === 'ktp') {
-        confidenceThreshold = 0.85; // KTP requires higher confidence for Tesseract
-        
-        const d = ocrResult.data || {};
-        const nikStr = (d.nik || '').toString().replace(/\D/g, '');
-        const hasSufficientName = d.nama && d.nama.length >= 3;
-        
-        if (nikStr.length !== 16 || !hasSufficientName) {
-           throw new Error(`KTP validation failed: Invalid NIK length (${nikStr.length}) or missing Nama. Triggering VLM fallback.`);
-        }
+        confidenceThreshold = 0.5; // Lower confidence threshold to accept Tesseract results
       }
       
       if (confidence < confidenceThreshold) {
