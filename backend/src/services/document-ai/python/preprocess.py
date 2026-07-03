@@ -34,7 +34,9 @@ def main():
         if doc_type == 'ktp':
             processed = process_ktp(image)
         elif doc_type.startswith('shm'):
-            processed = process_shm(image)
+            # SHM uses its dedicated pipeline (Green Channel, Shadow removal, etc)
+            # This is proven to extract structured SHM text more reliably for Tesseract
+            processed = process_shm(image, doc_type)
         else:
             processed = process_general(image)
             
@@ -48,3 +50,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

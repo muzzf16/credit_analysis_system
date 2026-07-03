@@ -49,20 +49,19 @@ function hitungCharacterScore(data) {
  * Hitung sub-score CAPACITY dari DSR/DSCR
  */
 function hitungCapacityScore(data) {
-  const { dsr, dscr, jenisKredit } = data;
-  if (jenisKredit === 'KONSUMTIF') {
-    // DSR: <20%=100, 20-30%=80, 30-40%=60, >40%=20
-    if (dsr < 20) return 100;
-    if (dsr < 30) return 80;
-    if (dsr < 40) return 60;
-    return 20;
+  const { dsr, jenisKredit } = data;
+  if (jenisKredit === 'KONSUMTIF' || jenisKredit === 'PEGAWAI') {
+    // DSR KONSUMTIF/PEGAWAI: <=30%=100, 31-35%=80, 36-40%=60, >40%=20
+    if (dsr <= 30) return 100; // Sangat aman
+    if (dsr <= 35) return 80;  // Aman bersyarat
+    if (dsr <= 40) return 60;  // Risiko tinggi
+    return 20;                 // Tidak layak
   } else {
-    // DSCR: >2=100, 1.5-2=80, 1.2-1.5=60, 1-1.2=40, <1=10
-    if (dscr > 2) return 100;
-    if (dscr >= 1.5) return 80;
-    if (dscr >= 1.2) return 60;
-    if (dscr >= 1) return 40;
-    return 10;
+    // DSR MIKRO/PRODUKTIF: <=30%=100, 31-40%=80, 41-50%=60, >50%=20
+    if (dsr <= 30) return 100; // Sangat Layak
+    if (dsr <= 40) return 80;  // Layak
+    if (dsr <= 50) return 60;  // Perlu kehati-hatian
+    return 20;                 // Tidak Layak
   }
 }
 
@@ -85,22 +84,26 @@ function hitungCapitalScore(data) {
 }
 
 /**
- * Hitung sub-score COLLATERAL dari LTV & Coverage
+ * Hitung sub-score COLLATERAL dari LTV
  */
 function hitungCollateralScore(data) {
-  const { ltv = 100, coverageRatio = 1, jenisAgunan = 'SHM' } = data;
-  // Coverage: >2=100, 1.5-2=80, 1.2-1.5=60, 1-1.2=40, <1=10
-  let coverScore = 100;
-  if (coverageRatio < 1) coverScore = 10;
-  else if (coverageRatio < 1.2) coverScore = 40;
-  else if (coverageRatio < 1.5) coverScore = 60;
-  else if (coverageRatio < 2) coverScore = 80;
+  const { ltv = 100, jenisAgunan = 'SHM' } = data;
+  
+  // LTV (Berdasarkan matriks internal BPR)
+  // <= 70% Sangat aman (100)
+  // 71 - 80% Aman (80)
+  // 81 - 90% Risiko tinggi (60)
+  // > 90% Tidak layak (20)
+  let ltvScore = 100;
+  if (ltv > 90) ltvScore = 20;
+  else if (ltv > 80) ltvScore = 60;
+  else if (ltv > 70) ltvScore = 80;
 
   // Jenis agunan bonus
   const agunanBonus = { SHM: 10, SHGB: 8, BPKB: 5, DEPOSITO: 10, AJB: 6, MESIN: 3, PERSEDIAAN: 2 };
   const bonus = agunanBonus[jenisAgunan] || 5;
 
-  return Math.min(100, Math.round(coverScore * 0.8 + bonus * 2));
+  return Math.min(100, Math.round(ltvScore * 0.8 + bonus * 2));
 }
 
 /**

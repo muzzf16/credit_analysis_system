@@ -3,6 +3,10 @@
  * Uses regex and heuristics to extract structured data from raw OCR text.
  */
 
+// Import the comprehensive SHM parser (dedicated module)
+const { parseSHM: parseSHMFull } = require('./parsers/shm.parser');
+
+
 /**
  * Clean and normalize lines of text
  * @param {string} text 
@@ -36,8 +40,6 @@ function segmentKtpText(text) {
     'RT/RW',
     'RTRW',
     'KEL/DESA',
-    'KELURAHAN',
-    'DESA',
     'KECAMATAN',
     'AGAMA',
     'STATUS PERKAWINAN',
@@ -47,8 +49,8 @@ function segmentKtpText(text) {
   ];
 
   for (const label of labels) {
-    const pattern = new RegExp(`\\s*${label.replace(/\//g, '\\/')}\\s*[:;=]?`, 'gi');
-    out = out.replace(pattern, (match) => `\n${match.trim()}`);
+    const pattern = new RegExp(`\\s*\\b${label.replace(/\//g, '\\/')}\\b\\s*[:;=]?`, 'gi');
+    out = out.replace(pattern, (match) => `\n${match.trim()} `);
   }
 
   // Put obvious value separators on new lines too.
@@ -121,7 +123,7 @@ function extractValueAfterLabelMatch(line, labelRegex) {
 function isLikelyLabelLine(line) {
   const normalized = normalizeOcrText(line);
   if (!normalized) return false;
-  return /^(NIK|NAMA|TEMPAT\b|TGL\b|TEMPAT\/TGL|JENIS\s*KELAMIN|ALAMAT|RT\s*\/\s*RW|RTRW|KEL\s*\/\s*DESA|KELURAHAN|DESA|KECAMATAN|AGAMA|STATUS\s*PERKAWINAN|STATUS\s*KAWIN|PEKERJAAN|KEWARGANEGARAAN|PEMEGANG\s*HAK|ATAS\s*NAMA|NOMOR|MERK|MEREK|TIPE|TAHUN|KABUPATEN|KOTA|LUAS|NIB|SURAT|HAK)\b/i.test(normalized);
+  return /^(NIK|NAMA|TEMPAT\b|TGL\b|TEMPAT\/TGL|JENIS\s*KELAMIN|ALAMAT|RT\s*\/\s*RW|RTRW|KEL\s*\/\s*DESA|(?:KELURAHAN|DESA)\s*[:;=]|KECAMATAN|AGAMA|STATUS\s*PERKAWINAN|STATUS\s*KAWIN|PEKERJAAN|KEWARGANEGARAAN|PEMEGANG\s*HAK|ATAS\s*NAMA|NOMOR|MERK|MEREK|TIPE|TAHUN|KABUPATEN|KOTA|LUAS|NIB|SURAT|HAK)\b/i.test(normalized);
 }
 
 /**
@@ -132,7 +134,7 @@ function isLikelyLabelLine(line) {
 function isKtpLabelLine(line) {
   const normalized = normalizeOcrText(line);
   if (!normalized) return false;
-  return /^(NIK|NAMA|TEMPAT(?:\s*\/\s*TGL)?(?:\s*LAHIR)?|TGL\s*LAHIR|JENIS\s*KELAMIN|ALAMAT|RT\s*\/\s*RW|RTRW|KEL\s*\/\s*DESA|KELURAHAN|DESA|KECAMATAN|AGAMA|STATUS\s*PERKAWINAN|STATUS\s*KAWIN|PEKERJAAN|KEWARGANEGARAAN)\b/i.test(normalized);
+  return /^(NIK|NAMA|TEMPAT(?:\s*\/\s*TGL)?(?:\s*LAHIR)?|TGL\s*LAHIR|JENIS\s*KELAMIN|ALAMAT|RT\s*\/\s*RW|RTRW|KEL\s*\/\s*DESA|(?:KELURAHAN|DESA)\s*[:;=]|KECAMATAN|AGAMA|STATUS\s*PERKAWINAN|STATUS\s*KAWIN|PEKERJAAN|KEWARGANEGARAAN)\b/i.test(normalized);
 }
 
 /**
@@ -351,6 +353,7 @@ function parseKTP(text) {
     .replace(/\bN[I1l|]K\b/gi, 'NIK')
     .replace(/\bT[E6]MP[A4]T\b/gi, 'Tempat')
     .replace(/\bL[A4]H[I1l|]R\b/gi, 'Lahir')
+    .replace(/\bTG[I1l|]?\s*L[A4]H[I1l|]R\b/gi, 'Tgl Lahir')
     .replace(/\b[A4]L[A4]M[A4]T\b/gi, 'Alamat')
     .replace(/\b[A4]G[A4]M[A4]\b/gi, 'Agama')
     .replace(/\bK[E6]C[A4]M[A4]T[A4]N\b/gi, 'Kecamatan')
@@ -364,6 +367,9 @@ function parseKTP(text) {
     .replace(/\bH[I1l|]NGG[A4]\b/gi, 'Hingga')
     .replace(/\bS[E6]UMUR\b/gi, 'SEUMUR')
     .replace(/\bH[I1l|]DUP\b/gi, 'HIDUP');
+
+  // Segment the text into logical lines, handling cases where OCR output is one long string
+  rawText = segmentKtpText(rawText);
 
   const lines = getCleanLines(rawText);
 
@@ -629,7 +635,17 @@ function parseKTP(text) {
         stopWhen: isKtpLabelLine
       });
       if (value) {
-        data.agama = value.toUpperCase().trim();
+        let agamaRaw = value.toUpperCase().trim();
+        const validAgama = ['ISLAM', 'KRISTEN', 'KATOLIK', 'HINDU', 'BUDDHA', 'KONGHUCU'];
+        let matched = false;
+        for (const a of validAgama) {
+          if (agamaRaw.includes(a)) {
+            data.agama = a;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) data.agama = agamaRaw;
       }
       continue;
     }
@@ -652,7 +668,30 @@ function parseKTP(text) {
         stopWhen: isKtpLabelLine
       });
       if (value) {
-        data.pekerjaan = value.toUpperCase().replace(/[^A-Z0-9\s\-()\/.]/g, ' ').replace(/\s+/g, ' ').trim();
+        let p = value.toUpperCase().replace(/[^A-Z0-9\s\-()\/.]/g, ' ').replace(/\s+/g, ' ').trim();
+        const validPekerjaan = [
+          'BELUM/TIDAK BEKERJA', 'MENGURUS RUMAH TANGGA', 'PELAJAR/MAHASISWA', 'PENSIUNAN', 'PEGAWAI NEGERI SIPIL',
+          'TENTARA NASIONAL INDONESIA', 'KEPOLISIAN RI', 'PERDAGANGAN', 'PETANI/PEKEBUN', 'PETERNAK', 'NELAYAN/PERIKANAN',
+          'INDUSTRI', 'KONSTRUKSI', 'TRANSPORTASI', 'KARYAWAN SWASTA', 'KARYAWAN BUMN', 'KARYAWAN BUMD', 'KARYAWAN HONORER',
+          'BURUH HARIAN LEPAS', 'BURUH TANI/PERKEBUNAN', 'BURUH NELAYAN/PERIKANAN', 'BURUH PETERNAKAN', 'PEMBANTU RUMAH TANGGA',
+          'TUKANG CUKUR', 'TUKANG LISTRIK', 'TUKANG BATU', 'TUKANG KAYU', 'TUKANG SOL SEPATU', 'TUKANG LAS/PANDAI BESI', 'TUKANG JAHIT',
+          'PENATA RAMBUT', 'PENATA RIAS', 'PENATA BUSANA', 'MEKANIK', 'TUKANG GIGI', 'SENIMAN', 'TABIB', 'PARAJI', 'PERANCANG BUSANA',
+          'PENTERJEMAH', 'IMAM MASJID', 'PENDETA', 'PASTOR', 'WARTAWAN', 'USTADZ/MUBALIGH', 'JURU MASAK', 'PROMOTOR ACARA',
+          'ANGGOTA DPR-RI', 'ANGGOTA DPD', 'ANGGOTA BPK', 'PRESIDEN', 'WAKIL PRESIDEN', 'ANGGOTA MAHKAMAH KONSTITUSI', 'ANGGOTA KABINET/KEMENTERIAN',
+          'DUTA BESAR', 'GUBERNUR', 'WAKIL GUBERNUR', 'BUPATI', 'WAKIL BUPATI', 'WALIKOTA', 'WAKIL WALIKOTA', 'ANGGOTA DPRD PROVINSI',
+          'ANGGOTA DPRD KABUPATEN/KOTA', 'DOSEN', 'GURU', 'PILOT', 'PENGACARA', 'NOTARIS', 'ARSITEK', 'AKUNTAN', 'KONSULTAN', 'DOKTER',
+          'BIDAN', 'PERAWAT', 'APOTEKER', 'PSIKIATER/PSIKOLOG', 'PENYIAR TELEVISI', 'PENYIAR RADIO', 'PELAUT', 'PENELITI', 'SOPIR',
+          'PIALANG', 'PARANORMAL', 'PEDAGANG', 'PERANGKAT DESA', 'KEPALA DESA', 'BIARAWATI', 'WIRASWASTA'
+        ];
+        let matched = false;
+        for (const vp of validPekerjaan) {
+          if (p.includes(vp)) {
+            data.pekerjaan = vp;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) data.pekerjaan = p;
       }
       continue;
     }
@@ -747,7 +786,31 @@ function parseKTP(text) {
   }
 
   // Clean and normalize fields
-  if (data.nama) data.nama = data.nama.replace(/[^A-Z\s.,']/g, '').replace(/\s+/g, ' ').trim();
+  if (data.nama) {
+    let nameStr = data.nama.replace(/[^A-Z\s.,']/g, '').replace(/\s+/g, ' ').trim();
+    // Split by 2 or more spaces to remove far right noise (if spaces were preserved)
+    nameStr = nameStr.split(/\s{2,}/)[0];
+    
+    // Remove common OCR noise artifacts at the end of the name
+    const parts = nameStr.split(' ');
+    const validShortNames = ['BIN', 'BINTI', 'SRI', 'NUR', 'TRI', 'DWI', 'EKA', 'EDI', 'ALI', 'IDA', 'ADE', 'ANI', 'ARI', 'MIA', 'TIA', 'LIA', 'NIA', 'INA', 'IRA', 'IKA', 'ITA', 'AL', 'LA', 'EL', 'DE', 'VAN', 'DR', 'H', 'HJ', 'ST', 'M', 'S', 'I', 'RR', 'RA', 'NY', 'TN', 'KH', 'TB', 'CUT', 'NYM', 'AYU', 'BGS', 'GDE', 'NGH', 'KT', 'MD', 'KM', 'GD', 'ZUL', 'ABU', 'UMI'];
+    
+    while (parts.length > 1) {
+      const last = parts[parts.length - 1];
+      if (last.length <= 3 && !validShortNames.includes(last)) {
+        const isAllVowels = /^[AIUEO]+$/.test(last);
+        const isAllConsonants = /^[^AIUEO]+$/.test(last);
+        const isKnownNoise = ['ET', 'EA', 'AE', 'IE', 'EI', 'EE', 'OO', 'UU', 'II', 'AA'].includes(last);
+        if (isAllVowels || isAllConsonants || isKnownNoise) {
+          parts.pop();
+          continue;
+        }
+      }
+      break;
+    }
+    data.nama = parts.join(' ');
+  }
+  
   if (data.alamat) data.alamat = data.alamat.replace(/\s+/g, ' ').trim();
 
   return data;
@@ -816,132 +879,16 @@ function parseSuratNikah(text) {
  * @param {string} text 
  * @returns {object}
  */
+/**
+ * Parser for SHM (Sertifikat Hak Milik)
+ * Delegates to the comprehensive SHM parser module.
+ * @param {string} text - Raw OCR text
+ * @returns {object}
+ */
 function parseSHM(text) {
-  const lines = getCleanLines(text);
-  const data = {
-    nomorSertifikat: '',
-    atasNama: '',
-    luasTanah: 0,
-    alamatAgunan: '',
-    kecamatan: ''
-  };
-
-  // --- 1. OWNER NAME & CERTIFICATE NUMBER ---
-  const pemegangHakIdx = lines.findIndex(l => /pemegang\s*hak|nama\s*pemilik/i.test(l));
-  if (pemegangHakIdx !== -1) {
-    for (let offset = 1; offset <= 5; offset++) {
-      const checkIdx = pemegangHakIdx + offset;
-      if (checkIdx < lines.length) {
-        const l = lines[checkIdx];
-        if (!data.nomorSertifikat) {
-          const numMatch = l.match(/\b(\d{4,8})\b/);
-          if (numMatch) {
-            data.nomorSertifikat = numMatch[1];
-            continue;
-          }
-        }
-        if (!data.atasNama) {
-          const isLabelLine = /no|nomor|desa|kel|kec|kab|tgl|tanggal/i.test(l);
-          const hasDigits = /\d/.test(l);
-          if (!isLabelLine && !hasDigits && l.length > 3) {
-            data.atasNama = l.toUpperCase().replace(/[^A-Z\s.,']/g, '').trim();
-          }
-        }
-      }
-    }
-  }
-
-  if (!data.nomorSertifikat) {
-    const shmNoMatch = text.match(/(?:hak\s+milik|no|nomor)\.?\s*(\d{4,8})/i);
-    if (shmNoMatch) {
-      data.nomorSertifikat = shmNoMatch[1];
-    }
-  }
-
-  if (!data.atasNama) {
-    const ownerVal = findValueAfterLabel(lines, /pemegang\s*hak|atas\s*nama|nama\s*pemilik/i);
-    if (ownerVal) {
-      data.atasNama = ownerVal.toUpperCase().replace(/[^A-Z\s.,']/g, '');
-    }
-  }
-
-  // --- 2. LAND AREA ---
-  const areaMatch = text.match(/luas\b.*?(\d+(?:\.\d+)?)\s*(?:m2|m²|meter|m\b)/i);
-  if (areaMatch) {
-    data.luasTanah = parseFloat(areaMatch[1]) || 0;
-  } else {
-    const luasIdx = lines.findIndex(l => /luas/i.test(l));
-    if (luasIdx !== -1) {
-      for (let offset = -3; offset <= 3; offset++) {
-        const checkIdx = luasIdx + offset;
-        if (checkIdx >= 0 && checkIdx < lines.length) {
-          const l = lines[checkIdx];
-          const m = l.match(/(\d+(?:\.\d+)?)\s*(?:m2|m²|meter|m\b)/i) || l.match(/\b(\d{2,6})\s*[mM]2/);
-          if (m) {
-            data.luasTanah = parseFloat(m[1]) || 0;
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  // --- 3. LOCATION / ADDRESS ---
-  let kecamatanVal = findValueAfterLabel(lines, /kecamatan|kec/i);
-  if (!kecamatanVal) {
-    const kecMatch = text.match(/kec(?:amatan)?\.?\s+([A-Z\s]{3,20})/i);
-    if (kecMatch) kecamatanVal = kecMatch[1];
-  }
-  data.kecamatan = kecamatanVal ? kecamatanVal.trim().toUpperCase() : '';
-
-  // Desa / Kelurahan
-  let desaVal = findValueAfterLabel(lines, /kelurahan|desa|kel/i);
-  if (!desaVal) {
-    const desaIdx = lines.findIndex(l => /desa\/kel/i.test(l) || /kelurahan|desa|kel/i.test(l));
-    if (desaIdx !== -1 && desaIdx + 1 < lines.length) {
-      const nextLine = lines[desaIdx + 1];
-      if (!/tgl|tanggal|NIB|letak/i.test(nextLine) && nextLine.length > 2) {
-        desaVal = nextLine;
-      }
-    }
-  }
-  const desa = desaVal ? desaVal.trim().toUpperCase() : '';
-
-  // Kabupaten
-  let kabVal = '';
-  const kabIdx = lines.findIndex(l => /kabupaten\s*[\/\-]\s*kota|kabupaten|kota/i.test(l));
-  if (kabIdx !== -1) {
-    const line = lines[kabIdx];
-    if (line.includes(':')) {
-      const parts = line.split(':');
-      if (parts[1] && parts[1].trim().length > 2) {
-        kabVal = parts[1].trim();
-      }
-    }
-    if (!kabVal && kabIdx + 1 < lines.length) {
-      const nextLine = lines[kabIdx + 1];
-      if (!/tgl|tanggal|ketua|penerbitan/i.test(nextLine) && nextLine.length > 2) {
-        kabVal = nextLine;
-      }
-    }
-  }
-  if (!kabVal) {
-    kabVal = findValueAfterLabel(lines, /kabupaten|kab/i);
-    if (kabVal && (kabVal.toUpperCase().includes('/ KOTA') || kabVal.trim() === '/')) {
-      kabVal = '';
-    }
-  }
-  const kab = kabVal ? kabVal.trim().toUpperCase() : '';
-
-  const locationParts = [];
-  if (desa) locationParts.push(`DESA ${desa}`);
-  if (data.kecamatan) locationParts.push(`KEC. ${data.kecamatan}`);
-  if (kab) locationParts.push(kab);
-
-  data.alamatAgunan = locationParts.join(', ');
-
-  return data;
+  return parseSHMFull(text);
 }
+
 
 /**
  * Parser for BPKB (Buku Pemilik Kendaraan Bermotor)
@@ -1365,6 +1312,11 @@ function parseDocumentText(text, type) {
     case 'shm':
     case 'shgb':
     case 'ajb':
+    case 'shm_cover':
+    case 'shm_pendaftaran':
+    case 'shm_peralihan':
+    case 'shm_surat_ukur':
+    case 'shm_peta':
       return parseSHM(text);
     case 'bpkb':
     case 'kendaraan':

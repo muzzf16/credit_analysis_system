@@ -37,6 +37,7 @@ class OcrPipeline {
       return {
         engineUsed: 'tesseract',
         success: true,
+        rawText: engineResult.rawText,
         data: validateAndClean(engineResult.data || {}, type),
         confidences: engineResult.confidences,
         warnings: engineResult.warnings

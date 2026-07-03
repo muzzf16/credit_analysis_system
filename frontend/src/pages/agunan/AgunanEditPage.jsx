@@ -29,27 +29,58 @@ function mergeShmToForm(pages) {
   const suratUkur = pages.surat_ukur?.data  || {};
   const peta      = pages.peta?.data        || {};
 
-  const nomor  = cover.nomor_sertifikat   || pend.nomor_sertifikat    || '';
-  const nama   = pend.nama_pemegang_hak   || pend.atas_nama           || '';
-  const luasM2 = (pend.luas_m2 > 0 ? pend.luas_m2 : null)
-               || (suratUkur.luas_m2 > 0 ? suratUkur.luas_m2 : null) || 0;
+  const nomor   = cover.nomor_sertifikat   || pend.nomor_sertifikat    || '';
+  const nama    = pend.nama_pemegang_hak   || pend.atas_nama           || '';
+  const luasM2  = (pend.luas_m2 > 0 ? pend.luas_m2 : null)
+                || (suratUkur.luas_m2 > 0 ? suratUkur.luas_m2 : null) || 0;
+  const luasBgn = (pend.luas_bangunan > 0 ? pend.luas_bangunan : null)
+                || (suratUkur.luas_bangunan > 0 ? suratUkur.luas_bangunan : null) || 0;
   const keadaan = suratUkur.keadaan_tanah || pend.keadaan_tanah       || '';
   const kec     = cover.kecamatan         || suratUkur.kecamatan       || pend.kecamatan      || '';
-  const kab     = cover.kabupaten_kota    || suratUkur.kabupaten_kota  || '';
+  const kab     = cover.kabupaten_kota    || suratUkur.kabupaten_kota  || pend.kabupaten_kota || '';
   const desa    = cover.desa_kelurahan    || suratUkur.desa_kelurahan  || pend.desa_kelurahan || '';
-  const prov    = cover.provinsi          || suratUkur.provinsi        || '';
+  const prov    = cover.provinsi          || suratUkur.provinsi        || pend.provinsi       || '';
 
-  const tetangga = Array.isArray(peta.nama_tetangga) ? peta.nama_tetangga : [];
-  const [bU = '', bS = '', bT = '', bB = ''] = tetangga;
+  // [Sesi 41 NEW] NIB & Nomor Surat Ukur
+  const nib            = suratUkur.nib              || cover.nib              || '';
+  const nomorSuratUkur = suratUkur.nomor_surat_ukur || cover.nomor_surat_ukur || '';
+  const kodeDokParts   = [];
+  if (nib) kodeDokParts.push(`NIB: ${nib}`);
+  if (nomorSuratUkur) kodeDokParts.push(`SU: ${nomorSuratUkur}`);
+  const kodeDokumen = suratUkur.kode_dokumen || kodeDokParts.join(' | ') || '';
+
+  // [Sesi 41 NEW] Batas tanah — prioritas dari peta, fallback ke surat_ukur
+  const petaTetangga = Array.isArray(peta.nama_tetangga) ? peta.nama_tetangga : [];
+  const [pU = '', pS = '', pT = '', pB = ''] = petaTetangga;
+
+  const bU = pU || peta.batas_utara   || suratUkur.batas_utara   || '';
+  const bS = pS || peta.batas_selatan || suratUkur.batas_selatan || '';
+  const bT = pT || peta.batas_timur   || suratUkur.batas_timur   || '';
+  const bB = pB || peta.batas_barat   || suratUkur.batas_barat   || '';
 
   const alamatParts  = [desa, kec ? `Kec. ${kec}` : null, kab ? `Kab. ${kab}` : null, prov].filter(Boolean);
   const alamatOcr    = alamatParts.join(', ');
   const deskripsiOcr = [keadaan, luasM2 ? `${luasM2} m\u00B2` : ''].filter(Boolean).join(', ');
 
-  return { nomorSertifikat: nomor, atasNama: nama, luasTanah: luasM2,
-           kabupaten: kab, kecamatan: kec, kelurahan: desa,
-           alamatAgunan: alamatOcr, deskripsi: deskripsiOcr,
-           batasUtara: bU, batasSelatan: bS, batasTimur: bT, batasBarat: bB };
+  return {
+    nomorSertifikat: nomor,
+    atasNama:        nama,
+    luasTanah:       luasM2,
+    luasBangunan:    luasBgn,
+    kabupaten:       kab,
+    kecamatan:       kec,
+    kelurahan:       desa,
+    alamatAgunan:    alamatOcr,
+    deskripsi:       deskripsiOcr,
+    batasUtara:      bU,
+    batasSelatan:    bS,
+    batasTimur:      bT,
+    batasBarat:      bB,
+    // [Sesi 41 NEW]
+    nib:             nib,
+    nomorSuratUkur:  nomorSuratUkur,
+    kodeDokumen:     kodeDokumen,
+  };
 }
 
 export default function AgunanEditPage() {
@@ -182,6 +213,8 @@ export default function AgunanEditPage() {
       ...(merged.batasSelatan    && { batasSelatan:      merged.batasSelatan }),
       ...(merged.batasTimur      && { batasTimur:        merged.batasTimur }),
       ...(merged.batasBarat      && { batasBarat:        merged.batasBarat }),
+      // [Sesi 41 NEW] NIB & Nomor Surat Ukur disimpan ke kode_dokumen
+      ...(merged.kodeDokumen     && { kodeDokumen:       merged.kodeDokumen }),
     }));
     setSuccessMsg('✅ Data dari SHM berhasil diterapkan ke form!');
     setTimeout(() => setSuccessMsg(''), 3000);
@@ -352,7 +385,10 @@ export default function AgunanEditPage() {
           </div>
           <div><label className="label">No. Sertifikat</label><input type="text" value={form.nomorSertifikat} onChange={e => update('nomorSertifikat', e.target.value)} className="input-field" /></div>
           <div><label className="label">Atas Nama</label><input type="text" value={form.atasNama} onChange={e => update('atasNama', e.target.value)} className="input-field" /></div>
-          <div><label className="label">Deskripsi</label><input type="text" value={form.deskripsi} onChange={e => update('deskripsi', e.target.value)} className="input-field" /></div>
+          
+          {!['SHM', 'SHGB', 'AJB'].includes(form.jenisAgunan) && (
+            <div><label className="label">Deskripsi</label><input type="text" value={form.deskripsi} onChange={e => update('deskripsi', e.target.value)} className="input-field" /></div>
+          )}
 
           {['SHM', 'SHGB', 'AJB'].includes(form.jenisAgunan) && (
             <>

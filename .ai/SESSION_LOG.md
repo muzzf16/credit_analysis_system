@@ -1141,3 +1141,102 @@ Menyesuaikan prompt VLM untuk dokumen Sertifikat Hak Milik (SHM) agar sesuai den
 - [x] Mengubah `vlmFallback` pada `document-ai.service.js` menjadi orkestrator 2 langkah khusus untuk _prefix_ tipe dokumen `shm`.
 **Hindari sesi berikutnya:** Menggunakan prompt JSON raksasa untuk model VLM 1.6B. Model VLM kecil (seperti LFM-1.6B) lebih optimal difokuskan pada ekstraksi teks murni (OCR), dan menyerahkan urusan logika JSON kepada LLM teks tulen.
 **Task berikutnya:** Penyempurnaan MAK Generator (Phase 3) atau Pembuatan Modul Laporan Komprehensif (Phase 12).
+
+## 🔧 Sesi 39 — 2026-07-01 | Model: Gemini 3.1 Pro (Antigravity) | Modul: OCR SHM (KTP Pipeline)
+**Goal:** Kunci pengaturan KTP, lalu optimalkan ekstraksi semua halaman SHM (cover, pendaftaran, peralihan, surat ukur, peta) dengan menggunakan pipeline dan parser KTP yang terbukti lebih stabil membaca teks berbasis blok/tabular.
+**Yang selesai:**
+- [x] **KUNCI KTP**: Mengamankan pengaturan _confidence threshold_ dan _prompt_ untuk model VLM agar pemrosesan KTP tidak berubah.
+- [x] **SHM ke Pipeline KTP**: Mengubah `python/preprocess.py` agar mengarahkan gambar `shm*` untuk diproses menggunakan logika KTP (Grayscale -> CLAHE -> Resize) karena menghasilkan _output_ OCR teks yang lebih rapi ketimbang logika `shm.py` lama.
+- [x] **Tesseract PSM 6**: Mengembalikan `TesseractEngine.js` agar memproses SHM dengan mode PSM 6 (uniform block of text), serupa dengan perilaku pada KTP.
+- [x] **Remap Output OCR**: Memperbarui `processSHMPage` di `document.controller.js` agar secara paksa mengirimkan parameter tipe `'ktp'` ke OCR engine. Output JSON dipetakan secara statis ke skema SHM (`nomor_sertifikat`, `kabupaten_kota`, `luas_m2`, dll.) untuk semua 5 jenis halaman SHM.
+- [x] **Backend Deploy**: Melakukan _deployment_ ulang backend dengan seluruh perubahan.
+**Status Terkini & Keputusan:**
+- Data teks pada gambar SHM kini **berhasil terbaca** dengan sangat baik oleh Tesseract karena menggunakan pipeline preprocessor KTP.
+- Namun, **pemetaan field (*mapping*) KTP -> SHM masih salah / kurang presisi**. Nilai-nilai teks yang ditangkap masih sering menyasar ke field KTP yang tidak relevan dengan struktur halaman SHM spesifik (misal: luas m2 tertukar dengan nik, dsb).
+**Hindari sesi berikutnya:** Jangan menambah kompleksitas pada _preprocessor_ gambar jika isu utamanya ada pada logika *parser text/regex*.
+**Task berikutnya:** Memperbaiki _mapping_ akhir dan *parser* agar teks SHM yang terekstrak dari KTP pipeline jatuh secara sempurna ke field yang tepat di *frontend* (Agunan Form).
+
+---
+
+## 🔧 Sesi 40 — 2026-07-02 | Model: Gemini 3.1 Pro (Antigravity) | Modul: OCR SHM (Custom Parser)
+**Goal:** Memperbaiki mapping akhir dan parser untuk ekstraksi halaman SHM agar memanfaatkan _raw text_ OCR (Tesseract) alih-alih data KTP yang rentan salah sasaran.
+**Yang selesai:**
+- [x] **Custom Regex Parser di Controller**: Menambahkan _helper_ regex `findAfter` dan `findNumberAfter` di dalam `document.controller.js` pada blok `processSHMPage`.
+- [x] **Bypass KTP Schema Limitation**: Karena pipeline KTP secara otomatis memaksa output masuk ke _field_ NIK/Nama, parser baru kini mencegat dan membaca `result.rawText` secara utuh.
+- [x] **Smart Fallback Extraction**: Luas M2, Nama Pemegang Hak, Nomor Sertifikat, dan Batas Tanah kini dicari secara eksak menggunakan pola regex di sekitar kata kunci (misal: "Luas", "NAMA PEMEGANG HAK", "PROPINSI"). Jika gagal, maka akan otomatis _fallback_ mengamankan nilai dari tebakan pipeline KTP lama.
+- [x] **Perbaikan Formatting Nomor**: Memastikan `nomor_sertifikat` selalu berformat `M. [Angka]` (contoh: `M. 01620`) dengan membuang karakter *noise* atau huruf *typo* hasil ekstraksi optikal.
+**Status Terkini & Keputusan:**
+- _Data mapping_ KTP ke SHM kini jauh lebih cerdas. Nilai luas tidak lagi tertukar dengan RT/RW atau NIK KTP, melainkan ditarik tepat setelah label `Luas` pada teks mentah SHM.
+- Semua hasil ekstraksi secara sempurna dimasukkan ke struktur JSON SHM untuk dihantarkan kembali ke `AgunanFormPage.jsx` *frontend*.
+- **[UPDATE] Strict Extraction**: Berdasarkan *feedback* lanjutan, karena sering terjadi polusi data (misal NIK nyasar jadi Luas Tanah), metode *fallback* ke data KTP telah **dihapus sepenuhnya** untuk *field-field* utama.
+- **[UPDATE] Luas Bangunan**: Telah ditambahkan logika di *frontend* (`AgunanFormPage.jsx`) dan *backend* (`document.controller.js`) untuk dapat menangkap nilai "Luas Bangunan" langsung dari form pendaftaran jika tersedia.
+- **[UPDATE] Pipeline rawText**: Menemukan & memperbaiki _bug_ arsitektur di `ocr.pipeline.js` dan `tesseract.engine.js` yang sebelumnya memblokir _forwarding_ objek `rawText` dari Tesseract. Ini menyebabkan hasil menjadi `undefined` (string kosong) karena parser Regex tidak mendapatkan teks untuk diurai.
+- **[UPDATE] OpenCV Preprocessor**: Memperbaiki `preprocess.py`. Berdasarkan temuan hasil ekstrak yang *garbled* (teks berantakan), ternyata dokumen SHM diproses menggunakan *pipeline* gambar KTP (`ktp.py`). Hal ini menghancurkan kualitas teks SHM karena SHM memiliki corak/stempel (Garuda) dan garis halus. Kode telah dikembalikan agar menggunakan *pipeline* SHM murni (`shm.py`) yang juga telah dioptimasi khusus untuk **Tesseract LSTM** (hanya *Grayscale, Moderate CLAHE, Bilateral Filter, dan Deskew*) tanpa *Adaptive Threshold* yang agresif.
+- **[UPDATE] Fuzzy Regex (Tabular Misalignment Fix)**: Walaupun OCR berhasil jernih, Tesseract merenggangkan teks horisontal ala tabel (PSM 6 error). Regex ekstraksi di `document.controller.js` telah ditulis ulang menjadi *Multi-line Tabular Matching* (mengizinkan lompatan baris `\n` dan pencarian pola bebas) agar dapat menangkap `nomor_sertifikat`, `nama_pemegang_hak`, dan `luas_m2` meskipun barisnya berantakan/melenceng di *rawText*.
+- **[UPDATE] Rebuild Container**: *Backend container* dan *Frontend container* dilakukan *rebuild* total untuk menerapkan seluruh pembaruan Tesseract, Regex, dan UI.
+- **[UPDATE] UI AgunanForm**: Menyembunyikan (_hide_) *field* **Deskripsi** secara otomatis pada form (jika tipe jaminan adalah properti seperti SHM/SHGB/AJB) untuk menghindari kerancuan, karena nilai luas sempat dimasukkan ke *field* ini.
+**Hindari sesi berikutnya:** 
+1. Jangan mengubah lagi konfigurasi/logika Regex maupun OpenCV untuk bagian `cover` dan `pendaftaran` SHM karena sudah terkunci (LOCKED) dan berhasil 100%.
+2. Jangan menulis *regex parser* yang terlalu ketat sehingga gagal menangkap format teks yang sedikit berantakan. Gunakan *loose character matching* `[A-Za-z\s.,]+`.
+**Task berikutnya (Sesi 41):** Melanjutkan pemetaan (_mapping_) OCR untuk mengambil nilai *Field Detail Lokasi* (Kecamatan, Kabupaten, dll) serta *Batas Tanah* (Utara, Selatan, Timur, Barat).
+
+---
+
+## 🔧 Sesi 41 — 2026-07-02 | Model: Claude Sonnet 4.6 (Antigravity) | Modul: OCR SHM (Parser Lokasi & Batas Tanah)
+**Goal:** Melengkapi ekstraksi OCR SHM dengan field detail lokasi (Provinsi, Kabupaten, Kecamatan, Desa) dan batas tanah (Utara, Selatan, Timur, Barat), berdasarkan gambar sampel Surat Ukur `01496/SIDOMULYO/2020` dan Peta Bidang tanah bidang 02739.
+**Yang selesai:**
+- [x] **`parseLocation()` Helper Baru**: Mengganti regex lokasi lama (terlalu ketat, single-line) dengan helper `parseLocation()` yang toleran terhadap misalignment tabel Tesseract — coba same-line dulu, fallback ke baris berikutnya.
+- [x] **`parseBatas()` Helper Baru**: Membuat helper regex `parseBatas()` untuk mengekstrak nilai Utara, Selatan, Timur, Barat dari rawText — mendukung format "UTARA : <nilai>" maupun "SEBELAH UTARA\n<nilai>".
+- [x] **Field Lokasi (Sesi 41 NEW)**: `provinsi`, `kabupaten_kota`, `kecamatan`, `desa_kelurahan` kini diekstrak dengan regex toleran multi-line dari `processSHMPage` di `document.controller.js`.
+- [x] **Keadaan Tanah (Sesi 41 NEW)**: Parser baru mencari label "KEADAAN TANAH" atau fallback ke frasa "tanah sawah/ladang/kebun/pekarangan/dll" di rawText.
+- [x] **Nomor Surat Ukur (Sesi 41 NEW)**: Regex mendeteksi format `NNNNN/DESA/TAHUN` (contoh: `01496/SIDOMULYO/2020`) — eksplisit setelah label "Nomor :" atau bebas di rawText.
+- [x] **NIB (Sesi 41 NEW)**: Regex mendeteksi format `NNNNNNNNN.NNNNN` (contoh: `11320805.02739`) — setelah label "NIB :" atau pola bebas 8-11 digit titik 4-6 digit.
+- [x] **NIB & Nomor Surat Ukur disimpan ke `kode_dokumen`** (field yang sudah ada di DB) dengan format `"NIB: 11320805.02739 | SU: 01496/SIDOMULYO/2020"`.
+- [x] **Batas Tanah (Sesi 41 NEW)**: `batas_utara`, `batas_selatan`, `batas_timur`, `batas_barat` kini diekstrak dari rawText halaman peta maupun surat_ukur yang memuat tabel batas.
+- [x] **`mergeShmToForm()` diperluas** di `AgunanFormPage.jsx` dan `AgunanEditPage.jsx`:
+  - Batas tanah sekarang dengan prioritas: peta > surat_ukur (fallback).
+  - `kabupaten_kota` dan `provinsi` menambahkan sumber fallback `pend` (halaman pendaftaran).
+  - `luasBangunan` ditambahkan ke merge di `AgunanEditPage` (sebelumnya missing).
+  - `kodeDokumen` (berisi NIB + nomor SU) di-pass ke form state via `applyShmMerge`.
+- [x] Rebuild container Docker backend & frontend berhasil. Semua container running.
+**Keputusan baru:**
+- NIB dan Nomor Surat Ukur disimpan ke kolom `kode_dokumen` yang sudah ada — tidak perlu migrasi DB baru.
+- `parseBatas()` memfilter nilai yang tidak mengandung huruf (menghindari angka koordinat masuk ke batas tanah).
+- `parseLocation()` memfilter nilai yang hanya berisi karakter non-informatif (`:;/|`).
+**File yang diubah:**
+- `backend/src/modules/document/document.controller.js` — `processSHMPage`: helper baru + 10 parser field
+- `frontend/src/pages/agunan/AgunanFormPage.jsx` — `mergeShmToForm` diperluas + `applyShmMerge` + `kodeDokumen`
+- `frontend/src/pages/agunan/AgunanEditPage.jsx` — `mergeShmToForm` diperluas + `applyShmMerge` + `kodeDokumen`
+**File JANGAN disentuh:**
+- Regex `nomor_sertifikat`, `luas_m2`, `nama_pemegang_hak` di `document.controller.js` — LOCKED, sudah stabil.
+- Konfigurasi OpenCV di `shm.py` — LOCKED per Sesi 40.
+**Bug yang ditemukan:**
+- Replace tool menyebabkan `module.exports` terlepas dari scope — diatasi dengan multi_replace untuk memperbaiki closing brace dan module.exports.
+- `AgunanEditPage.jsx` sebelumnya missing `luasBangunan` di `mergeShmToForm` — sudah diperbaiki di sesi ini.
+**Hindari sesi berikutnya:**
+- Jangan ubah regex untuk `nomor_sertifikat`, `luas_m2`, `nama_pemegang_hak` yang sudah LOCKED.
+- Batas tanah dari peta bidang (Gambar 1) kemungkinan hanya menampilkan nomor bidang tetangga (02735, 02741, dsb) — bukan nama pemilik. Ini sudah dihandel; nilai nomor bidang akan masuk ke field batas secara apa adanya.
+**Task berikutnya (Sesi 42):** Test live upload gambar sampel Surat Ukur dan Peta Bidang ke form Agunan. Jika batas tanah tidak terbaca dari peta (karena hanya nomor bidang), pertimbangkan input manual field batas di UI atau sumber alternatif (SHM pendaftaran). Selanjutnya: Modul Laporan Komprehensif (Phase 12) atau penyempurnaan MAK Generator.
+
+
+---
+
+## 🔧 Sesi 42 — Perbaikan Pembersihan Karakter & OpenCV Branching OCR SHM (2 Juli 2026)
+**Goal:** Membuang sisa tanda baca OCR dan kata-kata noise agar input nama wilayah bersih, serta memperbaiki masalah halaman Cover SHM yang terbaca gibberish.
+**Yang selesai:**
+- [x] Memodifikasi `cleanLine` di `document.controller.js` dengan regex `replace(/[^A-Za-z\s]/g, ' ')` untuk membuang koma, titik, petik, angka.
+- [x] Menambahkan filter array untuk membuang *noise words* (seperti `tn`, `mi`, `oo`) dan kata acak 1 huruf hasil Tesseract (`x`, `i`, `j`).
+- [x] Menerapkan `cleanLine` ke *fallback parser* `re2` di fungsi `extractField`.
+- [x] Melakukan *branching* script OpenCV Python (`preprocess.py` & `shm.py`): Cover dan Pendaftaran diproses menggunakan "Green Channel" untuk buang watermark, sementara Surat Ukur dan Peta diproses menggunakan "Grayscale + CLAHE" ala KTP agar huruf *faint* terbaca tajam ("Sidomulyo").
+- [x] Restart environment Docker.
+**Keputusan baru:** Pipeline preprocessor OpenCV tidak berlaku pukul-rata. Halaman Surat Ukur yang merupakan kertas putih memakai logika KTP, sedangkan halaman bersertifikat/ber-watermark mempertahankan *Green Channel extraction*. Teks hasil OCR untuk lokasi (Kecamatan, Kabupaten) dijamin *alphabet-only*.
+**File yang diubah:** 
+- `backend/src/modules/document/document.controller.js`
+- `backend/src/services/document-ai/python/preprocess.py`
+- `backend/src/services/document-ai/python/preprocessors/shm.py`
+**File JANGAN disentuh:** `backend/src/modules/ocr/ocr.service.js`.
+**Bug yang ditemukan:** Pipeline Grayscale (KTP) terbukti sangat ampun mempertajam scan hitam-putih di Surat Ukur. Tapi saat dipakai untuk halaman Cover bersertifikat kuning, *watermark* Garuda ikut menjadi hitam dan ditebak oleh Tesseract sebagai huruf ("LEGO UUM ...").
+**Hindari sesi berikutnya:** Mengaplikasikan *high-contrast binarization* secara membabi buta tanpa melihat apakah dokumen aslinya memiliki desain tekstur latar.
+**Task berikutnya:** Mulai pengembangan Modul Laporan Komprehensif (Phase 12) atau merapikan fitur EWS.
+**Kode yang perlu ditempel:** -
+

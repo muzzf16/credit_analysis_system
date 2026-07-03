@@ -33,27 +33,46 @@ function mergeShmToForm(pages) {
   const nama     = pend.nama_pemegang_hak   || pend.atas_nama           || '';
   const luasM2   = (pend.luas_m2 > 0 ? pend.luas_m2 : null)
                  || (suratUkur.luas_m2 > 0 ? suratUkur.luas_m2 : null) || 0;
+  const luasBgn  = (pend.luas_bangunan > 0 ? pend.luas_bangunan : null)
+                 || (suratUkur.luas_bangunan > 0 ? suratUkur.luas_bangunan : null) || 0;
   const keadaan  = suratUkur.keadaan_tanah  || pend.keadaan_tanah       || '';
   const kec      = cover.kecamatan          || suratUkur.kecamatan       || pend.kecamatan       || '';
-  const kab      = cover.kabupaten_kota     || suratUkur.kabupaten_kota  || '';
+  const kab      = cover.kabupaten_kota     || suratUkur.kabupaten_kota  || pend.kabupaten_kota  || '';
   const desa     = cover.desa_kelurahan     || suratUkur.desa_kelurahan  || pend.desa_kelurahan  || '';
-  const prov     = cover.provinsi           || suratUkur.provinsi        || '';
+  const prov     = cover.provinsi           || suratUkur.provinsi        || pend.provinsi        || '';
 
-  // Batas tanah dari peta: nama tetangga = [Utara, Selatan, Timur, Barat]
-  const tetangga   = Array.isArray(peta.nama_tetangga) ? peta.nama_tetangga : [];
-  const [bU = '', bS = '', bT = '', bB = ''] = tetangga;
+  // [Sesi 41 NEW] NIB & Nomor Surat Ukur — dari surat_ukur atau cover
+  const nib            = suratUkur.nib            || cover.nib            || '';
+  const nomorSuratUkur = suratUkur.nomor_surat_ukur || cover.nomor_surat_ukur || '';
+
+  // Gabungkan ke kode_dokumen jika tersedia
+  const kodeDokParts = [];
+  if (nib) kodeDokParts.push(`NIB: ${nib}`);
+  if (nomorSuratUkur) kodeDokParts.push(`SU: ${nomorSuratUkur}`);
+  const kodeDokumen = suratUkur.kode_dokumen || kodeDokParts.join(' | ') || '';
+
+  // [Sesi 41 NEW] Batas tanah — prioritas dari peta, fallback ke surat_ukur
+  // nama_tetangga array (backward compat): [Utara, Selatan, Timur, Barat]
+  const petaTetangga = Array.isArray(peta.nama_tetangga) ? peta.nama_tetangga : [];
+  const [pU = '', pS = '', pT = '', pB = ''] = petaTetangga;
+
+  const bU = pU || peta.batas_utara   || suratUkur.batas_utara   || '';
+  const bS = pS || peta.batas_selatan || suratUkur.batas_selatan || '';
+  const bT = pT || peta.batas_timur   || suratUkur.batas_timur   || '';
+  const bB = pB || peta.batas_barat   || suratUkur.batas_barat   || '';
 
   // Alamat otomatis
   const alamatParts = [desa, kec ? `Kec. ${kec}` : null, kab ? `Kab. ${kab}` : null, prov].filter(Boolean);
   const alamatOcr   = alamatParts.join(', ');
 
-  // Deskripsi otomatis
+  // Deskripsi otomatis dari keadaan tanah + luas
   const deskripsiOcr = [keadaan, luasM2 ? `${luasM2} m\u00B2` : ''].filter(Boolean).join(', ');
 
   return {
     nomorSertifikat: nomor,
     atasNama:        nama,
     luasTanah:       luasM2,
+    luasBangunan:    luasBgn,
     kabupaten:       kab,
     kecamatan:       kec,
     kelurahan:       desa,
@@ -63,8 +82,13 @@ function mergeShmToForm(pages) {
     batasSelatan:    bS,
     batasTimur:      bT,
     batasBarat:      bB,
+    // [Sesi 41 NEW]
+    nib:             nib,
+    nomorSuratUkur:  nomorSuratUkur,
+    kodeDokumen:     kodeDokumen,
   };
 }
+
 
 export default function AgunanFormPage() {
   const [params] = useSearchParams();
@@ -129,6 +153,8 @@ export default function AgunanFormPage() {
       ...(merged.batasSelatan    && { batasSelatan:     merged.batasSelatan }),
       ...(merged.batasTimur      && { batasTimur:       merged.batasTimur }),
       ...(merged.batasBarat      && { batasBarat:       merged.batasBarat }),
+      // [Sesi 41 NEW] NIB & Nomor Surat Ukur disimpan ke kode_dokumen
+      ...(merged.kodeDokumen     && { kodeDokumen:      merged.kodeDokumen }),
     };
     setAgunanList(updated);
   };
@@ -357,8 +383,10 @@ export default function AgunanFormPage() {
             </div>
             <div><label className="label">No. Sertifikat</label><input type="text" value={a.nomorSertifikat} onChange={e => updateAgunan(i, 'nomorSertifikat', e.target.value)} className="input-field" /></div>
             <div><label className="label">Atas Nama</label><input type="text" value={a.atasNama} onChange={e => updateAgunan(i, 'atasNama', e.target.value)} className="input-field" /></div>
-            <div><label className="label">Deskripsi</label><input type="text" value={a.deskripsi} onChange={e => updateAgunan(i, 'deskripsi', e.target.value)} className="input-field" /></div>
-
+            
+            {!['SHM', 'SHGB', 'AJB'].includes(a.jenisAgunan) && (
+              <div><label className="label">Deskripsi</label><input type="text" value={a.deskripsi} onChange={e => updateAgunan(i, 'deskripsi', e.target.value)} className="input-field" /></div>
+            )}
             {['SHM', 'SHGB', 'AJB'].includes(a.jenisAgunan) && (
               <>
                 <div><label className="label">Luas Tanah (m²)</label><input type="number" value={a.luasTanah} onChange={e => updateAgunan(i, 'luasTanah', parseFloat(e.target.value) || 0)} className="input-field text-right" /></div>

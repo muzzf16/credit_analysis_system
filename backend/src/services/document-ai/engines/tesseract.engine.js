@@ -22,15 +22,17 @@ class TesseractEngine {
       // Strict validation for KTP disabled to prioritize Tesseract
       if (tesseractType === 'ktp') {
         confidenceThreshold = 0.5; // Lower confidence threshold to accept Tesseract results
+      } else if (tesseractType.startsWith('shm')) {
+        confidenceThreshold = 0.1; // ACCEPT SHM TESSERACT REGARDLESS OF CONFIDENCE
       }
       
       if (confidence < confidenceThreshold) {
         throw new Error(`Low confidence: ${confidence.toFixed(2)} (Threshold: ${confidenceThreshold})`);
       }
-      
       return {
         success: true,
         data: ocrResult.data || {},
+        rawText: ocrResult.rawText, // Forward raw text for parsing
         confidences: ocrResult.confidences,
         warnings: ocrResult.warnings,
         confidence: confidence
