@@ -1,5 +1,5 @@
 const db = require('../../../config/database');
-const { minioClient, BUCKET_NAME: BUCKET } = require('../../../config/minio');
+const { minioClient, getPresignedUrl: minioGetPresignedUrl, BUCKET_NAME: BUCKET } = require('../../../config/minio');
 const { v4: uuid } = require('uuid');
 const path = require('path');
 const config = require('../../../config');
@@ -807,7 +807,7 @@ class DocumentIntelligenceService {
     // Presigned MinIO Url to view the document
     let fileUrl = '';
     try {
-      fileUrl = await minioClient.presignedGetObject(BUCKET, job.file_path, 3600);
+      fileUrl = await minioGetPresignedUrl(job.file_path, 3600);
     } catch (e) {
       console.error(`[Doc Intel] Presigned URL failed for ${job.file_path}`, e);
     }

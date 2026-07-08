@@ -9,7 +9,7 @@ class GlmOcrClient {
    * @returns {Promise<object>} Raw JSON response from GLM OCR Service
    */
   static async uploadKtp(fileBuffer, mimeType, fileName) {
-    const baseUrl = config.glmOcrServiceUrl || 'http://localhost:8000';
+    const baseUrl = config.glmOcrServiceUrl || 'http://localhost:8099';
     const url = `${baseUrl}/ocr/ktp`;
     
     console.log(`[GLM OCR Client] Sending request to ${url}`);
@@ -19,10 +19,17 @@ class GlmOcrClient {
     const formData = new FormData();
     formData.append('file', blob, fileName);
 
+    const controller = new AbortController();
+    const timeoutMs = 90000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     const response = await fetch(url, {
       method: 'POST',
-      body: formData
+      body: formData,
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();

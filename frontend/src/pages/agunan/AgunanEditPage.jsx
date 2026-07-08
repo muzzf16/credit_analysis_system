@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Building2, MapPin, CheckCircle, XCircle, Upload, RefreshCw } from 'lucide-react';
-import { agunanService, documentService } from '../../services';
+import { agunanService, documentService, pengajuanService, debiturService } from '../../services';
 import { JENIS_AGUNAN } from '../../utils/constants';
 import { formatRupiah } from '../../utils/formatters';
 
@@ -91,11 +91,36 @@ export default function AgunanEditPage() {
   const [error,        setError]        = useState('');
   const [successMsg,   setSuccessMsg]   = useState('');
   const [pengajuanId,  setPengajuanId]  = useState('');
+  const [debiturInfo,  setDebiturInfo]  = useState({ nama: '', alamat: '', usaha: '' });
+
+  useEffect(() => {
+    if (!pengajuanId) return;
+    const fetchDebitur = async () => {
+      try {
+        const resP = await pengajuanService.getById(pengajuanId);
+        const peng = resP.data.data;
+        if (peng && peng.debitur_id) {
+          const resD = await debiturService.getById(peng.debitur_id);
+          const deb = resD.data.data;
+          setDebiturInfo({
+            nama: deb.nama || peng.debitur_nama || '',
+            alamat: deb.alamat || '',
+            usaha: deb.usaha?.nama_usaha || ''
+          });
+        }
+      } catch (err) {
+        console.error('Gagal mengambil data debitur:', err);
+      }
+    };
+    fetchDebitur();
+  }, [pengajuanId]);
 
   // ─── SHM multi-page state ────────────────────────────────────────────────
   const [shmPages, setShmPages] = useState(INIT_SHM_PAGES());
   // BPKB single upload loading
   const [bpkbLoading, setBpkbLoading] = useState(false);
+  // SPPT PBB single upload loading
+  const [spptLoading, setSpptLoading] = useState(false);
 
   const updateShmPage = (pageKey, patch) =>
     setShmPages(prev => ({ ...prev, [pageKey]: { ...prev[pageKey], ...patch } }));
@@ -110,6 +135,7 @@ export default function AgunanEditPage() {
     batasUtara: '', batasSelatan: '', batasTimur: '', batasBarat: '',
     bentukTanah: 'Segi Empat', permukaanTanah: 'Rata', aksesJalan: 'Simpangan Mobil', jenisJalan: 'Aspal',
     lantaiBangunan: '', rangkaAtap: '', penutupAtap: '', dinding: '', fasilitasListrik: '', fasilitasAir: '',
+    fotoJaminan: [],
   });
 
   useEffect(() => {
@@ -151,6 +177,11 @@ export default function AgunanEditPage() {
           dinding: a.dinding || '',
           fasilitasListrik: a.fasilitas_listrik || '',
           fasilitasAir: a.fasilitas_air || '',
+          fotoJaminan: (a.foto || []).map(f => ({
+            id: f.id,
+            file_path: f.file_path,
+            preview: f.file_url || '', // file_url sudah berupa full presigned URL dari MinIO
+          })),
         });
       } catch (err) {
         setError(err.response?.data?.message || 'Gagal memuat data agunan.');
@@ -164,7 +195,18 @@ export default function AgunanEditPage() {
   const update = (field, value) => {
     setForm(prev => {
       const next = { ...prev, [field]: value };
-      if (field === 'nilaiTaksasi') next.nilaiLikuidasi = Math.round(parseFloat(value || 0) * 0.6);
+      
+      // Auto-calculate Taksasi = 90% of Pasar
+      if (field === 'nilaiPasar') {
+        const pasarVal = parseFloat(value || 0);
+        next.nilaiTaksasi = Math.round(pasarVal * 0.9);
+      }
+      
+      // Auto-calculate Likuidasi = 60% of Taksasi
+      if (field === 'nilaiTaksasi' || (field === 'nilaiPasar' && next.nilaiTaksasi)) {
+        next.nilaiLikuidasi = Math.round(parseFloat(next.nilaiTaksasi || 0) * 0.6);
+      }
+      
       return next;
     });
   };
@@ -243,11 +285,98 @@ export default function AgunanEditPage() {
     }
   };
 
+  const handleFotoJaminanUpload = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    const currentPhotos = form.fotoJaminan || [];
+    if (currentPhotos.length + files.length > 2) {
+      alert('Maksimal 2 foto jaminan diperbolehkan.');
+      return;
+    }
+    const newPhotos = files.map(file => ({
+      file,
+      preview: URL.createObjectURL(file)
+    }));
+    update('fotoJaminan', [...currentPhotos, ...newPhotos]);
+  };
+
+  const removeFotoJaminan = async (photoIndex) => {
+    const currentPhotos = [...(form.fotoJaminan || [])];
+    const photo = currentPhotos[photoIndex];
+
+    // Jika foto lama (dari DB), hapus via API backend
+    if (photo.id) {
+      try {
+        await agunanService.deleteFoto(id, photo.id);
+      } catch (err) {
+        setError(`Gagal menghapus foto: ${err.response?.data?.message || err.message}`);
+        return; // Batalkan jika API gagal
+      }
+    } else if (photo.preview) {
+      // Foto baru yang belum disimpan, cukup revoke blob URL
+      URL.revokeObjectURL(photo.preview);
+    }
+
+    currentPhotos.splice(photoIndex, 1);
+    update('fotoJaminan', currentPhotos);
+  };
+
+  // ─── SPPT PBB OCR ────────────────────────────────────────────────────────
+  const handleSpptScan = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setSpptLoading(true); setError('');
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res       = await documentService.extractSpptPbb(formData);
+      const extracted = res.data.data.data || {};
+      
+      let njopStr = extracted.total_njop || '';
+      if (typeof njopStr === 'string') njopStr = njopStr.replace(/[^0-9]/g, '');
+      const njopVal = parseFloat(njopStr) || 0;
+      
+      setForm(prev => ({
+        ...prev,
+        ...(njopVal > 0 && { nilaiNjop: njopVal }),
+      }));
+      setSuccessMsg('OCR SPPT PBB berhasil diproses.');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Gagal memproses OCR SPPT PBB.');
+    } finally {
+      setSpptLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     setLoading(true); setError(''); setSuccessMsg('');
     try {
-      await agunanService.update(id, form);
-      setSuccessMsg('Data agunan berhasil diperbarui!');
+      const { fotoJaminan, ...agunanPayload } = form;
+      await agunanService.update(id, agunanPayload);
+
+      const newPhotos = (fotoJaminan || []).filter(f => f.file);
+      let uploadErrors = 0;
+      if (newPhotos.length > 0) {
+        for (const foto of newPhotos) {
+          const formData = new FormData();
+          formData.append('file', foto.file);
+          formData.append('kategori', 'FOTO_JAMINAN_EDIT');
+          formData.append('keterangan', 'Foto Jaminan Baru');
+          try {
+            await agunanService.addFoto(id, formData);
+          } catch (errUpload) {
+            console.error('Gagal upload foto jaminan:', errUpload);
+            uploadErrors++;
+          }
+        }
+      }
+
+      if (uploadErrors > 0) {
+        setSuccessMsg(`Data agunan berhasil diperbarui, namun ${uploadErrors} foto gagal diupload.`);
+      } else {
+        setSuccessMsg('Data agunan berhasil diperbarui!');
+      }
       setTimeout(() => navigate(`/pengajuan/${pengajuanId}`), 1500);
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal memperbarui agunan.');
@@ -399,7 +528,14 @@ export default function AgunanEditPage() {
 
           {/* Penilaian */}
           <hr className="md:col-span-2 border-navy-border" />
-          <h4 className="md:col-span-2 text-sm font-semibold text-gold">💰 Penilaian</h4>
+          <div className="md:col-span-2 flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-gold">💰 Penilaian</h4>
+            <label className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer">
+              {spptLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              {spptLoading ? 'Scan SPPT...' : 'Scan SPPT PBB'}
+              <input type="file" accept="image/*,.pdf,application/pdf" onChange={handleSpptScan} className="hidden" disabled={spptLoading} />
+            </label>
+          </div>
           <div><label className="label">Nilai Pasar (Rp)</label><input type="number" value={form.nilaiPasar} onChange={e => update('nilaiPasar', parseFloat(e.target.value) || 0)} className="input-field text-right" /></div>
           <div><label className="label">Nilai NJOP (Rp)</label><input type="number" value={form.nilaiNjop} onChange={e => update('nilaiNjop', parseFloat(e.target.value) || 0)} className="input-field text-right" /></div>
           <div><label className="label">Nilai Taksasi (Rp)</label><input type="number" value={form.nilaiTaksasi} onChange={e => update('nilaiTaksasi', parseFloat(e.target.value) || 0)} className="input-field text-right" /></div>
@@ -469,14 +605,96 @@ export default function AgunanEditPage() {
           <div><label className="label">Fasilitas Listrik</label><input type="text" value={form.fasilitasListrik} onChange={e => update('fasilitasListrik', e.target.value)} className="input-field" placeholder="Contoh: 900 Watt" /></div>
           <div><label className="label">Fasilitas Air</label><input type="text" value={form.fasilitasAir} onChange={e => update('fasilitasAir', e.target.value)} className="input-field" placeholder="Contoh: PDAM / Sumur" /></div>
 
-          {/* GPS */}
-          <hr className="md:col-span-2 border-navy-border mt-4" />
-          <div className="flex items-end gap-2 md:col-span-2">
-            <div className="flex-1"><label className="label">Titik Koordinat (GPS)</label><input type="text" readOnly value={form.latitude ? `${form.latitude}, ${form.longitude}` : ''} className="input-field" placeholder="Belum ada" /></div>
-            <button onClick={getLocation} className="btn-secondary shrink-0 mb-0"><MapPin className="w-4 h-4" /> Dapatkan GPS</button>
+            <hr className="md:col-span-2 border-navy-border mt-4" />
+            <div className="flex items-end gap-2 md:col-span-2">
+              <div className="flex-1"><label className="label">Titik Koordinat (GPS)</label><input type="text" readOnly value={form.latitude ? `${form.latitude}, ${form.longitude}` : ''} className="input-field" placeholder="Belum ada" /></div>
+              <button onClick={getLocation} className="btn-secondary shrink-0 mb-0"><MapPin className="w-4 h-4" /> Dapatkan GPS</button>
+            </div>
+
+            <hr className="md:col-span-2 border-navy-border mt-4" />
+            
+            {/* ─── Foto Jaminan & Cetak Preview ──────────────────────────────── */}
+            <div className="md:col-span-2 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-gold">📸 Foto Jaminan</h4>
+                  <p className="text-xs text-slate-400">Unggah foto agunan (maks 2). Dokumen preview cetak akan otomatis terisi.</p>
+                </div>
+                <label className={`btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer ${(form.fotoJaminan?.length >= 2) ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <Upload className="w-3.5 h-3.5" />
+                  Unggah Foto
+                  <input type="file" accept="image/*" multiple onChange={handleFotoJaminanUpload} className="hidden" />
+                </label>
+              </div>
+              
+              {/* Layout Print Preview mirip gambar referensi */}
+              {(form.fotoJaminan && form.fotoJaminan.length > 0) && (
+                <div className="bg-white border-2 border-black p-6 rounded mx-auto max-w-2xl text-black shadow-lg mb-6">
+                  {/* Header Title */}
+                  <div className="text-center font-bold underline text-lg mb-6 uppercase">
+                    FOTO JAMINAN / FOTO RUMAH TEMPAT TINGGAL
+                  </div>
+                  
+                  {/* Debitur Info Table */}
+                  <table className="w-full text-sm font-medium mb-6">
+                    <tbody>
+                      <tr>
+                        <td className="w-32 py-1">Nama Debitur</td>
+                        <td className="w-4 text-center">:</td>
+                        <td className="py-1 uppercase font-bold">{debiturInfo.nama || '___________________'}</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 align-top">Alamat</td>
+                        <td className="w-4 text-center align-top">:</td>
+                        <td className="py-1 uppercase">{debiturInfo.alamat || '___________________'}</td>
+                      </tr>
+                      {debiturInfo.usaha && (
+                        <tr>
+                          <td className="py-1 align-top">Usaha</td>
+                          <td className="w-4 text-center align-top">:</td>
+                          <td className="py-1 uppercase">{debiturInfo.usaha}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+
+                  {/* Photo Area */}
+                  <div className="flex flex-col gap-6 items-center border border-black p-4 mb-6 min-h-[400px] justify-center bg-gray-50 relative">
+                    {form.fotoJaminan.map((foto, idx) => (
+                      <div key={idx} className="relative group w-full max-w-md border-2 border-black p-1 bg-white">
+                        <img 
+                          src={foto.preview || ''} 
+                          alt={`Foto Jaminan ${idx + 1}`} 
+                          className="w-full h-auto object-contain max-h-[300px]" 
+                          onError={(e) => { e.target.onerror = null; e.target.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%23eeeeee%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2216%22 fill=%22%23999999%22%3EGambar Tidak Ditemukan%3C/text%3E%3C/svg%3E'; }}
+                        />
+                        <button 
+                          onClick={() => removeFotoJaminan(idx)}
+                          className="absolute -top-3 -right-3 bg-red-600 text-white rounded-full p-1 opacity-100 transition shadow hover:bg-red-700"
+                        >
+                          <XCircle className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Signature Area */}
+                  <div className="flex justify-between px-10 text-center text-sm font-semibold">
+                    <div className="flex flex-col justify-end">
+                      <p className="mb-20">Mengetahui,<br />Kabid. Pemasaran</p>
+                      <p className="underline uppercase">EVI NOVIANTI, SE</p>
+                    </div>
+                    <div className="flex flex-col justify-end">
+                      <p className="mb-20">Petugas Analisa</p>
+                      <p className="underline uppercase">DIAN WICAKSANA ADI, ST</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
-      </div>
 
       {/* Footer Actions */}
       <div className="flex justify-end gap-3">

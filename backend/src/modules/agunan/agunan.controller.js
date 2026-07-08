@@ -31,9 +31,23 @@ async function update(req, res) {
 
 async function addFoto(req, res) {
   try {
-    const data = await svc.addFoto(req.params.agunanId, req.body);
+    if (!req.file) return error(res, 'File foto wajib diupload.', 400);
+    const data = await svc.addFoto(req.params.agunanId, req.file, req.body, req.user.id);
     return success(res, data, 'Foto agunan berhasil ditambahkan.', 201);
-  } catch (err) { return error(res, err.message, err.status || 500); }
+  } catch (err) {
+    console.error('addFoto error:', err);
+    return error(res, err.message, err.status || 500); 
+  }
 }
 
-module.exports = { create, getById, update, getByPengajuanId, addFoto };
+async function deleteFoto(req, res) {
+  try {
+    const data = await svc.deleteFoto(req.params.fotoId, req.params.agunanId);
+    return success(res, data, 'Foto agunan berhasil dihapus.');
+  } catch (err) {
+    console.error('deleteFoto error:', err);
+    return error(res, err.message, err.status || 500);
+  }
+}
+
+module.exports = { create, getById, update, getByPengajuanId, addFoto, deleteFoto };

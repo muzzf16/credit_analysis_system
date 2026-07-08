@@ -41,7 +41,8 @@ export const agunanService = {
   getById: (id) => api.get(`/agunan/${id}`),
   create: (data) => api.post('/agunan', data),
   update: (id, data) => api.put(`/agunan/${id}`, data),
-  addFoto: (agunanId, data) => api.post(`/agunan/${agunanId}/foto`, data),
+  addFoto: (agunanId, data) => api.post(`/agunan/${agunanId}/foto`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  deleteFoto: (agunanId, fotoId) => api.delete(`/agunan/${agunanId}/foto/${fotoId}`),
 };
 
 export const slikService = {
@@ -127,6 +128,7 @@ export const documentService = {
   extractShm:    (formData) => api.post('/document/shm',      formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 300000 }),
   extractShmPage:(formData) => api.post('/document/shm/page', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 300000 }),
   extractBpkb:   (formData) => api.post('/document/bpkb',     formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 300000 }),
+  extractSpptPbb:(formData) => api.post('/document/sppt_pbb', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 300000 }),
 
   extractSurvey: (formData) => api.post('/document/survey', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 300000 }),
 };

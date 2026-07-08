@@ -16,5 +16,5 @@ module.exports = {
   llmModelName: process.env.LLM_MODEL_NAME || 'qwen3.5',
   glmApiUrl: process.env.GLM_API_URL || 'https://api.llamamind.com/v1',
   glmApiKey: process.env.GLM_API_KEY || process.env.LLM_API_KEY || 'no-key',
-  glmOcrServiceUrl: process.env.GLM_OCR_SERVICE_URL || 'http://localhost:8000',
+  glmOcrServiceUrl: process.env.GLM_OCR_SERVICE_URL || 'http://localhost:8099',
 };

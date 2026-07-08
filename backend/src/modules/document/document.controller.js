@@ -66,7 +66,9 @@ async function processKTP(req, res) {
                             glmError.message.includes('connect ECONNREFUSED') ||
                             glmError.message.includes('GLM OCR Service error (503)') ||
                             glmError.message.includes('GLM OCR Service error (500)') ||
-                            glmError.message.includes('network error');
+                            glmError.message.includes('network error') ||
+                            glmError.message.includes('aborted') ||
+                            glmError.message.includes('abort');
       
       if (isUnavailable) {
         console.warn('[Document AI] GLM OCR service unavailable, falling back to Tesseract OCR');
@@ -128,6 +130,13 @@ async function processSHM(req, res) {
  */
 async function processBPKB(req, res) {
   return processDocument(req, res, 'bpkb');
+}
+
+/**
+ * Handle POST /api/document/sppt_pbb
+ */
+async function processSpptPbb(req, res) {
+  return processDocument(req, res, 'sppt_pbb');
 }
 
 /**
@@ -386,6 +395,7 @@ module.exports = {
   processNPWP,
   processSHM,
   processBPKB,
+  processSpptPbb,
   processSurvey,
   processSuratNikah,
   processSHMPage,

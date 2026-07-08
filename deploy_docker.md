@@ -97,6 +97,44 @@ docker-compose exec backend npm run seed
 
 ---
 
+## 🔄 Deploy Update (Tanpa Full Rebuild)
+
+Gunakan prosedur berikut saat ada perubahan kode tanpa perlu rebuild seluruh stack.
+
+### Update Backend Saja
+```bash
+bash deploy-backend.sh
+```
+Script ini menyalin source backend terbaru ke dalam container dan restart otomatis.
+
+### Update Frontend Saja
+```bash
+# 1. Build image frontend terbaru
+docker compose build frontend
+
+# 2. Recreate container frontend dengan image baru (tanpa menyentuh container lain)
+docker compose up -d --no-deps --force-recreate frontend
+
+# 3. WAJIB: Restart nginx agar resolve DNS ke IP container frontend yang baru
+docker compose restart nginx
+```
+
+> [!IMPORTANT]
+> **Selalu jalankan `docker compose restart nginx` setelah recreate container frontend.**
+> Docker mengubah IP internal container setiap kali container dibuat ulang. Nginx yang tidak di-restart akan tetap mengarah ke IP lama dan mengakibatkan **502 Bad Gateway**.
+
+> [!WARNING]
+> **Jika menggunakan `docker-compose` versi lama (v1.x)**, perintah `up -d frontend` bisa secara tidak sengaja mematikan container `postgres` dan `minio`. Jika terjadi **500 Internal Server Error** setelah deploy frontend, periksa dan hidupkan kembali container database:
+> ```bash
+> # Cek status semua container
+> docker compose ps -a
+>
+> # Jika postgres atau minio Exited, hidupkan kembali:
+> docker compose up -d postgres minio
+> ```
+
+---
+
 ## 🔐 Akun Akses Default
 Setelah seed berhasil dijalankan, silakan masuk ke aplikasi menggunakan kredensial administrator awal berikut:
 - **URL Aplikasi**: `http://<IP_SERVER_ATAU_DOMAIN>/`

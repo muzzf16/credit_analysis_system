@@ -1,5 +1,5 @@
 const db = require('../../config/database');
-const { minioClient, BUCKET_NAME: BUCKET } = require('../../config/minio');
+const { minioClient, getPresignedUrl: minioGetPresignedUrl, BUCKET_NAME: BUCKET } = require('../../config/minio');
 const { v4: uuid } = require('uuid');
 const path = require('path');
 
@@ -31,7 +31,7 @@ async function getByReferensi(referensiId, referensiTipe) {
 async function getPresignedUrl(id) {
   const result = await db.query('SELECT file_path, file_name FROM dokumen WHERE id = $1', [id]);
   if (result.rows.length === 0) throw { status: 404, message: 'Dokumen tidak ditemukan.' };
-  const url = await minioClient.presignedGetObject(BUCKET, result.rows[0].file_path, 3600);
+  const url = await minioGetPresignedUrl(result.rows[0].file_path, 3600);
   return { url, fileName: result.rows[0].file_name };
 }
 

@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { BarChart3, Save, Loader2, ArrowLeft, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { analisaService } from '../../services';
+import { analisaService, slikService, pengajuanService } from '../../services';
 import { formatRupiah, formatPercent } from '../../utils/formatters';
 
 export default function AnalisaProduktifPage() {
@@ -9,6 +9,7 @@ export default function AnalisaProduktifPage() {
   const pengajuanId = params.get('pengajuanId') || '';
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const [form, setForm] = useState({
@@ -17,6 +18,98 @@ export default function AnalisaProduktifPage() {
     biayaOpBulan1: 0, biayaOpBulan2: 0, biayaOpBulan3: 0,
     angsuranPerBulan: 0, pengurangAngsuran: 0,
   });
+
+  useEffect(() => {
+    if (!pengajuanId) return;
+
+    const loadData = async () => {
+      setLoadingData(true);
+      try {
+        let slikInstallment = 0;
+        let angsuranDariPengajuan = 0;
+
+        // 1. Fetch Credit Application details
+        try {
+          const pRes = await pengajuanService.getById(pengajuanId);
+          if (pRes.data?.data?.angsuran_perbulan) {
+            angsuranDariPengajuan = Number(pRes.data.data.angsuran_perbulan);
+          }
+        } catch (e) {
+          console.error("Failed to load pengajuan", e);
+        }
+
+        // 2. Fetch SLIK details
+        try {
+          const slikRes = await slikService.getByPengajuanId(pengajuanId);
+          const slikData = slikRes.data?.data;
+          if (slikData && slikData.detail_slik) {
+            slikData.detail_slik.forEach(f => {
+              let tenorBulan = 0;
+              if (f.tanggalMulai && f.jatuhTempo) {
+                const start = new Date(f.tanggalMulai);
+                const end = new Date(f.jatuhTempo);
+                if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                  tenorBulan = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+                }
+              }
+              const plafon = Number(f.plafon || 0);
+              const rateTahunan = Number(f.sukuBunga || 0);
+              if (plafon > 0 && rateTahunan > 0 && tenorBulan > 0) {
+                const rateBulanan = (rateTahunan / 100) / 12;
+                const angsuran = (plafon * rateBulanan * Math.pow(1 + rateBulanan, tenorBulan)) / (Math.pow(1 + rateBulanan, tenorBulan) - 1);
+                if (!isNaN(angsuran) && isFinite(angsuran)) {
+                  slikInstallment += angsuran;
+                }
+              }
+            });
+          }
+        } catch (err) {
+          console.error("Failed to load SLIK:", err);
+        }
+
+        // 3. Fetch existing saved Produktif analysis
+        try {
+          const res = await analisaService.getProduktif(pengajuanId);
+          if (res.data?.data) {
+            const data = res.data.data;
+            setForm({
+              omsetBulan1: Number(data.omset_bulan1 || 0),
+              omsetBulan2: Number(data.omset_bulan2 || 0),
+              omsetBulan3: Number(data.omset_bulan3 || 0),
+              hppBulan1: Number(data.hpp_bulan1 || 0),
+              hppBulan2: Number(data.hpp_bulan2 || 0),
+              hppBulan3: Number(data.hpp_bulan3 || 0),
+              biayaOpBulan1: Number(data.biaya_op_bulan1 || 0),
+              biayaOpBulan2: Number(data.biaya_op_bulan2 || 0),
+              biayaOpBulan3: Number(data.biaya_op_bulan3 || 0),
+              pengurangAngsuran: Number(data.pengurang_angsuran || Math.round(slikInstallment) || 0),
+              angsuranPerBulan: angsuranDariPengajuan || 0,
+            });
+          } else {
+            // No analysis yet, set defaults
+            setForm(prev => ({
+              ...prev,
+              pengurangAngsuran: Math.round(slikInstallment),
+              angsuranPerBulan: angsuranDariPengajuan,
+            }));
+          }
+        } catch (err) {
+          // If analysis service fails or returns 404, set defaults
+          setForm(prev => ({
+            ...prev,
+            pengurangAngsuran: Math.round(slikInstallment),
+            angsuranPerBulan: angsuranDariPengajuan,
+          }));
+        }
+      } catch (err) {
+        console.error("Error loading page data:", err);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    loadData();
+  }, [pengajuanId]);
 
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
 
@@ -66,6 +159,14 @@ export default function AnalisaProduktifPage() {
       </div>
     );
   };
+
+  if (loadingData) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-6xl">

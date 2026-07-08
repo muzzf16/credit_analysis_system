@@ -14,6 +14,7 @@ router.post('/shm/page', multerUpload.single('file'), ctrl.processSHMPage);
 router.post('/shm', multerUpload.single('file'), ctrl.processSHM);
 
 router.post('/bpkb', multerUpload.single('file'), ctrl.processBPKB);
+router.post('/sppt_pbb', multerUpload.single('file'), ctrl.processSpptPbb);
 router.post('/survey', multerUpload.single('file'), ctrl.processSurvey);
 router.post('/surat_nikah', multerUpload.single('file'), ctrl.processSuratNikah);
 

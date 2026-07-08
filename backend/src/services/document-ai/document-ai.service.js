@@ -143,6 +143,19 @@ Gunakan format persis berikut:
 {"jenis_usaha":"","perkiraan_skala":"kecil/menengah/besar","kondisi_bangunan":"baik/sedang/kurang","indikasi_aktif":true,"catatan":""}
 Pada field catatan, tuliskan observasi singkat tentang kondisi usaha yang terlihat di foto.`;
 
+    case 'sppt_pbb':
+      return `Kamu adalah sistem OCR dokumen Indonesia. BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR SURAT PEMBERITAHUAN PAJAK TERUTANG (SPPT PBB).
+ATURAN SANGAT KETAT:
+1. DILARANG mengarang atau menebak data.
+2. Jika data tidak terbaca, ISI STRING KOSONG "".
+3. Kembalikan HANYA JSON valid tanpa markdown.
+
+Ekstrak:
+- total_njop: Total NJOP (biasanya angka di kolom kanan bawah tabel, di baris "TOTAL NJOP" atau "NJOP Dasar Pengenaan PBB").
+
+Gunakan format persis berikut:
+{"total_njop":""}`;
+
 
 
     default:

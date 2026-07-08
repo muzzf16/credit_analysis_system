@@ -104,6 +104,10 @@ const SURVEY_SCHEMA = {
   catatan: ""
 };
 
+const SPPT_PBB_SCHEMA = {
+  total_njop: ""
+};
+
 /**
  * Helper to extract fields from SHM raw_text when LLM fails or is bypassed
  */
@@ -359,6 +363,15 @@ function validateAndClean(rawData, type) {
       result.catatan = (data.catatan !== undefined && data.catatan !== null) ? String(data.catatan).trim() : "";
       return result;
     }
+    case 'sppt_pbb': {
+      const result = {};
+      Object.keys(SPPT_PBB_SCHEMA).forEach(key => {
+        let val = (data[key] !== undefined && data[key] !== null) ? String(data[key]).trim() : "";
+        if (key === 'total_njop') val = val.replace(/\D/g, ''); // just numbers
+        result[key] = val;
+      });
+      return result;
+    }
     case 'shm_cover': {
       const s = (k) => { const v = data[k]; return (v === null || v === undefined || String(v).trim() === 'null') ? '' : String(v).trim(); };
       return {
@@ -460,5 +473,6 @@ module.exports = {
   SHM_SCHEMA,
   BPKB_SCHEMA,
   SURVEY_SCHEMA,
+  SPPT_PBB_SCHEMA,
   validateAndClean
 };

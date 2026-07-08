@@ -198,7 +198,11 @@ export default function MakPreviewPage() {
   const totalPenghasilan = isKonsumtif ? parseFloat(financialAnalisa.total_penghasilan || 0) : parseFloat(financialAnalisa.laba_bersih || 0);
   const rpcPercent = 90;
   const rpcAmount = (totalPenghasilan * rpcPercent) / 100;
-  const angsuranEksisting = isKonsumtif ? parseFloat(financialAnalisa.cicilan_existing || 0) : (totalAngsuranSlikAll || 0);
+  const angsuranEksisting = isKonsumtif
+    ? parseFloat(financialAnalisa.cicilan_existing || 0)
+    : (financialAnalisa.pengurang_angsuran !== undefined && financialAnalisa.pengurang_angsuran !== null
+      ? parseFloat(financialAnalisa.pengurang_angsuran)
+      : (totalAngsuranSlikAll || 0));
   const pengurangAngsuran = isKonsumtif ? parseFloat(financialAnalisa.pengurang_angsuran || 0) : 0;
   const biayaHidup = isKonsumtif
     ? (parseFloat(financialAnalisa.listrik || 0) +
@@ -1036,7 +1040,7 @@ export default function MakPreviewPage() {
                       </tr>
                       <tr className="border-b border-gray-200">
                         <td className="p-1.5 font-semibold bg-gray-50">Penggunaan</td>
-                        <td className="p-1.5">BIAYA PENDIDIKAN SEKOLAH ANAK</td>
+                        <td className="p-1.5">{pengajuan.tujuan_kredit || '-'}</td>
                       </tr>
                       <tr className="border-b border-gray-200">
                         <td className="p-1.5 font-semibold bg-gray-50">Jangka Waktu</td>
@@ -1044,7 +1048,9 @@ export default function MakPreviewPage() {
                       </tr>
                       <tr className="border-b border-gray-200">
                         <td className="p-1.5 font-semibold bg-gray-50">Provisi / Suku Bunga</td>
-                        <td className="p-1.5">2,00% / 15,00% Anuitas</td>
+                        <td className="p-1.5">
+                          2,00% / {pengajuan.suku_bunga ? parseFloat(pengajuan.suku_bunga).toFixed(2).replace('.', ',') : '15,00'}% {pengajuan.sistem_angsuran ? (pengajuan.sistem_angsuran.charAt(0).toUpperCase() + pengajuan.sistem_angsuran.slice(1).toLowerCase()) : 'Anuitas'}
+                        </td>
                       </tr>
                       <tr className="border-b border-gray-200">
                         <td className="p-1.5 font-semibold bg-gray-50">Jaminan Kredit</td>
@@ -1052,7 +1058,11 @@ export default function MakPreviewPage() {
                       </tr>
                       <tr className="border-b border-gray-200">
                         <td className="p-1.5 font-semibold bg-gray-50">Pembayaran angsuran</td>
-                        <td className="p-1.5">Potong gaji/TPP/TPG/SUMBER PENGHASILAN LAIN setiap bulan</td>
+                        <td className="p-1.5">
+                          {pengajuan.jenis_kredit === 'KONSUMTIF'
+                            ? 'Potong gaji/TPP/TPG/SUMBER PENGHASILAN LAIN setiap bulan'
+                            : 'Dari hasil usaha ditunjang penghasilan Ybs sebagai karyawan/buruh'}
+                        </td>
                       </tr>
                       <tr className="border-b border-gray-200">
                         <td className="p-1.5 font-semibold bg-gray-50">Akad Kredit</td>
@@ -1343,6 +1353,56 @@ export default function MakPreviewPage() {
 
               </div>
             </div>         </div>
+
+          {/* ============================================================ */}
+          {/* PAGE 4 (Optional): FOTO JAMINAN */}
+          {/* ============================================================ */}
+          {mainAgunan?.foto?.length > 0 && (
+            <div className="print-page border-2 border-gray-800 p-8 mb-8 bg-white relative">
+              <div className="text-center font-bold underline text-lg mb-6 uppercase">
+                FOTO JAMINAN / FOTO RUMAH TEMPAT TINGGAL
+              </div>
+              
+              <table className="w-full text-xs font-medium mb-6">
+                <tbody>
+                  <tr>
+                    <td className="w-32 py-1">Nama Debitur</td>
+                    <td className="w-4 text-center">:</td>
+                    <td className="py-1 uppercase font-bold">{pengajuan.debitur_nama || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1 align-top">Alamat</td>
+                    <td className="w-4 text-center align-top">:</td>
+                    <td className="py-1 uppercase">{mainAgunan.alamat_agunan || '-'}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="flex flex-col gap-6 items-center border border-black p-4 mb-12 min-h-[400px] justify-center bg-gray-50 relative">
+                {mainAgunan.foto.map((foto, idx) => (
+                  <div key={idx} className="w-full max-w-md border-2 border-black p-1 bg-white">
+                    <img 
+                      src={foto.file_url || ''} 
+                      alt={`Foto Jaminan ${idx + 1}`} 
+                      className="w-full h-auto object-contain max-h-[400px]" 
+                      onError={(e) => { e.target.onerror = null; e.target.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%23eeeeee%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2216%22 fill=%22%23999999%22%3EGambar Tidak Ditemukan%3C/text%3E%3C/svg%3E'; }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-between px-10 text-center text-xs font-semibold">
+                <div className="flex flex-col justify-end">
+                  <p className="mb-20">Mengetahui,<br />Kabid. Pemasaran</p>
+                  <p className="underline uppercase">{kabidName}</p>
+                </div>
+                <div className="flex flex-col justify-end">
+                  <p className="mb-20">Petugas Analisa</p>
+                  <p className="underline uppercase">{pengusulName}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
       </div>

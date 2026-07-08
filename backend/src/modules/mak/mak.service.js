@@ -43,8 +43,9 @@ async function getMakData(pengajuanId) {
     surveyUsaha = usahaSurveyRes.rows[0] || null;
   }
 
-  // 6. Agunan (all)
-  const agunanRes = await db.query('SELECT * FROM agunan WHERE pengajuan_id = $1', [pengajuanId]);
+  // 6. Agunan (all) - using agunan service to get photos
+  const agunanService = require('./../agunan/agunan.service');
+  const agunanRes = await agunanService.getByPengajuanId(pengajuanId);
 
   // 7. SLIK
   const slikRes = await db.query('SELECT * FROM slik WHERE pengajuan_id = $1', [pengajuanId]);
@@ -76,7 +77,7 @@ async function getMakData(pengajuanId) {
     survey,
     surveyLingkungan,
     surveyUsaha,
-    agunan: agunanRes.rows,
+    agunan: agunanRes,
     slik: slikRes.rows[0] || null,
     analisaKonsumtif: konsumtifRes.rows[0] || null,
     analisaProduktif: produktifRes.rows[0] || null,

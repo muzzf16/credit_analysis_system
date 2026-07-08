@@ -37,6 +37,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-BprMinio@2024}
       MINIO_UPDATE: "off"
+      MINIO_SERVER_URL: "http://192.168.0.210:9000"
       GODEBUG: multipathtcp=0
     volumes:
       - minio_data_2:/data
@@ -81,6 +82,8 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-BprMinio@2024}
       MINIO_BUCKET: bpr-bapera
       MINIO_USE_SSL: "false"
+      MINIO_PUBLIC_HOST: "192.168.0.210"
+      MINIO_PUBLIC_PORT: "9000"
       # Document AI / VLM — llama.cpp server berjalan di host, bukan di container
       # 172.22.0.1 = docker bridge gateway → host machine
       LFM_API_URL: http://172.22.0.1:1976
@@ -89,7 +92,7 @@ services:
       LLM_PROVIDER: openai
       LLM_MODEL_NAME: qwen3.5
       LLM_API_KEY: no-key
-      GLM_OCR_SERVICE_URL: http://host.docker.internal:8000
+      GLM_OCR_SERVICE_URL: http://host.docker.internal:8099
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

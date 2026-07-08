@@ -1240,3 +1240,90 @@ Menyesuaikan prompt VLM untuk dokumen Sertifikat Hak Milik (SHM) agar sesuai den
 **Task berikutnya:** Mulai pengembangan Modul Laporan Komprehensif (Phase 12) atau merapikan fitur EWS.
 **Kode yang perlu ditempel:** -
 
+---
+
+## 🔧 Sesi 43 — 2026-07-06 | Model: Gemini 3.5 Flash | Modul: Analisa Produktif & MAK
+**Goal:** Otomasi pengisian field "Pengurang Angsuran" dari SLIK dan "Angsuran per Bulan" dari Pengajuan Kredit pada Analisa Produktif.
+**Yang selesai:**
+- [x] Menambahkan `useEffect` pada `AnalisaProduktifPage.jsx` untuk mengambil data otomatis dari SLIK dan Pengajuan Kredit pada saat halaman dimuat.
+- [x] Mengisi otomatis field **Pengurang Angsuran** dengan total angsuran SLIK (annuity-based sum) dan field **Angsuran per Bulan** dengan nominal dari pengajuan kredit.
+- [x] Menambahkan state loading spinner (`loadingData`) saat memuat data di `AnalisaProduktifPage.jsx`.
+- [x] Memperbarui mapping `angsuranEksisting` pada `MakPreviewPage.jsx` untuk tipe kredit Produktif agar merujuk ke data `pengurang_angsuran` yang tersimpan di database, sehingga tidak terjadi double-counting atau tampilan Rp 0 yang salah.
+**Keputusan baru:**
+- Field "Pengurang Angsuran" pada Analisa Produktif kini terhubung ke SLIK total angsuran.
+- Nilai "Angsuran per Bulan" pada Analisa Produktif langsung mengambil data dari database Pengajuan Kredit.
+- Pada halaman preview MAK untuk kredit produktif, `angsuranEksisting` dipetakan ke saved `pengurang_angsuran` (menggantikan default `totalAngsuranSlikAll`) agar sinkron dengan input manual/otomatis analis.
+**File yang diubah:**
+- `frontend/src/pages/analisa/AnalisaProduktifPage.jsx`
+- `frontend/src/pages/mak/MakPreviewPage.jsx`
+**File JANGAN disentuh:**
+- `backend/src/utils/financialFormulas.js`
+**Bug yang ditemukan:** -
+**Hindari sesi berikutnya:** -
+**Task berikutnya:** Mulai pengembangan Modul Laporan Komprehensif (Phase 12) atau merapikan fitur EWS.
+**Kode yang perlu ditempel:** -
+
+---
+
+## Sesi 43 — 2026-07-07 | Model: Antigravity | Modul: UI & Backend
+**Goal:** Optimasi UI, Form Upload Foto Jaminan, dan Perbaikan Error Upload Image.
+**Yang selesai:**
+- [x] Diskusi mengenai perbedaan performa kode Gemini Canvas dan optimasi frontend.
+- [x] Menerapkan optimasi performa React di `AgunanEditPage.jsx` dan `AgunanFormPage.jsx` dengan menggunakan `useCallback` untuk mencegah re-render yang tidak perlu.
+- [x] Menambahkan fitur upload dan hapus foto jaminan ganda dengan _preview_ di form Agunan.
+- [x] Memperbaiki bug di mana tombol hapus gambar ('X') tersembunyi karena kelas hover (dibuat jadi selalu terlihat).
+- [x] Mengatasi error 400 & 500 saat _upload_ foto dengan menambahkan _header_ `multipart/form-data` secara eksplisit pada panggilan API `axios`.
+- [x] Menambahkan instruksi _diagnostic console error log_ di controller Agunan untuk mempermudah pencarian root-cause error internal server.
+- [x] Mengsinkronisasikan gambar yang di-upload dari MinIO agar muncul di halaman cetak / preview MAK.
+**Keputusan baru:** Semua pemanggilan API upload file di _frontend_ yang tidak menggunakan instance `axios` dengan interceptor default yang menset _multipart_ secara otomatis, harus secara manual didefinisikan tipe _content_-nya (`headers: { 'Content-Type': 'multipart/form-data' }`) untuk mencegah MinIO dan Multer gagal mendeteksi stream file.
+**File yang diubah:**
+- `frontend/src/pages/agunan/AgunanEditPage.jsx`
+- `frontend/src/pages/agunan/AgunanFormPage.jsx`
+- `frontend/src/services/agunan.service.js`
+- `frontend/src/pages/mak/MakPreviewPage.jsx`
+- `backend/src/modules/agunan/agunan.controller.js`
+**File JANGAN disentuh:** -
+**Bug yang ditemukan:** Error "File foto wajib diupload" (HTTP 400) dan HTTP 500 karena frontend mengirim foto dengan format teks/JSON biasa akibat hilangnya header multipart.
+**Hindari sesi berikutnya:** Mengirimkan binary `File`/`Blob` via Axios ke server Node.js tanpa header multipart.
+**Task berikutnya:** Lanjutkan pengembangan modul Laporan Komprehensif atau pengujian fitur EWS secara E2E.
+**Kode yang perlu ditempel:** -
+
+---
+
+## 🔧 Sesi 44 — 2026-07-08 | Model: Antigravity | Modul: Agunan & MinIO
+**Goal:** Memperbaiki bug "Gambar Tidak Ditemukan" pada foto jaminan agunan yang disebabkan oleh masalah _presigned URL_ MinIO yang tidak bisa diakses dari browser, serta error 403 _SignatureDoesNotMatch_.
+**Yang selesai:**
+- [x] Mengubah IP `MINIO_PUBLIC_HOST` pada konfigurasi dari `minio` (internal docker) menjadi IP Publik server (`192.168.0.210`).
+- [x] Memperbaiki error `403 SignatureDoesNotMatch` dengan membuat arsitektur **`minioPublicClient`** di `backend/src/config/minio.js`.
+- [x] Mengatur `minioPublicClient` agar langsung di-initialize dengan `MINIO_PUBLIC_HOST` dan `MINIO_PUBLIC_PORT` (`9000`), sehingga fungsi `presignedGetObject` secara native langsung men-generate signature yang _valid_ untuk IP Publik tanpa perlu string replacement yang merusak hash signature.
+- [x] Me-_revert_ modifikasi eksperimental Nginx proxy (`/storage/`) karena MinIO SDK sekarang sudah men-generate URL presigned port 9000 yang bisa diakses langsung via browser.
+- [x] Melakukan integrasi dan deployment ulang backend container.
+**Keputusan baru:** Pembuatan Public Presigned URL MinIO tidak boleh dimanipulasi dengan `url.replace` manual sesudah digenerate, karena hal tersebut merusak signature AWS v4. Solusi resminya adalah menggunakan instance `Minio.Client` khusus (`minioPublicClient`) yang telah disetel menggunakan Endpoint Publik untuk melakukan hashing.
+**File yang diubah:**
+- `backend/src/config/minio.js`
+- `docker-compose.yml`
+- `.env`
+**File JANGAN disentuh:** Konfigurasi _reverse proxy_ Nginx untuk MinIO.
+**Bug yang ditemukan:** Mengganti secara manual hostname di dalam Presigned URL MinIO (contoh `http://minio:9000/...` di-replace ke `http://192.168.0.210:9000/...`) akan langsung ditolak (`403 Forbidden`) karena parameter URL _path_ dan _host_ berbeda dari yang awalnya dipakai untuk menandatangani request.
+**Hindari sesi berikutnya:** Meng-_override_ URL MinIO secara manual menggunakan regex/replace pada _presigned URLs_.
+**Task berikutnya:** Melanjutkan pengembangan modul laporan atau EWS.
+**Kode yang perlu ditempel:** -
+
+---
+
+## 🔧 Sesi 45 — 2026-07-08 | Model: Antigravity | Modul: Agunan & MAK
+**Goal:** Memperbaiki bug foto agunan/jaminan yang tidak muncul di halaman cetak / preview MAK karena masalah referensi URL dan pemanggilan database.
+**Yang selesai:**
+- [x] Memperbarui `mak.service.js` (fungsi `getMakData`) agar memanggil fungsi `agunanService.getByPengajuanId()` untuk mengambil daftar agunan, sehingga mendapatkan data agunan beserta array foto dan URL *presigned* MinIO yang utuh.
+- [x] Memperbaiki *bug* kembalian `agunan: agunanRes.rows` menjadi `agunan: agunanRes` di `mak.service.js` karena `getByPengajuanId` langsung mengembalikan *array*.
+- [x] Memperbarui render `<img src>` pada `MakPreviewPage.jsx` untuk tidak me-*(hardcode)* prefix `http://localhost:5000` di depan URL foto, dan cukup memanfaatkan `foto.file_url` asli bawaan backend (yang sudah merupakan *presigned* MinIO url publik).
+- [x] Mendeploy ulang service `backend` dan `frontend` melalui skrip bash dan docker compose (tanpa build total).
+**Keputusan baru:** Foto agunan untuk laporan MAK kini sepenuhnya mengandalkan fungsionalitas dan logika `agunanService` secara terpusat untuk menghindari *duplicate logic* dalam pembentukan *presigned URLs* MinIO.
+**File yang diubah:**
+- `backend/src/modules/mak/mak.service.js`
+- `frontend/src/pages/mak/MakPreviewPage.jsx`
+**File JANGAN disentuh:** -
+**Bug yang ditemukan:** Preview foto di MAK sebelumnya rusak karena URL foto ditempeli dengan hostname localhost, sementara string asli dari database sudah menunjuk ke *presigned url* dari container/server MinIO secara langsung. Serta *array* foto memang hilang karena backend `mak.service.js` tidak melakukan `JOIN` tabel `agunan_foto`.
+**Hindari sesi berikutnya:** Menarik row database secara mentah menggunakan `db.query` pada modul laporan MAK jika modul aslinya (seperti `agunanService`) sudah menyediakan method abstrak yang matang dan menangani detail relasi kompleks (seperti MinIO URL map).
+**Task berikutnya:** Melanjutkan pengembangan modul laporan atau EWS.
+**Kode yang perlu ditempel:** -

@@ -9,6 +9,15 @@ const minioClient = new Minio.Client({
   secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin123',
 });
 
+// Client khusus untuk generate public presigned URL agar signature menggunakan public host
+const minioPublicClient = new Minio.Client({
+  endPoint: process.env.MINIO_PUBLIC_HOST || process.env.MINIO_ENDPOINT || 'localhost',
+  port: parseInt(process.env.MINIO_PUBLIC_PORT) || parseInt(process.env.MINIO_PORT) || 9000,
+  useSSL: process.env.MINIO_USE_SSL === 'true',
+  accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
+  secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin123',
+});
+
 const BUCKET_NAME = process.env.MINIO_BUCKET || 'bpr-bapera';
 
 /**
@@ -66,7 +75,7 @@ const uploadFile = async (objectName, buffer, mimeType) => {
  * @returns {Promise<string>} signed URL
  */
 const getPresignedUrl = async (objectName, expiry = 3600) => {
-  return await minioClient.presignedGetObject(BUCKET_NAME, objectName, expiry);
+  return await minioPublicClient.presignedGetObject(BUCKET_NAME, objectName, expiry);
 };
 
 /**

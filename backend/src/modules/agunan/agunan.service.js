@@ -1,4 +1,7 @@
 const db = require('../../config/database');
+const { minioClient, getPresignedUrl, BUCKET_NAME: BUCKET } = require('../../config/minio');
+const { v4: uuid } = require('uuid');
+const path = require('path');
 const { hitungLTV, hitungCoverageRatio } = require('../../utils/financialFormulas');
 const { toNum, toStr } = require('../../utils/db-helpers');
 
@@ -36,19 +39,45 @@ async function create(data, userId) {
   return result.rows[0];
 }
 
+async function mapFotos(rows) {
+  for (let agunan of rows) {
+    if (agunan.foto && Array.isArray(agunan.foto)) {
+      for (let f of agunan.foto) {
+        if (f && f.file_path) {
+          try {
+            f.file_url = await getPresignedUrl(f.file_path);
+          } catch (e) {
+            console.error('Failed to get presigned URL for', f.file_path, e);
+          }
+        }
+      }
+    }
+  }
+  return rows;
+}
+
 async function getByPengajuanId(pengajuanId) {
   const result = await db.query(
     `SELECT a.*, (SELECT json_agg(f.*) FROM agunan_foto f WHERE f.agunan_id = a.id) as foto
      FROM agunan a WHERE a.pengajuan_id = $1 ORDER BY a.created_at`, [pengajuanId]);
-  return result.rows;
+  return await mapFotos(result.rows);
 }
 
-async function addFoto(agunanId, data) {
-  const { filePath, fileName, keterangan, latitude, longitude } = data;
+async function addFoto(agunanId, file, data, userId) {
+  const { keterangan, latitude, longitude } = data;
+  
+  const ext = path.extname(file.originalname);
+  const objectName = `agunan/foto/${agunanId}/${uuid()}${ext}`;
+
+  await minioClient.putObject(BUCKET, objectName, file.buffer, file.size, {
+    'Content-Type': file.mimetype,
+    'x-amz-meta-uploaded-by': userId,
+  });
+
   const result = await db.query(
     `INSERT INTO agunan_foto (agunan_id, file_path, file_name, keterangan, latitude, longitude, timestamp_foto)
      VALUES ($1,$2,$3,$4,$5,$6,NOW()) RETURNING *`,
-    [agunanId, filePath, fileName, toStr(keterangan), toNum(latitude), toNum(longitude)]
+    [agunanId, objectName, file.originalname, toStr(keterangan), toNum(latitude), toNum(longitude)]
   );
   return result.rows[0];
 }
@@ -58,7 +87,8 @@ async function getById(id) {
     `SELECT a.*, (SELECT json_agg(f.*) FROM agunan_foto f WHERE f.agunan_id = a.id) as foto
      FROM agunan a WHERE a.id = $1`, [id]);
   if (result.rows.length === 0) { const e = new Error('Agunan tidak ditemukan'); e.status = 404; throw e; }
-  return result.rows[0];
+  const mapped = await mapFotos(result.rows);
+  return mapped[0];
 }
 
 async function update(id, data, userId) {
@@ -103,4 +133,29 @@ async function update(id, data, userId) {
   return result.rows[0];
 }
 
-module.exports = { create, getById, update, getByPengajuanId, addFoto };
+async function deleteFoto(fotoId, agunanId) {
+  // Ambil data foto terlebih dahulu untuk mendapat file_path
+  const fotoResult = await db.query(
+    'SELECT * FROM agunan_foto WHERE id = $1 AND agunan_id = $2',
+    [fotoId, agunanId]
+  );
+  if (fotoResult.rows.length === 0) {
+    const e = new Error('Foto tidak ditemukan'); e.status = 404; throw e;
+  }
+  const foto = fotoResult.rows[0];
+
+  // Hapus dari MinIO
+  try {
+    await minioClient.removeObject(BUCKET, foto.file_path);
+  } catch (e) {
+    console.error('Gagal menghapus file dari MinIO:', foto.file_path, e);
+    // Tetap lanjut hapus dari DB meski MinIO gagal
+  }
+
+  // Hapus record dari database
+  await db.query('DELETE FROM agunan_foto WHERE id = $1', [fotoId]);
+  return { deleted: true, fotoId };
+}
+
+module.exports = { create, getById, update, getByPengajuanId, addFoto, deleteFoto };
+
