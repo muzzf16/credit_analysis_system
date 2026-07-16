@@ -175,9 +175,6 @@ export default function DebiturFormPage() {
         const resultEngine = result.engineUsed || res.data?.engineUsed || 'lfm';
         const resultConfidences = result.confidences || res.data?.confidences || {};
 
-        console.log('[OCR KTP] Raw response:', res.data);
-        console.log('[OCR KTP] Normalized payload:', d);
-
         setVlmEngine(resultEngine);
         setConfidences(resultConfidences);
 
