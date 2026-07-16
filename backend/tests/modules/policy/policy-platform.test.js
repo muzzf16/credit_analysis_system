@@ -16,6 +16,12 @@ const path = require('path');
 const fixturePath = path.join(__dirname, '../../../src/modules/policy/fixtures/bpr-bapera-2024.policy.json');
 const rawFixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
 
+function activatePolicy(policy) {
+  policy.transition('REVIEW');
+  policy.transition('APPROVED');
+  policy.transition('ACTIVE');
+}
+
 describe('Policy Platform (Sprint 5.1)', () => {
 
   // ═══════════════════════════════════════════════════════════════
@@ -177,8 +183,7 @@ describe('Policy Platform (Sprint 5.1)', () => {
       dataA.metadata.version = 'A';
       dataA.metadata.priority = 10;
       const policyA = new PolicyPack(dataA);
-      // Hack state for test
-      policyA._lifecycle._state = 'ACTIVE';
+      activatePolicy(policyA);
       repo.save(policyA);
 
       // Policy B: Priority 20
@@ -186,7 +191,7 @@ describe('Policy Platform (Sprint 5.1)', () => {
       dataB.metadata.version = 'B';
       dataB.metadata.priority = 20;
       const policyB = new PolicyPack(dataB);
-      policyB._lifecycle._state = 'ACTIVE';
+      activatePolicy(policyB);
       repo.save(policyB);
 
       const resolver = new PolicyResolver(repo);
@@ -203,7 +208,7 @@ describe('Policy Platform (Sprint 5.1)', () => {
       data25.metadata.version = '2025';
       data25.metadata.effectiveDate = '2025-01-01';
       const policy25 = new PolicyPack(data25);
-      policy25._lifecycle._state = 'ACTIVE';
+      activatePolicy(policy25);
       repo.save(policy25);
 
       // Policy 2026: Effective Jun 1 2026
@@ -211,7 +216,7 @@ describe('Policy Platform (Sprint 5.1)', () => {
       data26.metadata.version = '2026';
       data26.metadata.effectiveDate = '2026-06-01';
       const policy26 = new PolicyPack(data26);
-      policy26._lifecycle._state = 'ACTIVE';
+      activatePolicy(policy26);
       repo.save(policy26);
 
       const resolver = new PolicyResolver(repo);
@@ -236,7 +241,7 @@ describe('Policy Platform (Sprint 5.1)', () => {
       dataSME.metadata.version = 'SME';
       dataSME.metadata.segments = ['SME'];
       const policySME = new PolicyPack(dataSME);
-      policySME._lifecycle._state = 'ACTIVE';
+      activatePolicy(policySME);
       repo.save(policySME);
 
       // MICRO Policy
@@ -244,7 +249,7 @@ describe('Policy Platform (Sprint 5.1)', () => {
       dataMicro.metadata.version = 'MICRO';
       dataMicro.metadata.segments = ['MICRO'];
       const policyMicro = new PolicyPack(dataMicro);
-      policyMicro._lifecycle._state = 'ACTIVE';
+      activatePolicy(policyMicro);
       repo.save(policyMicro);
 
       const resolver = new PolicyResolver(repo);
