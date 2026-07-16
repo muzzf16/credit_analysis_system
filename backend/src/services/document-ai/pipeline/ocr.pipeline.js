@@ -25,15 +25,12 @@ class OcrPipeline {
    */
   async run(fileBuffer, type, mimetype, vlmFallbackFn) {
     // 1. Image Preprocessing Pipeline (OpenCV Python)
-    console.log(`[OcrPipeline] Pre-processing image with OpenCV for type: ${type}...`);
     const processedBuffer = await imagePipeline.process(fileBuffer, type);
     
     // 2. Primary Engine Execution (Tesseract)
-    console.log(`[OcrPipeline] Executing primary OCR engine (Tesseract)...`);
     const engineResult = await this.engines.tesseract.execute(processedBuffer, mimetype, type);
     
     if (engineResult.success) {
-      console.log(`[OcrPipeline] ✅ Primary engine succeeded with confidence: ${engineResult.confidence.toFixed(2)}`);
       return {
         engineUsed: 'tesseract',
         success: true,
@@ -46,12 +43,10 @@ class OcrPipeline {
     
     // 3. VLM Fallback Execution
     if (vlmFallbackFn) {
-      console.log(`[OcrPipeline] Primary engine failed or low confidence. Triggering VLM Fallback...`);
       try {
         // Use the ORIGINAL fileBuffer (raw colored image) for VLM!
         // VLMs perform much better on natural colored images than heavily binarized OpenCV outputs.
         const vlmResult = await vlmFallbackFn(fileBuffer, mimetype, type);
-        console.log(`[OcrPipeline] ✅ VLM Fallback succeeded.`);
         return {
           engineUsed: 'vlm',
           success: true,
@@ -64,11 +59,9 @@ class OcrPipeline {
           }]
         };
       } catch (vlmError) {
-        console.warn(`[OcrPipeline ⚠️] VLM fallback also failed. Error: ${vlmError.message}`);
         
         // 4. Last Resort
         if (engineResult.confidence && engineResult.data) {
-           console.log(`[OcrPipeline] Returning low-confidence primary result as last resort...`);
            return {
              engineUsed: 'tesseract',
              success: true,
