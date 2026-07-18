@@ -53,8 +53,12 @@ async function convertPdfToPngBuffer(pdfBuffer) {
 function getPromptForType(type) {
   switch (type.toLowerCase()) {
     case 'ktp':
-      return `Ekstrak data dari gambar KTP ini.
-Tulis ulang semua teks KTP ke dalam format JSON. Jika tidak terbaca, kosongkan. HANYA KELUARKAN JSON.
+      return `Kamu adalah sistem OCR dokumen Indonesia. BACA TEKS PERSIS SEPERTI YANG TERTULIS PADA GAMBAR KARTU TANDA PENDUDUK (KTP).
+ATURAN SANGAT KETAT:
+1. DILARANG mengarang, menebak, atau menambahkan kata yang tidak ada di gambar.
+2. Jika ada field yang blur, buram, tertutup silau, atau tidak terbaca dengan yakin, ISI DENGAN STRING KOSONG "".
+3. Jangan memperbaiki ejaan nama/alamat jika tertulis salah atau disingkat di dokumen.
+4. Perhatikan baik-baik angka '1' vs huruf 'I', dan '0' vs huruf 'O'.
 
 Format JSON:
 {"nik":"isi_nik","nama":"isi_nama","tempat_tgl_lahir":"isi_tempat_tgl_lahir","jenis_kelamin":"isi_jenis_kelamin","alamat":"isi_alamat","rt_rw":"isi_rt_rw","kel_desa":"isi_kel_desa","kecamatan":"isi_kecamatan","agama":"isi_agama","status_perkawinan":"isi_status_perkawinan","pekerjaan":"isi_pekerjaan","kewarganegaraan":"isi_kewarganegaraan","berlaku_hingga":"isi_berlaku_hingga"}`;
@@ -148,10 +152,11 @@ Pada field catatan, tuliskan observasi singkat tentang kondisi usaha yang terlih
 ATURAN SANGAT KETAT:
 1. DILARANG mengarang atau menebak data.
 2. Jika data tidak terbaca, ISI STRING KOSONG "".
-3. Kembalikan HANYA JSON valid tanpa markdown.
+3. Perhatikan tabel perhitungan untuk mendapatkan Total NJOP.
+4. Kembalikan HANYA JSON valid tanpa markdown.
 
 Ekstrak:
-- total_njop: Total NJOP (biasanya angka di kolom kanan bawah tabel, di baris "TOTAL NJOP" atau "NJOP Dasar Pengenaan PBB").
+- total_njop: Total NJOP (biasanya angka di kolom kanan bawah tabel, di baris "TOTAL NJOP" atau "NJOP Dasar Pengenaan PBB". Ekstrak hanya angkanya saja).
 
 Gunakan format persis berikut:
 {"total_njop":""}`;

@@ -551,12 +551,14 @@ function parseKTP(text) {
 
     if (/\bJENIS\b.*\bKELAMIN\b/i.test(normalizedLine)) {
       const sexChunk = `${line} ${nextLine} ${nextNextLine}`;
-      if (/\bPEREMPUAN\b|\bWANITA\b/i.test(sexChunk)) {
+      const inlineValue = findValueAfterLabel(lines.slice(i), /\bJENIS\b.*\bKELAMIN\b/i, {
+        maxLookahead: 2,
+        stopWhen: isKtpLabelLine
+      });
+      if (/\bPEREMPUAN\b|\bWANITA\b/i.test(sexChunk) || /^P$/i.test(inlineValue.trim())) {
         data.jenis_kelamin = 'PEREMPUAN';
-      } else if (/\bLAKI[- ]?LAKI\b/i.test(sexChunk) || normalizedNext === 'L') {
+      } else if (/\bLAKI[- ]?LAKI\b/i.test(sexChunk) || /^L$/i.test(inlineValue.trim())) {
         data.jenis_kelamin = 'LAKI-LAKI';
-      } else if (normalizedNext === 'P') {
-        data.jenis_kelamin = 'PEREMPUAN';
       } else {
         data.jenis_kelamin = 'LAKI-LAKI';
       }
@@ -1298,9 +1300,65 @@ function parseSLIK(text) {
 }
 
 /**
+ * Parser for SPPT PBB
+ * Extracts Total NJOP from OCR text.
+ * @param {string} text
+ * @returns {object}
+ */
+function parseSpptPbb(text) {
+  const lines = getCleanLines(text);
+  const data = {
+    total_njop: 0
+  };
+
+  // Try to find TOTAL NJOP or NJOP Dasar Pengenaan PBB
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i];
+    if (/TOTAL\s*NJOP|NJOP\s*DASAR\s*PENGENAAN|NJOP\s*UNTUK\s*PERHITUNGAN/i.test(line)) {
+      const match = line.match(/[\d.,]{4,}/);
+      if (match) {
+        const money = parseMoney(match[0]);
+        if (money > 0) {
+          data.total_njop = money;
+          break;
+        }
+      }
+
+      // Look at the next few lines if the amount is on a separate line
+      const valueLines = lines.slice(i, i + 3).join(' ');
+      const valMatch = valueLines.match(/[\d.,]{4,}/);
+      if (valMatch) {
+         const val = parseMoney(valMatch[0]);
+         if (val > 0) {
+            data.total_njop = val;
+            break;
+         }
+      }
+    }
+  }
+
+  // Fallback: Just try to find a large number at the bottom half of the document
+  if (data.total_njop === 0) {
+      const bottomLines = lines.slice(Math.floor(lines.length / 2));
+      let maxVal = 0;
+      for(const line of bottomLines) {
+          const money = parseMoney(line);
+          if (money > maxVal) {
+              maxVal = money;
+          }
+      }
+      if (maxVal > 10000) {
+          data.total_njop = maxVal;
+      }
+  }
+
+  return data;
+}
+
+/**
  * Main Parse Route router
  * @param {string} text 
- * @param {string} type - ktp, surat_nikah, shm, bpkb, slik
+ * @param {string} type - ktp, surat_nikah, shm, bpkb, slik, sppt_pbb
  * @returns {object}
  */
 function parseDocumentText(text, type) {
@@ -1323,6 +1381,8 @@ function parseDocumentText(text, type) {
       return parseBPKB(text);
     case 'slik':
       return parseSLIK(text);
+    case 'sppt_pbb':
+      return parseSpptPbb(text);
     default:
       return { rawText: text };
   }
@@ -1334,5 +1394,6 @@ module.exports = {
   parseSuratNikah,
   parseSHM,
   parseBPKB,
-  parseSLIK
+  parseSLIK,
+  parseSpptPbb
 };

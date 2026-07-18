@@ -23,7 +23,11 @@ class TesseractEngine {
       if (tesseractType === 'ktp') {
         confidenceThreshold = 0.5; // Lower confidence threshold to accept Tesseract results
       } else if (tesseractType.startsWith('shm')) {
-        confidenceThreshold = 0.1; // ACCEPT SHM TESSERACT REGARDLESS OF CONFIDENCE
+        // Raise SHM threshold to 0.45. This ensures that poorly scanned SHM pages
+        // fall back to the VLM (GLM), which is much better at understanding complex layouts
+        confidenceThreshold = 0.45;
+      } else if (tesseractType === 'sppt_pbb') {
+        confidenceThreshold = 0.4;
       }
       
       if (confidence < confidenceThreshold) {
