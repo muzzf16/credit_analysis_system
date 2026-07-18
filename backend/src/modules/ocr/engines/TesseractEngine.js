@@ -28,8 +28,9 @@ class TesseractEngine extends BaseEngine {
       case 'shm_pendaftaran':
       case 'shm_peralihan':
       case 'shm_surat_ukur':
-      case 'shm_peta':   return 6;   // KTP pipeline used — PSM 6 matches KTP preprocessing
-      case 'bpkb':       return 4;
+      case 'shm_peta':   return 6;   // Often behaves better as a single uniform block, despite tabular data
+      case 'bpkb':       return 4;   // Assume a single column of text of variable sizes
+      case 'sppt_pbb':   return 4;   // Assume a single column of text of variable sizes (good for tables with distinct columns/rows)
       case 'surat_nikah': return 4;
       default: return 6;
     }
@@ -178,6 +179,14 @@ class TesseractEngine extends BaseEngine {
       const hasWni = /WNI|WNA/i.test(upperText);
       confidences.kewarganegaraan = hasWni ? 0.95 : overallConf * 0.6;
 
+      return confidences;
+    }
+
+    // ─── SPPT PBB Field Confidences ──────────────────────────────────────────
+    if (documentType === 'sppt_pbb') {
+      const hasNJOP = /NJOP/i.test(upperText);
+      const hasTotal = /TOTAL|JUMLAH/i.test(upperText);
+      confidences.total_njop = (hasNJOP || hasTotal) ? Math.min(0.90, overallConf + 0.15) : overallConf * 0.6;
       return confidences;
     }
 
